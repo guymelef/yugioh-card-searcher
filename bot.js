@@ -7,12 +7,13 @@ const express = require('express')
 const app = express()
 const port = process.env.PORT
 
+// EXPRESS SERVER
 app.get("/", (request, response) => {
   response.send("Hello, I'm a Twitch bot.")
 })
 
 app.listen(port, () => wakeUpDyno('https://ygo-card-searcher.herokuapp.com/'))
-
+// EXPRESS SERVER END
 
 const options = {
   options: { debug: true },
@@ -48,12 +49,38 @@ function onMessageHandler (channel, userState, message, self) {
       if (commandArg.length === 0) {
         client.say(channel, "❔ Try again with this syntax: !card <full/partial card name>")
         break
+      } else if (messageArray[1] === "*random") {
+        fetch('https://db.ygoprodeck.com/api/v5/randomcard.php')
+          .then(r => r.json())
+          .then(r => {
+            let cardInfo;
+            
+            if (r[0].type.includes("Monster")) {
+              cardInfo = `
+                ${r[0].name} (${r[0].attribute}) [${r[0].level}⭐] [${r[0].race}/${r[0].type}] : ${r[0].desc} ATK/${r[0].atk} DEF/${r[0].def}
+                `
+              if (r[0].type.includes("Synchro")) {
+                cardInfo = `⚪ ${cardInfo}`
+              } else if (r[0].type.includes("Fusion")) {
+                cardInfo = `🟣 ${cardInfo}`
+              } else {
+                cardInfo = `🟠 ${cardInfo}`
+              }
+            } else if (r[0].type.includes("Spell")) {
+              cardInfo = `🟢 ${r[0].name} [${r[0].race} ${r[0].type}] : ${r[0].desc}`
+            } else if (r[0].type.includes("Trap")) {
+              cardInfo = `🔴 ${r[0].name} [${r[0].race} ${r[0].type}] : ${r[0].desc}`
+            }
+
+            client.say(channel, cardInfo)
+          })
       } else {
         fetch(`https://db.ygoprodeck.com/api/v5/cardinfo.php?fname=${commandArg}`)
           .then(r => r.json())
           .then(r => {
             if (r.length === 1) {
               let cardInfo;
+              
               if (r[0].type.includes("Monster")) {
                 cardInfo = `
                   ${r[0].name} (${r[0].attribute}) [${r[0].level}⭐] [${r[0].race}/${r[0].type}] : ${r[0].desc} ATK/${r[0].atk} DEF/${r[0].def}
@@ -76,6 +103,7 @@ function onMessageHandler (channel, userState, message, self) {
               const found = r.find(e => e.name.toLowerCase() === commandArg)
               if (found) {
                 let cardInfo;
+                
                 if (found.type.includes("Monster")) {
                   cardInfo = `
                     ${found.name} (${found.attribute}) [${found.level}⭐] [${found.race}/${found.type}] : ${found.desc} ATK/${found.atk} DEF/${found.def}
