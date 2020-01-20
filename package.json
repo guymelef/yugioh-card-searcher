@@ -1,0 +1,24 @@
+{
+  "name": "card-searcher-bot",
+  "version": "1.0.0",
+  "description": "A Twitch for searching Yu-Gi-Oh! cards in chat.",
+  "main": "bot.js",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "node-fetch": "^2.6.0",
+    "tmi.js": "^1.5.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "twitch",
+    "bot",
+    "bot",
+    "yugioh"
+  ],
+  "author": "github.com/guymelef",
+  "license": "ISC"
+}
