@@ -7,6 +7,7 @@ const express = require('express')
 const app = express()
 const port = process.env.PORT
 
+
 // EXPRESS SERVER
 app.get("/", (request, response) => {
   response.send("Hello, I'm a Twitch bot.")
@@ -14,6 +15,7 @@ app.get("/", (request, response) => {
 
 app.listen(port, () => wakeUpDyno('https://ygo-card-searcher.herokuapp.com/'))
 // EXPRESS SERVER END
+
 
 const options = {
   options: { debug: true },
@@ -36,6 +38,10 @@ client.on('connected', onConnectedHandler)
 client.connect()
 
 
+function onConnectedHandler (server, port) {
+  console.log(`💯  Connected to ${server}:${port}`)
+}
+
 function onMessageHandler (channel, userState, message, self) {
   if (self) return
   if (!["domainvalidators", "cardsearcher", "thesandvich"].includes(userState.username)) return
@@ -47,94 +53,28 @@ function onMessageHandler (channel, userState, message, self) {
   switch (command) {
     case "!card":
       if (commandArg.length === 0) {
-        client.say(channel, "❔ Try again with this syntax: !card <full/partial card name>")
+        client.say(channel, "❓ Try again with this syntax: !card <full/partial card name>")
         break
       } else if (messageArray[1] === "*random") {
         fetch('https://db.ygoprodeck.com/api/v5/randomcard.php')
-          .then(r => r.json())
-          .then(r => {
-            let cardInfo;
-            
-            if (r[0].type.includes("Monster")) {
-              cardInfo = `
-                ${r[0].name} (${r[0].attribute}) [${r[0].level}⭐] [${r[0].race}/${r[0].type}] : ${r[0].desc} ATK/${r[0].atk} DEF/${r[0].def}
-                `
-              if (r[0].type.includes("Synchro")) {
-                cardInfo = `⚪ ${cardInfo}`
-              } else if (r[0].type.includes("Fusion")) {
-                cardInfo = `🟣 ${cardInfo}`
-              } else {
-                cardInfo = `🟠 ${cardInfo}`
-              }
-            } else if (r[0].type.includes("Spell")) {
-              cardInfo = `🟢 ${r[0].name} [${r[0].race} ${r[0].type}] : ${r[0].desc}`
-            } else if (r[0].type.includes("Trap")) {
-              cardInfo = `🔴 ${r[0].name} [${r[0].race} ${r[0].type}] : ${r[0].desc}`
-            }
-
-            client.say(channel, cardInfo)
+          .then(card => card.json())
+          .then(card => {
+            sendInfoForOneCard(card)
           })
       } else {
         fetch(`https://db.ygoprodeck.com/api/v5/cardinfo.php?fname=${commandArg}`)
-          .then(r => r.json())
-          .then(r => {
-            if (r.length === 1) {
-              let cardInfo;
-              
-              if (r[0].type.includes("Monster")) {
-                cardInfo = `
-                  ${r[0].name} (${r[0].attribute}) [${r[0].level}⭐] [${r[0].race}/${r[0].type}] : ${r[0].desc} ATK/${r[0].atk} DEF/${r[0].def}
-                  `
-                if (r[0].type.includes("Synchro")) {
-                  cardInfo = `⚪ ${cardInfo}`
-                } else if (r[0].type.includes("Fusion")) {
-                  cardInfo = `🟣 ${cardInfo}`
-                } else {
-                  cardInfo = `🟠 ${cardInfo}`
-                }
-              } else if (r[0].type.includes("Spell")) {
-                cardInfo = `🟢 ${r[0].name} [${r[0].race} ${r[0].type}] : ${r[0].desc}`
-              } else if (r[0].type.includes("Trap")) {
-                cardInfo = `🔴 ${r[0].name} [${r[0].race} ${r[0].type}] : ${r[0].desc}`
-              }
-
-              client.say(channel, cardInfo)
+          .then(cards => cards.json())
+          .then(cards => {
+            if (cards.length === 1) {
+              sendInfoForOneCard(cards[0])
             } else {
-              const found = r.find(e => e.name.toLowerCase() === commandArg)
+              const found = cards.find(card => card.name.toLowerCase() === commandArg)
               if (found) {
-                let cardInfo;
-                
-                if (found.type.includes("Monster")) {
-                  cardInfo = `
-                    ${found.name} (${found.attribute}) [${found.level}⭐] [${found.race}/${found.type}] : ${found.desc} ATK/${found.atk} DEF/${found.def}
-                    `
-                  if (found.type.includes("Synchro")) {
-                    cardInfo = `⚪ ${cardInfo}`
-                  } else if (found.type.includes("Fusion")) {
-                    cardInfo = `🟣 ${cardInfo}`
-                  } else {
-                    cardInfo = `🟠 ${cardInfo}`
-                  }
-                } else if (found.type.includes("Spell")) {
-                  cardInfo = `🟢 ${found.name} [${found.race} ${found.type}] : ${found.desc}`
-                } else if (found.type.includes("Trap")) {
-                  cardInfo = `🔴 ${found.name} [${found.race} ${found.type}] : ${found.desc}`
-                }
-
-                client.say(channel, cardInfo)
+                sendInfoForOneCard(found)
               } else {
-                const cards = r.map(card => {                
-                  if (card.type.includes("Synchro")) {
-                    return `⚪ ${card.name}`
-                  } else if (card.type.includes("Fusion")) {
-                    return `🟣 ${card.name}`
-                  } else if (card.type.includes("Trap")) {
-                    return `🔴 ${card.name}`
-                  } else if (card.type.includes("Spell")) {
-                    return `🟢 ${card.name}`
-                  } else {
-                    return `🟠 ${card.name}`
-                  }
+                const cards = cards.map(card => {                
+                  const symbol = getSymbol(card.type)
+                  return `${symbol} ${card.name}`
                 })
                 client.say(channel, `📜 [${r.length} Cards] : ${cards.join(', ')}`)
               }
@@ -148,6 +88,38 @@ function onMessageHandler (channel, userState, message, self) {
   }
 }
 
-function onConnectedHandler (server, port) {
-  console.log(`💯  Connected to ${server}:${port}`)
+const cardSymbols = {
+  Normal: '💛',
+  Effect: '🧡',
+  Pendulum: '🌗',
+  Spell: '💚',
+  Ritual: '💙',
+  Link: '🔗',
+  Fusion: '💜',
+  Trap: '❤️',
+  Synchro: '🤍',
+  XYZ: '🖤'
+}
+
+const getSymbol = (cardType) => {
+  const type = cardType.split(' ')[0]
+  return cardSymbols[type]
+}
+
+const sendInfoForOneCard = (card) => {
+  let cardInfo;
+                
+  if (card.type.includes("Monster")) {
+    cardInfo = `
+      ${card.name} (${card.attribute}) [${card.level}⭐] [${card.race}/${card.type}] : ${card.desc} ATK/${card.atk} DEF/${card.def}
+      `
+    const symbol = getSymbol(card.type)
+    cardInfo = `${symbol} ${cardInfo}`
+  } else if (card.type.includes("Spell")) {
+    cardInfo = `💚 ${card.name} [${card.race} ${card.type}] : ${card.desc}`
+  } else if (card.type.includes("Trap")) {
+    cardInfo = `❤️ ${card.name} [${card.race} ${card.type}] : ${card.desc}`
+  }
+
+  client.say(channel, cardInfo)
 }
