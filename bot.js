@@ -140,7 +140,7 @@ function onMessageHandler (channel, userState, message, self) {
               }
             }
           })
-          .catch (_ => client.say(channel, 'No card found. 👻'))
+          .catch (_ => client.action(channel, "couldn't find any card(s) with that query, not even in the Shadow Realm. 👻"))
         break
       }
     default:
