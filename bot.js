@@ -53,36 +53,35 @@ function onMessageHandler (channel, userState, message, self) {
   switch (command) {
     case "!card":
       if (commandArg.length === 0) {
-        client.say(channel, "❓ Try again with this syntax: !card <full/partial card name>")
-        break
+        client.say(channel, "❓ To search for cards, follow this syntax: !card <full/partial card name>")
       } else if (messageArray[1] === "*random") {
         fetch('https://db.ygoprodeck.com/api/v5/randomcard.php')
           .then(card => card.json())
           .then(card => {
-            sendInfoForOneCard(card)
+            sendInfoForOneCard(card[0], channel)
           })
       } else {
         fetch(`https://db.ygoprodeck.com/api/v5/cardinfo.php?fname=${commandArg}`)
           .then(cards => cards.json())
           .then(cards => {
             if (cards.length === 1) {
-              sendInfoForOneCard(cards[0])
+              sendInfoForOneCard(cards[0], channel)
             } else {
               const found = cards.find(card => card.name.toLowerCase() === commandArg)
               if (found) {
-                sendInfoForOneCard(found)
+                sendInfoForOneCard(found, channel)
               } else {
-                const cards = cards.map(card => {                
+                const cardsArray = cards.map(card => {                
                   const symbol = getSymbol(card.type)
                   return `${symbol} ${card.name}`
                 })
-                client.say(channel, `📜 [${r.length} Cards] : ${cards.join(', ')}`)
+                client.say(channel, `📜 [${cards.length} Cards] : ${cardsArray.join(', ')}`)
               }
             }
           })
           .catch (_ => client.action(channel, "couldn't find any card(s) with that query, not even in the Shadow Realm. 👻"))
-        break
       }
+      break
     default:
       break
   }
@@ -91,34 +90,37 @@ function onMessageHandler (channel, userState, message, self) {
 const cardSymbols = {
   Normal: '💛',
   Effect: '🧡',
-  Pendulum: '🌗',
-  Spell: '💚',
   Ritual: '💙',
-  Link: '🔗',
   Fusion: '💜',
-  Trap: '❤️',
   Synchro: '🤍',
-  XYZ: '🖤'
+  Spell: '💚',
+  Trap: '❤️',
+  XYZ: '🖤',
+  Link: '🔗',
+  Pendulum: '🌗',
+  Skill: '✨'
 }
 
 const getSymbol = (cardType) => {
   const type = cardType.split(' ')[0]
-  return cardSymbols[type]
+  return cardSymbols[type] ? cardSymbols[type] : '🧡'
 }
 
-const sendInfoForOneCard = (card) => {
+const sendInfoForOneCard = (card, channel) => {
   let cardInfo;
-                
+
   if (card.type.includes("Monster")) {
     cardInfo = `
-      ${card.name} (${card.attribute}) [${card.level}⭐] [${card.race}/${card.type}] : ${card.desc} ATK/${card.atk} DEF/${card.def}
+      ${card.name} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} [${card.race}/${card.type}] : ${card.desc} ATK/${card.atk} ${card.def ? `DEF/${card.def}`: ''}
       `
     const symbol = getSymbol(card.type)
     cardInfo = `${symbol} ${cardInfo}`
   } else if (card.type.includes("Spell")) {
-    cardInfo = `💚 ${card.name} [${card.race} ${card.type}] : ${card.desc}`
+    cardInfo = `${cardSymbols.Spell} ${card.name} [${card.race} ${card.type}] : ${card.desc}`
   } else if (card.type.includes("Trap")) {
-    cardInfo = `❤️ ${card.name} [${card.race} ${card.type}] : ${card.desc}`
+    cardInfo = `${cardSymbols.Trap} ${card.name} [${card.race} ${card.type}] : ${card.desc}`
+  } else if (card.type.includes("Skill")) {
+    cardInfo = `${cardSymbols.Skill} ${card.name} [${card.race} ${card.type}] : ${card.desc}`
   }
 
   client.say(channel, cardInfo)
