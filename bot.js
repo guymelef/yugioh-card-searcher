@@ -43,50 +43,52 @@ function onConnectedHandler (server, port) {
 }
 
 function onMessageHandler (channel, userState, message, self) {
-  console.log(userState.mod)
   if (self) return
-  if (!["domainvalidators", "cardsearcher", "thesandvich", "nifroth"].includes(userState.username)) return
 
-  const messageArray = message.split(' ')
-  const command = messageArray[0].toLowerCase()
-  const commandArg = messageArray.slice(1).join(' ').toLowerCase()
+  if ((["domainvalidators", "cardsearcher", "thesandvich", "nifroth"].includes(userState.username) || userState.mod)) {
+    const messageArray = message.split(' ')
+    const command = messageArray[0].toLowerCase()
+    const commandArg = messageArray.slice(1).join(' ').toLowerCase()
 
-  switch (command) {
-    case "!search":
-      if (commandArg.length === 0) {
-        client.say(channel, "❓ To search for cards, follow this syntax: !card <full/partial card name>")
-      } else if (messageArray[1] === "--guide") {
-        client.say(channel, `MONSTER: [Normal: 💛, Effect: 🧡, Ritual: 💙, Fusion: 💜, Synchro: 🤍, XYZ: 🖤, Token: '🃏', Pendulum: 🌗, Link: 🔗], SPELL: 💚, TRAP: ❤️, SKILL: ✨`)
-      } else if (messageArray[1] === "--random") {
-        fetch('https://db.ygoprodeck.com/api/v5/randomcard.php')
-          .then(card => card.json())
-          .then(card => {
-            sendInfoForOneCard(card[0], channel)
-          })
-      } else {
-        fetch(`https://db.ygoprodeck.com/api/v5/cardinfo.php?fname=${commandArg}`)
-          .then(cards => cards.json())
-          .then(cards => {
-            if (cards.length === 1) {
-              sendInfoForOneCard(cards[0], channel)
-            } else {
-              const found = cards.find(card => card.name.toLowerCase() === commandArg)
-              if (found) {
-                sendInfoForOneCard(found, channel)
+    switch (command) {
+      case "!search":
+        if (commandArg.length === 0) {
+          client.say(channel, "❓ To search for cards, follow this syntax: !card <full/partial card name>")
+        } else if (messageArray[1] === "--guide") {
+          client.say(channel, `MONSTER: [Normal: 💛, Effect: 🧡, Ritual: 💙, Fusion: 💜, Synchro: 🤍, XYZ: 🖤, Token: '🃏', Pendulum: 🌗, Link: 🔗], SPELL: 💚, TRAP: ❤️, SKILL: ✨`)
+        } else if (messageArray[1] === "--random") {
+          fetch('https://db.ygoprodeck.com/api/v5/randomcard.php')
+            .then(card => card.json())
+            .then(card => {
+              sendInfoForOneCard(card[0], channel)
+            })
+        } else {
+          fetch(`https://db.ygoprodeck.com/api/v5/cardinfo.php?fname=${commandArg}`)
+            .then(cards => cards.json())
+            .then(cards => {
+              if (cards.length === 1) {
+                sendInfoForOneCard(cards[0], channel)
               } else {
-                const cardsArray = cards.map(card => {                
-                  const symbol = getSymbol(card.type)
-                  return `${symbol} ${card.name}`
-                })
-                client.say(channel, `📜 [${cards.length} Cards] : ${cardsArray.join(', ')}`)
+                const found = cards.find(card => card.name.toLowerCase() === commandArg)
+                if (found) {
+                  sendInfoForOneCard(found, channel)
+                } else {
+                  const cardsArray = cards.map(card => {                
+                    const symbol = getSymbol(card.type)
+                    return `${symbol} ${card.name}`
+                  })
+                  client.say(channel, `📜 [${cards.length} Cards] : ${cardsArray.join(', ')}`)
+                }
               }
-            }
-          })
-          .catch (_ => client.action(channel, "couldn't find any card(s) with that query, not even in the Shadow Realm. 👻"))
-      }
-      break
-    default:
-      break
+            })
+            .catch (_ => client.action(channel, "couldn't find any card(s) with that query, not even in the Shadow Realm. 👻"))
+        }
+        break
+      default:
+        break
+    }
+  } else {
+    return
   }
 }
 
@@ -116,8 +118,8 @@ const sendInfoForOneCard = (card, channel) => {
 
   if (type.includes("Monster")) {
     cardInfo = `
-      ${card.name} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} [${card.race}/${card.type}] : ${card.desc} ATK/${card.atk} ${card.def ? `DEF/${card.def}`: ''}
-      `
+      ${card.name} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} [${card.race}/${card.type}] [ATK/${card.atk} ${card.def ? `DEF/${card.def}`: ''}] : ${card.desc}
+    `
     const symbol = getSymbol(card.type)
     cardInfo = `${symbol} ${cardInfo}`
   } else {
