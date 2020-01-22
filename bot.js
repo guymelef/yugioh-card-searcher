@@ -52,7 +52,7 @@ function onMessageHandler (channel, userState, message, self) {
   const commandArg = messageArray.slice(1).join(' ').toLowerCase()
 
   switch (command) {
-    case "!card":
+    case "!search":
       if (commandArg.length === 0) {
         client.say(channel, "❓ To search for cards, follow this syntax: !card <full/partial card name>")
       } else if (messageArray[1] === "--guide") {
