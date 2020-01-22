@@ -27,7 +27,7 @@ const options = {
     username: process.env.BOT_USERNAME,
     password: process.env.OAUTH_TOKEN
   },
-  channels: ["thesandvich", "cardsearcher"]
+  channels: ["thesandvich", "cardsearcher", "nifroth"]
 }
 
 const client = new tmi.client(options)
@@ -43,6 +43,7 @@ function onConnectedHandler (server, port) {
 }
 
 function onMessageHandler (channel, userState, message, self) {
+  console.log(userState)
   if (self) return
   if (!["domainvalidators", "cardsearcher", "thesandvich"].includes(userState.username)) return
 
