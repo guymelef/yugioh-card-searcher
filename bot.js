@@ -108,20 +108,18 @@ const getSymbol = (cardType) => {
 
 const sendInfoForOneCard = (card, channel) => {
   let cardInfo;
+  const type = card.type.split(' ')
 
-  if (card.type.includes("Monster")) {
+  if (type.includes("Monster")) {
     cardInfo = `
       ${card.name} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} [${card.race}/${card.type}] : ${card.desc} ATK/${card.atk} ${card.def ? `DEF/${card.def}`: ''}
       `
     const symbol = getSymbol(card.type)
     cardInfo = `${symbol} ${cardInfo}`
-  } else if (card.type.includes("Spell")) {
-    cardInfo = `${cardSymbols.Spell} ${card.name} [${card.race} ${card.type}] : ${card.desc}`
-  } else if (card.type.includes("Trap")) {
-    cardInfo = `${cardSymbols.Trap} ${card.name} [${card.race} ${card.type}] : ${card.desc}`
-  } else if (card.type.includes("Skill")) {
-    cardInfo = `${cardSymbols.Skill} ${card.name} [${card.race} ${card.type}] : ${card.desc}`
+  } else {
+    cardInfo = `${cardSymbols.type[0]} ${card.name} [${card.race} ${card.type}] : ${card.desc}`
   }
+
 
   client.say(channel, cardInfo)
 }
