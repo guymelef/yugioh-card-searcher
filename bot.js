@@ -43,9 +43,9 @@ function onConnectedHandler (server, port) {
 }
 
 function onMessageHandler (channel, userState, message, self) {
-  console.log(userState)
+  console.log(userState.mod)
   if (self) return
-  if (!["domainvalidators", "cardsearcher", "thesandvich"].includes(userState.username)) return
+  if (!["domainvalidators", "cardsearcher", "thesandvich", "nifroth"].includes(userState.username)) return
 
   const messageArray = message.split(' ')
   const command = messageArray[0].toLowerCase()
