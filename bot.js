@@ -119,7 +119,7 @@ const sendInfoForOneCard = (card, channel) => {
     const symbol = getSymbol(card.type)
     cardInfo = `${symbol} ${cardInfo}`
   } else {
-    cardInfo = `${cardSymbols.type[0]} ${card.name} [${card.race} ${card.type}] : ${card.desc}`
+    cardInfo = `${cardSymbols[type[0]]} ${card.name} [${card.race} ${card.type}] : ${card.desc}`
   }
 
 
