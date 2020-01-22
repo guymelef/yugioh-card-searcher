@@ -55,7 +55,7 @@ function onMessageHandler (channel, userState, message, self) {
       if (commandArg.length === 0) {
         client.say(channel, "❓ To search for cards, follow this syntax: !card <full/partial card name>")
       } else if (messageArray[1] === "--guide") {
-        client.say(channel, `MONSTER: [Normal: 💛, Effect: 🧡, Token: '🤎', Ritual: 💙, Fusion: 💜, Synchro: 🤍, XYZ: 🖤, Pendulum: 🌗, Link: 🔗], SPELL: 💚, TRAP: ❤️, SKILL: ✨`)
+        client.say(channel, `MONSTER: [Normal: 💛, Effect: 🧡, Ritual: 💙, Fusion: 💜, Synchro: 🤍, XYZ: 🖤, Token: '🃏', Pendulum: 🌗, Link: 🔗], SPELL: 💚, TRAP: ❤️, SKILL: ✨`)
       } else if (messageArray[1] === "--random") {
         fetch('https://db.ygoprodeck.com/api/v5/randomcard.php')
           .then(card => card.json())
@@ -92,13 +92,13 @@ function onMessageHandler (channel, userState, message, self) {
 const cardSymbols = {
   Normal: '💛',
   Effect: '🧡',
-  Token: '🤎',
   Ritual: '💙',
   Fusion: '💜',
   Synchro: '🤍',
   Spell: '💚',
   Trap: '❤️',
   XYZ: '🖤',
+  Token: '🃏',
   Link: '🔗',
   Pendulum: '🌗',
   Skill: '✨'
