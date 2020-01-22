@@ -54,7 +54,9 @@ function onMessageHandler (channel, userState, message, self) {
     case "!card":
       if (commandArg.length === 0) {
         client.say(channel, "❓ To search for cards, follow this syntax: !card <full/partial card name>")
-      } else if (messageArray[1] === "*random") {
+      } else if (messageArray[1] === "--guide") {
+        client.say(channel, `MONSTER: [Normal: 💛, Effect: 🧡, Ritual: 💙, Fusion: 💜, Synchro: 🤍, XYZ: 🖤, Pendulum: 🌗, Link: 🔗], SPELL: 💚, TRAP: ❤️, SKILL: ✨`)
+      } else if (messageArray[1] === "--random") {
         fetch('https://db.ygoprodeck.com/api/v5/randomcard.php')
           .then(card => card.json())
           .then(card => {
