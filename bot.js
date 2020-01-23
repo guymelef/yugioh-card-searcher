@@ -31,9 +31,7 @@ const options = {
     "domainvalidators",
     "thesandvich",
     "cardsearcher",
-    "nifroth",
-    "steven_freshy"
-  ]
+    "nifroth"  ]
 }
 
 const client = new tmi.client(options)
