@@ -32,7 +32,7 @@ const options = {
     "thesandvich",
     "cardsearcher",
     "nifroth",
-    "steven_freshy"
+    "mcblueskies"
   ]
 }
 
@@ -75,7 +75,7 @@ function onMessageHandler (channel, userState, message, self) {
               if (cards.length === 1) {
                 sendInfoForOneCard(cards[0], channel)
               } else if (cards.length > 100) {
-                client.say(channel, `@${userState.username}, your search yielded ${cards.length} cards. Try refining your search query.`)
+                client.say(channel, `@${userState.username}, your search yielded ${cards.length} cards! Try refining your search query.`)
               } else {
                 const found = cards.find(card => card.name.toLowerCase() === commandArg)
                 if (found) {
