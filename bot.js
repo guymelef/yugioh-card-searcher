@@ -75,7 +75,7 @@ function onMessageHandler (channel, userState, message, self) {
               if (cards.length === 1) {
                 sendInfoForOneCard(cards[0], channel)
               } else if (cards.length > 100) {
-                client.say(channel, `@${userState['display-name']}, your search result yielded ${cards.length} cards! Refine your search query and try again.`)
+                client.say(channel, `@${userState['display-name']}, your search yielded ${cards.length} cards! Refine your search query and try again.`)
               } else {
                 const found = cards.find(card => card.name.toLowerCase() === commandArg)
                 if (found) {
