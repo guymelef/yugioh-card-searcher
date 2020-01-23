@@ -10,7 +10,7 @@ const port = process.env.PORT
 
 // EXPRESS SERVER
 app.get("/", (request, response) => {
-  response.send("Hello, I'm a Twitch bot.")
+  response.send("https://www.twitch.tv/cardsearcher")
 })
 
 app.listen(port, () => wakeUpDyno('https://ygo-card-searcher.herokuapp.com/'))
@@ -61,7 +61,7 @@ function onMessageHandler (channel, userState, message, self) {
         if (commandArg.length === 0) {
           client.say(channel, "❓ To search for cards, follow this syntax: !card <full/partial card name>")
         } else if (messageArray[1] === "--guide") {
-          client.say(channel, `MONSTER: [Normal: 💛, Effect: 🧡, Ritual: 💙, Fusion: 💜, Synchro: 🤍, XYZ: 🖤, Token: '🃏', Pendulum: 🌗, Link: 🔗], SPELL: 💚, TRAP: ❤️, SKILL: ✨`)
+          client.say(channel, `MONSTER: [💛: Normal, 🧡: Effect, 💙: Ritual, 💜: Fusion, 🤍: Synchro, 🖤: XYZ, Pendulum: 🌗, Link: 🔗, Token: '🃏'], 💚: SPELL, ❤️: TRAP, ✨: SKILL`)
         } else if (messageArray[1] === "--random") {
           fetch('https://db.ygoprodeck.com/api/v5/randomcard.php')
             .then(card => card.json())
