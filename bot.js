@@ -49,6 +49,7 @@ function onConnectedHandler (server, port) {
 function onMessageHandler (channel, userState, message, self) {
   if (self) return
   console.log(userState)
+  console.log(options)
   console.log(options.channels.includes(userState.username))
   if ((options.channels.includes(userState.username) || userState.mod)) {
     const messageArray = message.split(' ')
