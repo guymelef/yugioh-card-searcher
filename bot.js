@@ -27,7 +27,13 @@ const options = {
     username: process.env.BOT_USERNAME,
     password: process.env.OAUTH_TOKEN
   },
-  channels: ["thesandvich", "cardsearcher", "nifroth"]
+  channels: [
+    "domainvalidators",
+    "thesandvich",
+    "cardsearcher",
+    "nifroth",
+    "steven_freshy"
+  ]
 }
 
 const client = new tmi.client(options)
@@ -45,7 +51,7 @@ function onConnectedHandler (server, port) {
 function onMessageHandler (channel, userState, message, self) {
   if (self) return
 
-  if ((["domainvalidators", "cardsearcher", "thesandvich", "nifroth"].includes(userState.username) || userState.mod)) {
+  if ((options.channels.includes(userState.username) || userState.mod)) {
     const messageArray = message.split(' ')
     const command = messageArray[0].toLowerCase()
     const commandArg = messageArray.slice(1).join(' ').toLowerCase()
@@ -68,6 +74,8 @@ function onMessageHandler (channel, userState, message, self) {
             .then(cards => {
               if (cards.length === 1) {
                 sendInfoForOneCard(cards[0], channel)
+              } else if (cards.length > 100) {
+                client.say(channel, `@${userState.username}, your search yielded more than ${cards.length} cards. Try refining your search query.`)
               } else {
                 const found = cards.find(card => card.name.toLowerCase() === commandArg)
                 if (found) {
