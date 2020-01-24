@@ -86,7 +86,7 @@ function onMessageHandler (channel, userState, message, self) {
                   return sendInfoForOneCard(found, channel)
                 } else {
                   const cardsArray = cards.map(card => {                
-                    const symbol = getSymbol(card.type)
+                    const symbol = getSymbol(card.type.split(' ')[0])
                     return `${symbol}${card.name}`
                   })
                   return client.say(channel, `📜 [${cards.length} Cards] : ${cardsArray.join(', ')}`)
