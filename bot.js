@@ -120,8 +120,7 @@ const cardSymbols = {
 }
 
 const getSymbol = (cardType) => {
-  const type = cardType.split(' ')[0]
-  return cardSymbols[type] ? cardSymbols[type] : '🧡'
+  return cardSymbols[cardType] ? cardSymbols[cardType] : '🧡'
 }
 
 const sendInfoForOneCard = (card, channel) => {
@@ -129,13 +128,12 @@ const sendInfoForOneCard = (card, channel) => {
   const type = card.type.split(' ')
 
   if (type.includes("Monster")) {
+    const symbol = getSymbol(type[0])
     cardInfo = `
-      ${card.name} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} [${card.race}/${card.type}] [ATK/${card.atk}${card.def ? ` DEF/${card.def}`: ''}] : ${card.desc}
+      ${card.name} {${symbol}} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} [${card.race}/${card.type}] [ATK/${card.atk}${card.def ? ` DEF/${card.def}`: ''}] : ${card.desc}
     `
-    const symbol = getSymbol(card.type)
-    cardInfo = `{${symbol}} ${cardInfo}`
   } else {
-    cardInfo = `{${cardSymbols[type[0]]}} ${card.name} [${card.race} ${card.type}] : ${card.desc}`
+    cardInfo = `${card.name} {${cardSymbols[type[0]]}} [${card.race} ${card.type}] : ${card.desc}`
   }
 
 
