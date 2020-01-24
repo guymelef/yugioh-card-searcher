@@ -55,7 +55,7 @@ function onConnectedHandler (server, port) {
 function onMessageHandler (channel, userState, message, self) {
   if (self) return
 
-  if (channel === `#${userState.username}` || userState.mod) {
+  if (unModeratedChannels.includes(channel) || channel === `#${userState.username}` || userState.mod) {
     const messageArray = message.split(' ')
     const command = messageArray[0].toLowerCase()
     const commandArg = messageArray.slice(1).join(' ').toLowerCase()
