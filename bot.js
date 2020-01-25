@@ -128,12 +128,11 @@ const sendInfoForOneCard = (card, channel) => {
   const type = card.type.split(' ')
 
   if (type.includes("Monster")) {
-    const symbol = getSymbol(type[0])
     cardInfo = `
-      ${card.name} {${symbol}} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} [${card.race}/${card.type}] [ATK/${card.atk}${card.def ? ` DEF/${card.def}`: ''}] : ${card.desc}
+      ${card.name} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} [${card.race}/${card.type}] [ATK/${card.atk}${card.def ? ` DEF/${card.def}`: ''}] : ${card.desc}
     `
   } else {
-    cardInfo = `${card.name} {${cardSymbols[type[0]]}} [${card.race} ${card.type}] : ${card.desc}`
+    cardInfo = `${card.name} [${card.race} ${card.type}] : ${card.desc}`
   }
 
 
