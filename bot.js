@@ -28,7 +28,6 @@ const options = {
     password: process.env.OAUTH_TOKEN
   },
   channels: [
-    "domainvalidators",
     "cardsearcher",
     "thesandvich",
     "nifroth",
@@ -129,10 +128,10 @@ const sendInfoForOneCard = (card, channel) => {
 
   if (type.includes("Monster")) {
     cardInfo = `
-      ${card.name} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} [${card.race}/${card.type}] [ATK/${card.atk}${card.def ? ` DEF/${card.def}`: ''}] : ${card.desc}
+      💡 ${card.name} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} [${card.race}/${card.type}] [ATK/${card.atk}${card.def ? ` DEF/${card.def}`: ''}] : ${card.desc}
     `
   } else {
-    cardInfo = `${card.name} [${card.race} ${card.type}] : ${card.desc}`
+    cardInfo = `💡 ${card.name} [${card.race} ${card.type}] : ${card.desc}`
   }
 
 
