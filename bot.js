@@ -32,11 +32,13 @@ const options = {
     "thesandvich",
     "nifroth",
     "mcblueskies",
+    "moomoosaru",
   ]
 }
 
 const unModeratedChannels = [
   '#nifroth',
+  '#moomoosaru,
 ]
 
 const client = new tmi.client(options)
