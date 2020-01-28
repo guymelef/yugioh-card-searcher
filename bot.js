@@ -38,7 +38,7 @@ const options = {
 
 const unModeratedChannels = [
   '#nifroth',
-  '#moomoosaru,
+  '#moomoosaru',
 ]
 
 const client = new tmi.client(options)
