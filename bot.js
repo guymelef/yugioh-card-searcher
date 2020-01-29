@@ -100,7 +100,7 @@ function onMessageHandler (channel, userState, message, self) {
             Channel
               .findOneAndUpdate(
                 { name: userChannel },
-                { moderated: messageArray[1] === "--strict" ? true : false },
+                { moderated: messageArray[1] === "--strict" ? true : false, updated: Date.now() },
                 { new: true }
               )
               .then(response => {
@@ -155,11 +155,12 @@ function onMessageHandler (channel, userState, message, self) {
               return client.say(channel, cardInfo)
             })
         } else if (messageArray[1] === "--image") {
-          fetch(`https://db.ygoprodeck.com/api/v5/cardinfo.php?fname=${commandArg}`)
+          const arg = messageArray.slice(2).join(' ').toLowerCase()
+          fetch(`https://db.ygoprodeck.com/api/v5/cardinfo.php?fname=${arg}`)
             .then(cards => cards.json())
             .then(cards => {
               if (cards.length > 1) {
-                return client.say(channel, `${userName}, multiple cards found. Please refine your search.`)
+                return client.say(channel, `${userName}, multiple cards found. Please be more specific.`)
               } else {
                 return utils.shortenUrlAndReply(client, channel, userName, cards[0].name, cards[0].card_images[0].image_url)
               }

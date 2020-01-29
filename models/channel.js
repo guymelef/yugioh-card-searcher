@@ -9,12 +9,16 @@ const channelSchema = new mongoose.Schema({
     unique: true,
     uniqueCaseSensitive: true
   },
-  date: {
+  moderated: {
+    type: Boolean
+  },
+  signup_date: {
     type: Date,
     default: Date.now
   },
-  moderated: {
-    type: Boolean
+  updated: {
+    type: Date,
+    default: Date.now
   }
 })
 

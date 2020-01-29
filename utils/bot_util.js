@@ -54,10 +54,6 @@ const getCardInfo = (card) => {
 
 
 const shortenUrlAndReply = (client, channel, userName, cardName, url) => {
-  const myHeaders = new Headers()
-  myHeaders.append("Content-Type", "application/json")
-  myHeaders.append("Authorization", `Bearer ${process.env.BITLY_TOKEN}`)
-
   const raw = JSON.stringify({
     group_guid: `${process.env.BITLY_GUID}`,
     domain: "bit.ly",
@@ -65,15 +61,20 @@ const shortenUrlAndReply = (client, channel, userName, cardName, url) => {
   })
 
   const requestOptions = {
-    method: 'POST',
-    headers: myHeaders,
+    method: "POST",
     body: raw,
-    redirect: 'follow'
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${process.env.BITLY_TOKEN}`
+    },
+    redirect: "follow"
   }
 
-  fetch("https://api-ssl.bitly.com/v4/shorten", requestOptions)
+  return fetch("https://api-ssl.bitly.com/v4/shorten", requestOptions)
     .then(response => response.json())
-    .then(result => client.say(channel, `${userName} ➡ [${cardName}] - ${result.link}`))
+    .then(result => {
+      return client.say(channel, `${userName} ➡ "${cardName}" - ${result.link}`)
+    })
     .catch(err => client.action(channel, `couldn't find the card image you're looking for, ${userName}.`))
 }
 
