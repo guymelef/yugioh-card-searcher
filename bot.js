@@ -132,7 +132,8 @@ function onMessageHandler (channel, userState, message, self) {
             })
             .catch (err => client.say(channel, `${userName}, oops! There's an error. Please try again.`))
           
-          return unmoderatedChannels = unmoderatedChannels.filter(item => item !== userChannel)
+          unmoderatedChannels = unmoderatedChannels.filter(item => item !== userChannel)
+          return console.log("FREE CHANNELS", unmoderatedChannels)
         })
         .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
     }
