@@ -22,6 +22,7 @@ app.listen(port, () => wakeUpDyno('https://ygo-card-searcher.herokuapp.com/'))
 // EXPRESS SERVER END
 
 
+<<<<<<< HEAD
 
 // MONGOOSE START
 console.log("▶ Connecting to MongoDB...")
@@ -36,6 +37,31 @@ mongoose
   .catch(err => console.log("🛑 MongoDB Error:", err.message))
 // MONGOOSE END
 
+=======
+const options = {
+  options: { debug: process.env.DEBUG ? true : false },
+  connection: {
+    secure: true,
+    reconnect: true
+  },
+  identity: {
+    username: process.env.BOT_USERNAME,
+    password: process.env.OAUTH_TOKEN
+  },
+  channels: [
+    "cardsearcher",
+    "thesandvich",
+    "nifroth",
+    "mcblueskies",
+    "moomoosaru",
+  ]
+}
+
+const unModeratedChannels = [
+  '#nifroth',
+  '#moomoosaru',
+]
+>>>>>>> bee6842190a88d08cc6a3ea5ab05f7f1105bed41
 
 
 // TMI CLIENT START
@@ -199,4 +225,43 @@ function onMessageHandler (channel, userState, message, self) {
   } else {
     return
   }
+<<<<<<< HEAD
 }
+=======
+}
+
+const cardSymbols = {
+  Normal: '💛',
+  Effect: '🧡',
+  Ritual: '💙',
+  Fusion: '💜',
+  Synchro: '🤍',
+  Spell: '💚',
+  Trap: '❤️',
+  XYZ: '🖤',
+  Token: '🃏',
+  Link: '🔗',
+  Pendulum: '🌗',
+  Skill: '✨'
+}
+
+const getSymbol = (cardType) => {
+  return cardSymbols[cardType] ? cardSymbols[cardType] : '🧡'
+}
+
+const sendInfoForOneCard = (card, channel) => {
+  let cardInfo;
+  const type = card.type.split(' ')
+
+  if (type.includes("Monster")) {
+    cardInfo = `
+      🔎 ${card.name} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} [${card.race}/${card.type}] [ATK/${card.atk}${card.def ? ` DEF/${card.def}`: ''}] : ${card.desc}
+    `
+  } else {
+    cardInfo = `🔎 ${card.name} [${card.race} ${card.type}] : ${card.desc}`
+  }
+
+
+  client.say(channel, cardInfo)
+}
+>>>>>>> bee6842190a88d08cc6a3ea5ab05f7f1105bed41
