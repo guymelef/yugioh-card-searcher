@@ -156,6 +156,9 @@ function onMessageHandler (channel, userState, message, self) {
             })
         } else if (messageArray[1] === "--image") {
           const arg = messageArray.slice(2).join(' ').toLowerCase()
+          if (!arg)
+            return client.say(channel, `${userName}, please specify the card name.`)
+          
           fetch(`https://db.ygoprodeck.com/api/v5/cardinfo.php?fname=${arg}`)
             .then(cards => cards.json())
             .then(cards => {
