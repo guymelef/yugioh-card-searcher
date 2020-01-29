@@ -164,6 +164,10 @@ function onMessageHandler (channel, userState, message, self) {
             .then(cards => cards.json())
             .then(cards => {
               if (cards.length > 1) {
+                const found = cards.find(card => card.name.toLowerCase() === arg)
+                if (found) {
+                  return utils.shortenUrlAndReply(client, channel, userName, found.name, found.card_images[0].image_url)
+                }
                 return client.say(channel, `${userName}, multiple cards found. Please be more specific.`)
               } else {
                 return utils.shortenUrlAndReply(client, channel, userName, cards[0].name, cards[0].card_images[0].image_url)
