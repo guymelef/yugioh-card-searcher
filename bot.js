@@ -138,72 +138,83 @@ function onMessageHandler (channel, userState, message, self) {
         .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
     }
   } else if (unmoderatedChannels.includes(channel) || channel === userChannel || userState.mod) {
-    const messageArray = message.split(' ')
-    const command = messageArray[0].toLowerCase()
-    const commandArg = messageArray.slice(1).join(' ').toLowerCase()
+    if (message.startsWith("!search")) {
+      const messageArray = message.split(' ')
+      const searchArg = messageArray[1]
+      const query = messageArray.slice(2).join(' ').toLowerCase()
 
-    switch (command) {
-      case "!search":
-        if (!messageArray[1]) {
-          return client.say(channel, "❓ To search for cards, follow this syntax: !card <full/partial card name>")
-        } else if (messageArray[1] === "--guide") {
-          return client.say(channel, `MONSTER: [💛: Normal, 🧡: Effect, 💙: Ritual, 💜: Fusion, 🤍: Synchro, 🖤: XYZ, 🌗: Pendulum, 🔗: Link, 🃏: Token], 💚: SPELL, ❤️: TRAP, ✨: SKILL`)
-        } else if (messageArray[1] === "--random") {
-          fetch('https://db.ygoprodeck.com/api/v5/randomcard.php')
-            .then(card => card.json())
-            .then(card => {
-              const cardInfo = utils.getCardInfo(card[0])
-              return client.say(channel, cardInfo)
-            })
-        } else if (messageArray[1] === "--image") {
-          const arg = messageArray.slice(2).join(' ').toLowerCase()
-          if (!arg)
-            return client.say(channel, `${userName}, please specify the card name.`)
-          
-          fetch(`https://db.ygoprodeck.com/api/v5/cardinfo.php?fname=${arg}`)
+      switch (searchArg) {
+        case undefined:
+          client.say(channel, "❓ To search for cards, follow this syntax: !search <full/partial card name>")
+          break
+        case "--guide":
+          client.say(channel, `MONSTER: [💛: Normal, 🧡: Effect, 💙: Ritual, 💜: Fusion, 🤍: Synchro, 🖤: XYZ, 🌗: Pendulum, 🔗: Link, 🃏: Token], 💚: SPELL, ❤️: TRAP, ✨: SKILL`)
+          break
+        case "--random":
+          fetch('https://db.ygoprodeck.com/api/v6/randomcard.php')
+          .then(card => card.json())
+          .then(card => {
+            const cardInfo = utils.getCardInfo(card)
+            return client.say(channel, cardInfo)
+          })
+          .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
+          break
+        case "--image":
+          !query ? client.say(channel, `${userName}, please provide a unique card name to search for.`)
+          : fetch(`https://db.ygoprodeck.com/api/v6/cardinfo.php?fname=${query}`)
             .then(cards => cards.json())
             .then(cards => {
               if (cards.length > 1) {
-                const found = cards.find(card => card.name.toLowerCase() === arg)
-                if (found) {
-                  return utils.shortenUrlAndReply(client, channel, userName, found.name, found.card_images[0].image_url)
-                }
-                return client.say(channel, `${userName}, multiple cards found. Please be more specific.`)
+                const found = cards.find(card => card.name.toLowerCase() === query)
+                return found ? utils.shortenUrlAndReply(client, channel, userName, found.name, found.card_images[0].image_url)
+                : client.say(channel, `${userName}, your search returned multiple cards. Please provide a unique card name.`)
               } else {
                 return utils.shortenUrlAndReply(client, channel, userName, cards[0].name, cards[0].card_images[0].image_url)
               }
             })
-            .catch(err => client.action(channel, `couldn't find the card image you're looking for, ${userName}.`))
-        } else {
-          fetch(`https://db.ygoprodeck.com/api/v5/cardinfo.php?fname=${commandArg}`)
+            .catch (err => client.action(channel, "couldn't find any card(s) with that name, not even in the Shadow Realm. 👻"))
+          break
+        case "--list":
+          if (!query) {
+            return client.say(channel, `${userName}, to view a list of cards, provide a search term. Example: !search --list blue-eyes`)
+          } else {
+            fetch(`https://db.ygoprodeck.com/api/v6/cardinfo.php?fname=${query}`)
             .then(cards => cards.json())
             .then(cards => {
-              if (cards.length === 1) {
-                const cardInfo = utils.getCardInfo(cards[0])
-                return client.say(channel, cardInfo)
-              } else if (cards.length > 100) {
-                return client.say(channel, `@${userState['display-name']}, your search yielded ${cards.length} cards! Refine your search query and try again.`)
+              if (cards.length > 100) {
+                return client.say(channel,`${userName}, your search yielded a total of ${cards.length.toLocaleString()} cards! Please refine your search and try again.`)
               } else {
-                const found = cards.find(card => card.name.toLowerCase() === commandArg)
-                if (found) {
-                  const cardInfo = utils.getCardInfo(found)
-                  return client.say(channel, cardInfo)
-                } else {
-                  const cardsArray = cards.map(card => {                
-                    const symbol = utils.getSymbol(card.type.split(' ')[0])
-                    return `${symbol}${card.name}`
-                  })
-                  return client.say(channel, `📜 [${cards.length} Cards] : ${cardsArray.join(', ')}`)
-                }
+                return client.say(channel, utils.getCardArray(cards))
               }
             })
-            .catch (_ => client.action(channel, "couldn't find any card(s) with that query, not even in the Shadow Realm. 👻"))
-        }
-        break
-      default:
-        break
+            .catch (err => client.action(channel, "couldn't find any card(s) with that name, not even in the Shadow Realm. 👻"))
+          }
+          break
+        default:
+          const searchQuery = messageArray.slice(1).join(' ').toLowerCase()
+          fetch(`https://db.ygoprodeck.com/api/v6/cardinfo.php?fname=${searchQuery}`)
+          .then(cards => cards.json())
+          .then(cards => {
+            if (cards.length === 1) {
+              return client.say(channel, utils.getCardInfo(cards[0]))
+            } else {
+              const found = cards.find(card => card.name.toLowerCase() === searchQuery)
+              if (found) return client.say(channel, utils.getCardInfo(found))
+              
+              if (cards.length <= 20) {
+                return client.say(channel, utils.getCardArray(cards))
+              } else if (cards.length <= 100) {
+                return client.say(channel,`${userName}, your search yielded ${cards.length} cards. Be more specific or view a list of cards with that name using this command: !search --list ${searchQuery}`)
+              } else {
+                return client.say(channel,`${userName}, your search yielded a total of ${cards.length.toLocaleString()} cards! Please refine your search and try again.`)
+              }
+            }
+          })
+          .catch (err => client.action(channel, "couldn't find any card(s) with that name, not even in the Shadow Realm. 👻"))
+          break 
+      }
     }
-  } else {
+
     return
   }
 }

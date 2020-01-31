@@ -32,9 +32,7 @@ const cardSymbols = {
 }
 
 
-const getSymbol = (cardType) => {
-  return cardSymbols[cardType] ? cardSymbols[cardType] : '🧡'
-}
+const getSymbol = (cardType) => cardSymbols[cardType] ? cardSymbols[cardType] : '🧡'
 
 
 const getCardInfo = (card) => {
@@ -43,13 +41,22 @@ const getCardInfo = (card) => {
 
   if (type.includes("Monster")) {
     cardInfo = `
-      🔎 ${card.name} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} [${card.race}/${card.type}] [ATK/${card.atk}${card.def ? ` DEF/${card.def}`: ''}] : ${card.desc}
+      🔎 ${card.name} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} [${card.race}/${card.type}] [ATK/${card.atk}${card.def ? ` DEF/${card.def}`: ''}${card.linkval ? ` LINK-${card.linkval}`: ''}]${card.scale ? ` [Scale: ${card.scale}]` : ''} : ${card.desc}
     `
   } else {
     cardInfo = `🔎 ${card.name} [${card.race} ${card.type}] : ${card.desc}`
   }
 
   return cardInfo
+}
+
+
+const getCardArray = (cards) => {
+  const cardsArray = cards.map(card => {                
+    const symbol = getSymbol(card.type.split(' ')[0])
+    return `${symbol}${card.name}`
+  })
+  return `📜 [${cards.length} Cards] : ${cardsArray.join(', ')}`
 }
 
 
@@ -73,9 +80,9 @@ const shortenUrlAndReply = (client, channel, userName, cardName, url) => {
   return fetch("https://api-ssl.bitly.com/v4/shorten", requestOptions)
     .then(response => response.json())
     .then(result => {
-      return client.say(channel, `${userName} ➡ "${cardName}" - ${result.link}`)
+      return client.say(channel, `🖼 "${cardName}" - [ ${result.link} ]`)
     })
-    .catch(err => client.action(channel, `couldn't find the card image you're looking for, ${userName}.`))
+    .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
 }
 
 
@@ -84,5 +91,6 @@ module.exports = {
   options,
   getSymbol,
   getCardInfo,
+  getCardArray,
   shortenUrlAndReply
 }
