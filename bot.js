@@ -204,7 +204,7 @@ function onMessageHandler (channel, userState, message, self) {
               if (cards.length <= 20) {
                 return client.say(channel, utils.getCardArray(cards))
               } else if (cards.length <= 100) {
-                return client.say(channel,`${userName}, your search yielded ${cards.length} cards. Be more specific or view a list of cards with that name using this command: !search --list ${searchQuery}`)
+                return client.say(channel,`${userName}, your search yielded ${cards.length} cards. Be more specific or view the list with: !search --list ${searchQuery}`)
               } else {
                 return client.say(channel,`${userName}, your search yielded a total of ${cards.length.toLocaleString()} cards! Please refine your search and try again.`)
               }
