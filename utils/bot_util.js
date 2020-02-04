@@ -56,7 +56,7 @@ const getCardArray = (cards) => {
     const symbol = getSymbol(card.type.split(' ')[0])
     return `${symbol}${card.name}`
   })
-  return `📜 [${cards.length} Cards] : ${cardsArray.join(', ')}`
+  return `📜 [${cards.length} ${cards.length === 1 ? 'Card' : 'Cards'}] : ${cardsArray.join(', ')}`
 }
 
 
