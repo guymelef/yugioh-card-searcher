@@ -190,6 +190,24 @@ function onMessageHandler (channel, userState, message, self) {
             .catch (err => client.action(channel, "couldn't find any card(s) with that name, not even in the Shadow Realm. 👻"))
           }
           break
+        case "--throw":
+          fetch(`https://tmi.twitch.tv/group/user/${userChannel.slice(1)}/chatters`)
+          .then(response => response.json())
+          .then(response => {
+            const channelViewers = response.chatters.viewers
+            const randomUser = Math.floor(Math.random() * channelViewers.length)
+
+            return fetch('https://db.ygoprodeck.com/api/v6/randomcard.php')
+            .then(card => card.json())
+            .then(card => {
+              return card.name.includes("Exodia") ?
+              client.action(channel, `: DarkMode SAY GOODBYE TO EXODIAAA!!!1 ${userName.slice(1)} has thrown your cards off the boat, ${channelViewers[randomUser]}! DarkMode`)
+              : client.action(channel, `: Say goodbye to your "${card.name}" card, ${channelViewers[randomUser]}! ${userName.slice(1)} has thrown it off the boat! DarkMode`)
+            })
+            .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
+          })
+          .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
+          break
         default:
           const searchQuery = messageArray.slice(1).join(' ').toLowerCase()
           fetch(`https://db.ygoprodeck.com/api/v6/cardinfo.php?fname=${searchQuery}`)
