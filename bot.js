@@ -200,8 +200,8 @@ function onMessageHandler (channel, userState, message, self) {
             return fetch('https://db.ygoprodeck.com/api/v6/randomcard.php')
             .then(card => card.json())
             .then(card => {
-              return card.name.includes("Exodia") ?
-              client.action(channel, `: PowerUpL DarkMode PowerUpR  SAY GOODBYE TO EXODIAAAAA!!!1 ${userName.slice(1)} has thrown ${channelViewers[randomUser]}'s cards off the boat! PowerUpL DarkMode PowerUpR`)
+              return card.name.includes("Exodia") 
+              ? client.action(channel, `: TwitchLit PowerUpL DarkMode PowerUpR TwitchLit ...SAY GOODBYE TO EXODIAAA!!! ${userName.slice(1)} throws ${channelViewers[randomUser]}'s cards off the boat!`)
               : client.action(channel, `: PowerUpL DarkMode PowerUpR ${userName.slice(1)} throws ${channelViewers[randomUser]}'s "${card.name}" card off the boat!`)
             })
             .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
