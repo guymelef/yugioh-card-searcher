@@ -160,8 +160,10 @@ function onMessageHandler (channel, userState, message, self) {
           .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
           break
         case "--image":
-          !query ? client.say(channel, `${userName}, please provide a unique card name to search for.`)
-          : fetch(`https://db.ygoprodeck.com/api/v6/cardinfo.php?fname=${query}`)
+          if (!query) {
+            client.say(channel, `${userName}, please provide a unique card name to search for.`)
+          } else {
+            fetch(`https://db.ygoprodeck.com/api/v6/cardinfo.php?fname=${query}`)
             .then(cards => cards.json())
             .then(cards => {
               if (cards.length > 1) {
@@ -173,10 +175,11 @@ function onMessageHandler (channel, userState, message, self) {
               }
             })
             .catch (err => client.action(channel, "couldn't find any card(s) with that name, not even in the Shadow Realm. 👻"))
+          }
           break
         case "--list":
           if (!query) {
-            return client.say(channel, `${userName}, to view a list of cards, provide a search term. Example: !search --list blue-eyes`)
+            client.say(channel, `${userName}, to view a list of cards, provide a search term. Example: !search --list blue-eyes`)
           } else {
             fetch(`https://db.ygoprodeck.com/api/v6/cardinfo.php?fname=${query}`)
             .then(cards => cards.json())
@@ -200,9 +203,9 @@ function onMessageHandler (channel, userState, message, self) {
             return fetch('https://db.ygoprodeck.com/api/v6/randomcard.php')
             .then(card => card.json())
             .then(card => {
-              return card.name.includes("Exodia") 
-              ? client.action(channel, `: TwitchLit PowerUpL DarkMode PowerUpR TwitchLit ...SAY GOODBYE TO EXODIAAA!!! ${userName.slice(1)} throws ${channelViewers[randomUser]}'s cards off the boat!`)
-              : client.action(channel, `: PowerUpL DarkMode PowerUpR ${userName.slice(1)} throws ${channelViewers[randomUser]}'s "${card.name}" card off the boat!`)
+              return card.name.includes("Exodia") || card.name.includes("Forbidden One")
+              ? client.action(channel, `: ... CurseLit PowerUpL DarkMode PowerUpR CurseLit ... SAY GOODBYE TO EXODIAAA!!! ${userName.slice(1)} throws ${channelViewers[randomUser]}'s Exodia cards off the boat!`)
+              : client.action(channel, `: ${userName.slice(1)} throws ${channelViewers[randomUser]}'s "${card.name}" card off the boat! DarkMode`)
             })
             .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
           })
