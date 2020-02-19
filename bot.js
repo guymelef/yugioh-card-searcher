@@ -141,7 +141,7 @@ function onMessageHandler (channel, userState, message, self) {
       .find({})
       .sort({ name: 1 })
       .then(channels => {
-        channelList = channels.map(channel => channel.name.slice(1))
+        channelList = channels.map(channel => `◾ ${channel.name.slice(1)}`)
         channelList = channelList.filter(channel => channel !== 'cardsearcher')
         return client.say(channel, `imGlitch Currently, ${channels.length - 1} channels are using the bot: ${channelList.join(', ')}`)
       })
