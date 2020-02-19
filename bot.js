@@ -139,6 +139,7 @@ function onMessageHandler (channel, userState, message, self) {
     } else if (message.startsWith("!channels")) {
       Channel
       .find({})
+      .sort({ name: 1})
       .then(channels => {
         channelList = channels.map(channel => channel.name.slice(1))
         channelList = channelList.filter(channel => channel !== 'cardsearcher')
