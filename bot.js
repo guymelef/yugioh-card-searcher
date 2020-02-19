@@ -139,11 +139,11 @@ function onMessageHandler (channel, userState, message, self) {
     } else if (message.startsWith("!channels")) {
       Channel
       .find({})
-      .sort({ name: 1})
+      .sort({ name: 1 })
       .then(channels => {
         channelList = channels.map(channel => channel.name.slice(1))
         channelList = channelList.filter(channel => channel !== 'cardsearcher')
-        return client.say(channel, `imGlitch Currently, ${channels.length} channels are using the bot: ${channelList.join(', ')}`)
+        return client.say(channel, `imGlitch Currently, ${channels.length - 1} channels are using the bot: ${channelList.join(', ')}`)
       })
     }
   } else if (unmoderatedChannels.includes(channel) || channel === userChannel || userState.mod) {
