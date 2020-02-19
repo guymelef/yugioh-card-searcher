@@ -52,14 +52,14 @@ let unmoderatedChannels = []
 function onConnectedHandler (server, port) {
   console.log(`🆗 Connected to ${server}:${port}`)
   Channel
-    .find({})
-    .then(channels => {
-      channels.forEach(channel => {
-        client.join(channel.name)
-        !channel.moderated ? unmoderatedChannels.push(channel.name) : null
-      })
+  .find({})
+  .then(channels => {
+    channels.forEach(channel => {
+      client.join(channel.name)
+      !channel.moderated ? unmoderatedChannels.push(channel.name) : null
     })
-    .catch(err => console.log("❌ ERROR: ", err.message))
+  })
+  .catch(err => console.log("❌ ERROR: ", err.message))
 }
 
 function onMessageHandler (channel, userState, message, self) {
@@ -136,6 +136,14 @@ function onMessageHandler (channel, userState, message, self) {
           return console.log("FREE CHANNELS", unmoderatedChannels)
         })
         .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
+    } else if (message.startsWith("!channels")) {
+      Channel
+      .find({})
+      .then(channels => {
+        channelList = channels.map(channel => channel.name.slice(1))
+        channelList = channelList.filter(channel => channel !== 'cardsearcher')
+        client.say(`imGlitch Currently, ${channels.length} channels are using the bot: ${channelList.join(', ')}`)
+      })
     }
   } else if (unmoderatedChannels.includes(channel) || channel === userChannel || userState.mod) {
     if (message.startsWith("!search")) {
