@@ -42,7 +42,7 @@ const getCardInfo = (card) => {
 
   if (card.type.includes("Monster")) {
     cardInfo = `
-      🔎 ${card.name} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} ${card.scale ? ` [ ${card.scale} ⚖ ]` : ''} [${card.race}${card.type === "Monster" ? " Monster": `/${card.type}`}] [ATK/${card.atk}${card.def || card.def === 0 ? ` DEF/${card.def}`: ''}${card.linkval ? ` LINK-${card.linkval}] [${card.linkmarkers.length > 1 ? 'Markers' : 'Marker:'} ${card.linkmarkers.join(', ')}]` : ']'} : ${card.desc.replace(/-{40}/g, '')}
+      🔎 ${card.name} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} ${card.scale ? ` [ ${card.scale} ⚖ ]` : ''} [${card.race}${card.type === "Monster" ? " Monster": `/${card.type}`}] [ATK/${card.atk}${card.def || card.def === 0 ? ` DEF/${card.def}`: ''}${card.linkval ? ` LINK-${card.linkval}] [${card.linkmarkers.length > 1 ? 'Markers:' : 'Marker:'} ${card.linkmarkers.join(', ')}]` : ']'} : ${card.desc.replace(/-{40}/g, '')}
     `
   } else {
     cardInfo = `🔎 ${card.name} [${card.race} ${card.type.replace('Card', '').trim()}] : ${card.desc}`
