@@ -25,14 +25,14 @@ app.listen(port, () => wakeUpDyno('https://ygo-card-searcher.herokuapp.com/'))
 // MONGOOSE START
 console.log("▶ Connecting to MongoDB...")
 mongoose
-  .connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useFindAndModify: false,
-    useCreateIndex: true
-  })
-  .then(_ => console.log("Ⓜ Connected to MongoDB!"))
-  .catch(err => console.log("🛑 MongoDB Error:", err.message))
+.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  useFindAndModify: false,
+  useCreateIndex: true
+})
+.then(_ => console.log("Ⓜ Connected to MongoDB!"))
+.catch(err => console.log("🛑 MongoDB Error:", err.message))
 // MONGOOSE END
 
 
@@ -141,8 +141,8 @@ function onMessageHandler (channel, userState, message, self) {
       .find({})
       .sort({ name: 1 })
       .then(channels => {
-        channelList = channels.map(channel => `◾ ${channel.name.slice(1)}`)
-        channelList = channelList.filter(channel => channel !== '◾ cardsearcher')
+        channelList = channels.map(channel => `● ${channel.name.slice(1)}`)
+        channelList = channelList.filter(channel => channel !== '● cardsearcher')
         return client.say(channel, `imGlitch Currently, ${channels.length - 1} channels are using the bot: ${channelList.join(', ')}`)
       })
     }
@@ -183,7 +183,7 @@ function onMessageHandler (channel, userState, message, self) {
                 return utils.shortenUrlAndReply(client, channel, userName, cards[0].name, cards[0].card_images[0].image_url)
               }
             })
-            .catch (err => client.action(channel, "couldn't find any card(s) with that name, not even in the Shadow Realm. 👻"))
+            .catch (err => utils.scrapeYugipedia({ client, channel, userName, searchQuery: query, image: true }))
           }
           break
         case "--list":
@@ -240,7 +240,10 @@ function onMessageHandler (channel, userState, message, self) {
               }
             }
           })
-          .catch (err => client.action(channel, "couldn't find any card(s) with that name, not even in the Shadow Realm. 👻"))
+          .catch (err => {
+            const args = { client, channel, userName, searchQuery }
+            return utils.scrapeYugipedia(args)
+          })
           break 
       }
     }
