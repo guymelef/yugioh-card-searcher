@@ -1,4 +1,4 @@
-require('events').EventEmitter.setMaxListeners(100)
+process.setMaxListeners(0)
 require('dotenv').config()
 
 const tmi = require('tmi.js')
