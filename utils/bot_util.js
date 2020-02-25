@@ -142,7 +142,7 @@ const scrapeYugipedia = (args) => {
           args.client.say(args.channel, `🔎 ${name} [${race} ${type}] ${markers ? `[Markers: ${markers}]`: ''} : ${desc}`)
           break
         default:
-          const monsterTypes = [type, getProperty("type2"), getProperty("type3"), getProperty("type4")].filter(type => type).join('/')
+          let monsterTypes = [type, getProperty("type2"), getProperty("type3"), getProperty("type4")].filter(type => type).join('/')
 
           if (!type && types) monsterTypes = types.replace(/ /g, '')
 
