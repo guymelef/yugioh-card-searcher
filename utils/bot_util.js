@@ -128,6 +128,9 @@ const scrapeYugipedia = (args) => {
 
       const type = getProperty('type')
       const types = getProperty('types')
+
+      if (!type && !types) return args.client.action(args.channel, "couldn't find any card(s) with that name, not even in the Shadow Realm. 👻")
+
       switch (type) {
         case "Spell":
         case "Trap":
