@@ -1,4 +1,6 @@
 require('dotenv').config()
+require('events').EventEmitter.defaultMaxListeners = 0
+
 const tmi = require('tmi.js')
 const fetch = require('node-fetch')
 const wakeUpDyno = require('./wakeUpDyno')
