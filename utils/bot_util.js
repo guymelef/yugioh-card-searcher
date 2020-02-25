@@ -127,10 +127,8 @@ const scrapeYugipedia = (args) => {
       }
 
       const type = getProperty('type')
-      const types = getProperty('types')
-
-      if (!type && !types)
-        return args.client.action(args.channel, "couldn't find any card(s) with that name, not even in the Shadow Realm. 👻")
+      
+      if (!type) return args.client.action(args.channel, "couldn't find any card(s) with that name, not even in the Shadow Realm. 👻")
 
       switch (type) {
         case "Spell":
@@ -141,10 +139,6 @@ const scrapeYugipedia = (args) => {
           break
         default:
           const monsterTypes = [type, getProperty("type2"), getProperty("type3"), getProperty("type4")].filter(type => type).join('/')
-          
-          if (types)
-            monsterTypes = types.replace(/ /g, '')
-
           const attribute = getProperty("attribute")
           const level = getProperty("level") || getProperty("rank")
           const scale = getProperty("scale")
