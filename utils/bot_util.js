@@ -127,18 +127,22 @@ const scrapeYugipedia = (args) => {
       }
 
       const type = getProperty('type')
-      
-      if (!type) return args.client.action(args.channel, "couldn't find any card(s) with that name, not even in the Shadow Realm. 👻")
-
+      const types = getProperty('types')
       switch (type) {
         case "Spell":
         case "Trap":
           const race = getProperty("property")
           const desc = getProperty("lore")
-          args.client.say(args.channel, `🔎 ${name} [${race} ${type}] : ${desc}`)
+          let markers
+          if (race === "Link")
+            markers = getProperty("link_arrows")
+          args.client.say(args.channel, `🔎 ${name} [${race} ${type}] ${markers ? `[Markers: ${markers}]`: ''} : ${desc}`)
           break
         default:
           const monsterTypes = [type, getProperty("type2"), getProperty("type3"), getProperty("type4")].filter(type => type).join('/')
+
+          if (!type && types) monsterTypes = types.replace(/ /g, '')
+
           const attribute = getProperty("attribute")
           const level = getProperty("level") || getProperty("rank")
           const scale = getProperty("scale")
