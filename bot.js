@@ -1,4 +1,3 @@
-process.setMaxListeners(0)
 require('dotenv').config()
 
 const tmi = require('tmi.js')
@@ -40,6 +39,7 @@ mongoose
 
 // TMI CLIENT START
 const client = new tmi.client(utils.options)
+client.setMaxListeners(100)
 
 client.on('message', onMessageHandler)
 client.on('connected', onConnectedHandler)
