@@ -1,5 +1,5 @@
 require('dotenv').config()
-require('events').EventEmitter.defaultMaxListeners = 0
+require('events').EventEmitter.setMaxListeners = 0
 
 const tmi = require('tmi.js')
 const fetch = require('node-fetch')
