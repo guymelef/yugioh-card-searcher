@@ -42,7 +42,7 @@ const getCardInfo = (card) => {
 
   if (card.type.includes("Monster")) {
     cardInfo = `
-      🔎 ${card.name} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} ${card.scale ? ` [ ${card.scale} ⚖ ]` : ''} [${card.race}${card.type === "Monster" ? " Monster": `/${card.type}`}] [ATK/${card.atk}${card.def || card.def === 0 ? ` DEF/${card.def}`: ''}${card.linkval ? ` LINK-${card.linkval}] [${card.linkmarkers.length > 1 ? 'Markers:' : 'Marker:'} ${card.linkmarkers.join(', ')}]` : ']'} : ${card.desc.replace(/-{40}/g, '')}
+      🔎 ${card.name} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} ${card.scale ? `[◀${card.scale}▶]` : ''} [${card.race}/${card.type.replace(/ Monster/g, '').replace(/ /g, '/')}] [ATK/${card.atk}${card.def || card.def === 0 ? ` DEF/${card.def}`: ''}${card.linkval ? ` LINK-${card.linkval}] [${card.linkmarkers.length > 1 ? 'Markers:' : 'Marker:'} ${card.linkmarkers.join(', ')}]` : ']'} : ${card.desc.replace(/-{40}/g, '')}
     `
   } else {
     cardInfo = `🔎 ${card.name} [${card.race} ${card.type.replace('Card', '').trim()}] : ${card.desc}`
@@ -96,74 +96,88 @@ const scrapeYugipedia = (args) => {
     redirect: 'follow'
   }
 
-  return fetch(`https://yugipedia.com/api.php?action=query&format=json&redirects=true&list=search&srlimit=1&srwhat=nearmatch&srsearch=${args.searchQuery}`, requestOptions)
+  return fetch(`https://yugipedia.com/api.php?action=query&format=json&redirects=true&list=search&srlimit=1&srwhat=nearmatch&srsearch=${encodeURIComponent(args.searchQuery)}`, requestOptions)
   .then(response => response.json())
   .then(result => {
-    lastRequest = new Date()
     const pageTitle = result.query.search[0].title
-    JSDOM.fromURL(`https://yugipedia.com/wiki/${pageTitle}`).then(dom => {
-      const document = dom.window.document
-      const title = document.querySelector('.heading').textContent
-      const image = document.querySelector('.cardtable-main_image-wrapper > a')["href"]
-      const cardInfoTable = [...document.querySelector('.innertable > tbody').rows]
-      const cardProperties = { }
-      cardProperties.name = title
+    fetch(`https://yugipedia.com/api.php?action=query&format=json&redirects=true&prop=revisions&rvprop=content&formatversion=2&titles=${encodeURIComponent(pageTitle)}`)
+    .then(response => response.json())
+    .then(response => {
+      const cardRaw = response.query.pages[0].revisions[0].content
+      const name = response.query.pages[0].title
 
-      if (args.image) return shortenUrlAndReply(args.client, args.channel, args.userName, title, image)
+      const getProperty = (key) => {
+        const regex = new RegExp(`${key} += .*\n`, 'g')
 
-      cardInfoTable.forEach(row => {
-        if (!row.cells[1]) {
-          let lore = document.querySelector('.lore > p')
-          if (lore) {
-            lore = lore.innerHTML.replace(/<br>/g, ' ')
-            let newLore = document.createElement('p')
-            newLore.innerHTML = lore
-            cardProperties.desc = newLore.textContent.trim()
-          } else {
-            cardProperties.desc = row.cells[0].textContent.trim().replace('Pendulum Effect', '[ Pendulum Effect ]').replace('Monster Effect', '[ Monster Effect ]')
+        if (["lore", "pendulum_effect"].includes(key)) {
+          const cardLore = cardRaw.match(regex)
+          if (cardLore) {
+            return cardRaw.match(regex)[0].replace(/ +/g, ' ').slice(key.length + 3).replace(/<br \/>/g, ' ').replace(/\[\[\w*( *\w*)*\|/g, '').replace(/\[\[/g, '').replace(/]]/g, '').replace(/'{3}/g, '').replace(/'{2}/g, '\'').trim()
           }
-        } else if (["Password", "Effect types", "Status"].includes(row.cells[0].textContent.trim())) {
-          return
+          return null
         } else {
-          switch (row.cells[0].textContent.trim().toLowerCase()) {
-            case "card type":
-              cardProperties.type = row.cells[1].textContent.trim()
-              break
-            case "property":
-              cardProperties.race = row.cells[1].textContent.trim()
-              break
-            case "types":
-              cardProperties.race = row.cells[1].textContent.trim().replace(/ /g, '')
-              break
-            case "atk / def":
-              cardProperties.atk = row.cells[1].textContent.trim().match(/\d+/)[0]
-              cardProperties.def = row.cells[1].textContent.trim().match(/\d+$/)[0]
-              break
-            case "atk / link":
-              cardProperties.atk = row.cells[1].textContent.trim().match(/\d+/)[0]
-              cardProperties.link = row.cells[1].textContent.trim().match(/\d{1}$/)[0]
-              break
-            case "pendulum scale":
-              cardProperties.scale = row.cells[1].textContent.trim()
-              break
-            case "rank":
-              cardProperties.level = row.cells[1].textContent.trim()
-              break
-            case "link arrows":
-              cardProperties.linkmarkers = row.cells[1].textContent.trim().split(',')
-              break
-            default:
-              cardProperties[row.cells[0].textContent.trim().toLowerCase()] = row.cells[1].textContent.trim()
-              break
-          }  
+          const value = cardRaw.match(regex)
+          return value ? value[0].replace(/ +/g, ' ').trim().slice(key.length + 3).trim() : null
         }
-      })
-      cardProperties.card_images = [{ imageUrl: image}]
-      return args.client.say(args.channel, getCardInfo(cardProperties))
+      }
+
+      if (args.image) {
+        const imageLink = `https://yugipedia.com/wiki/File:${getProperty('image')}`
+        return shortenUrlAndReply(args.client, args.channel, args.userName, name, imageLink)
+      }
+
+      const type = getProperty('type')
+      
+      if (!type) return args.client.action(args.channel, "couldn't find any card(s) with that name, not even in the Shadow Realm. 👻")
+
+      switch (type) {
+        case "Spell":
+        case "Trap":
+          const race = getProperty("property")
+          const desc = getProperty("lore")
+          args.client.say(args.channel, `🔎 ${name} [${race} ${type}] : ${desc}`)
+          break
+        default:
+          const monsterTypes = [type, getProperty("type2"), getProperty("type3"), getProperty("type4")].filter(type => type).join('/')
+          const attribute = getProperty("attribute")
+          const level = getProperty("level") || getProperty("rank")
+          const scale = getProperty("scale")
+
+          const atkdef = () => {
+            const atk = getProperty("atk")
+            const def = getProperty("def")
+            if (monsterTypes.includes("Link")) {
+              const markers = getProperty("link_arrows").split(', ')
+              return `[ATK/${atk} LINK-${markers.length}] [Markers: ${markers.join(', ')}]`
+            } else {
+              return `[ATK/${atk} DEF/${def}]`
+            }
+          }
+
+          const getLore = () => {
+            const regular_lore = getProperty("lore")
+
+            if(monsterTypes.includes("Pendulum")) {
+              const pendulum_lore = getProperty("pendulum_effect")
+
+              if (pendulum_lore) {
+                return `[ Pendulum Effect ] ${pendulum_lore} [ Monster Effect ] ${regular_lore}`
+              } else {
+                return `${regular_lore}`
+              }
+            } else {
+              return `${regular_lore}`
+            }
+          }
+
+          args.client.say(args.channel, `🔎 ${name} (${attribute}) ${level ? `[${level}⭐]`: ''} ${scale ? `[◀${scale}▶]`: ''} [${monsterTypes}] ${atkdef()} : ${getLore()}`)
+
+          break
+      }
     })
-    .catch(err => args.client.say(args.channel, `${args.userName}, there was an error. Try again.`))
+    .catch(error => args.client.say(args.channel, `${args.userName}, there was an error. Try again.`))
   })  
-  .catch(err => args.client.action(args.channel, "couldn't find any card(s) with that name, not even in the Shadow Realm. 👻"))
+  .catch(error => args.client.action(args.channel, "couldn't find any card(s) with that name, not even in the Shadow Realm. 👻"))
 }
 
 
