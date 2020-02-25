@@ -205,18 +205,23 @@ function onMessageHandler (channel, userState, message, self) {
           }
           break
         case "--throw":
-          fetch(`https://tmi.twitch.tv/group/user/${userChannel.slice(1)}/chatters`)
+          fetch(`https://tmi.twitch.tv/group/user/${channel.slice(1)}/chatters`)
           .then(response => response.json())
           .then(response => {
             const channelViewers = response.chatters.viewers
-            const randomUser = Math.floor(Math.random() * channelViewers.length)
+            const randomUserIndex = Math.floor(Math.random() * channelViewers.length)
+            let randomUserName = channelViewers[randomUserIndex]
+
+            if (randomUserName === userName.slice(1).toLowerCase()) {
+              randomUserName = channel.slice(1)
+            }
 
             return fetch('https://db.ygoprodeck.com/api/v6/randomcard.php')
             .then(card => card.json())
             .then(card => {
               return card.name.includes("Exodia") || card.name.includes("Forbidden One")
-              ? client.action(channel, `: ... CurseLit PowerUpL DarkMode PowerUpR CurseLit ... SAY GOODBYE TO EXODIAAA!!! ${userName.slice(1)} throws ${channelViewers[randomUser]}'s Exodia cards off the boat!`)
-              : client.action(channel, `: ${userName.slice(1)} throws ${channelViewers[randomUser]}'s "${card.name}" card off the boat! DarkMode`)
+              ? client.action(channel, `: ... CurseLit PowerUpL DarkMode PowerUpR CurseLit ... SAY GOODBYE TO EXODIAAA!!! ${userName.slice(1)} throws ${randomUserName}'s Exodia cards off the boat!`)
+              : client.action(channel, `: ${userName.slice(1)} throws ${randomUserName}'s "${card.name}" card off the boat! DarkMode`)
             })
             .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
           })
