@@ -44,7 +44,7 @@ const getCardInfo = (card) => {
     cardInfo = `🔎 ${card.name} [${card.race} ${card.type.replace(' Card', '')}] : ${card.desc}`
   } else {
     cardInfo = `
-      🔎 ${card.name} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} ${card.scale ? `[◀${card.scale}▶]` : ''} [${card.race}/${card.type.replace(/ Monster/g, '').replace(/ /g, '/')}] [ATK/${card.atk}${card.def || card.def === 0 ? ` DEF/${card.def}`: ''}${card.linkval ? ` LINK-${card.linkval}] [${card.linkmarkers.length > 1 ? 'Markers:' : 'Marker:'} ${card.linkmarkers.join(', ')}]` : ']'} : ${card.desc.replace(/-{40}/g, '')}
+      🔎 ${card.name} (${card.attribute}) ${card.level ? `[${card.level}⭐]`: ''} ${card.scale ? `[◀${card.scale}▶]` : ''} [${card.race}/${card.type.replace(/ Monster/g, '').replace(/ /g, '/')}] [ATK/${card.atk}${card.def || card.def === 0 ? ` DEF/${card.def}`: ''}${card.linkval ? ` LINK—${card.linkval}] [${formatArrows(card.linkmarkers)}]` : ']'} : ${card.desc.replace(/-{40}/g, '')}
     `
   }
 
@@ -84,6 +84,29 @@ const shortenUrlAndReply = (client, channel, userName, cardName, url) => {
       return client.say(channel, `🖼 "${cardName}" - [ ${result.link} ]`)
     })
     .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
+}
+
+
+const formatArrows = (array) => {
+  const markers = {
+    "Top-Left": 0,
+    "Top": 1,
+    "Top-Center": 1,
+    "Top-Right": 2,
+    "Middle-Left": 3,
+    "Left": 3,
+    "Bottom-Left": 4,
+    "Bottom-Center": 5,
+    "Bottom": 5,
+    "Bottom-Right": 6,
+    "Middle-Right": 7,
+    "Right": 7
+  }  
+  const arrows = "↖⬆↗⬅↙⬇↘➡"
+  let arrowArray = array
+  arrowArray = arrowArray.map(arrow => markers[arrow]).sort()
+  arrowArray = arrowArray.map(arrow => arrows[arrow]).join('')
+  return arrowArray
 }
 
 
@@ -138,8 +161,9 @@ const scrapeYugipedia = (args) => {
           const desc = getProperty("lore")
           let markers
           if (race === "Link")
-            markers = getProperty("link_arrows")
-          args.client.say(args.channel, `🔎 ${name} [${race} ${type}] ${markers ? `[Markers: ${markers}]`: ''} : ${desc}`)
+            markers = getProperty("link_arrows").split(', ')
+          
+          args.client.say(args.channel, `🔎 ${name} [${race} ${type}] ${markers ? `[LINK—${markers.length}] [${formatArrows(markers)}]`: ''} : ${desc}`)
           break
         default:
           let monsterTypes = [type, getProperty("type2"), getProperty("type3"), getProperty("type4")].filter(type => type).join('/')
@@ -155,7 +179,7 @@ const scrapeYugipedia = (args) => {
             const def = getProperty("def")
             if (monsterTypes.includes("Link")) {
               const markers = getProperty("link_arrows").split(', ')
-              return `[ATK/${atk} LINK-${markers.length}] [Markers: ${markers.join(', ')}]`
+              return `[ATK/${atk} LINK—${markers.length}] [${formatArrows(markers)}]`
             } else {
               return `[ATK/${atk} DEF/${def}]`
             }
