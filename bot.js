@@ -57,8 +57,12 @@ function onConnectedHandler (server, port) {
     .find({})
     .then(channels => {
       channels.forEach(channel => {
-        client.join(channel.name)
-        !channel.moderated ? unmoderatedChannels.push(channel.name) : null
+        client
+        .join(channel.name)
+        .then(channelName => {
+          return !channel.moderated ? unmoderatedChannels.push(channel.name) : null
+        })
+        .catch(err => console.log(`✖ Something went wrong while joining ${channel.name}.`))
       })
     })
     .catch(err => console.log("❌ ERROR: ", err.message))
