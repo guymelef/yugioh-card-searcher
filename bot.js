@@ -145,7 +145,7 @@ function onMessageHandler (channel, userState, message, self) {
       .then(channels => {
         channelList = channels.map(channel => `● ${channel.name.slice(1)}`)
         channelList = channelList.filter(channel => channel !== '● cardsearcher')
-        return client.say(channel, `imGlitch Currently, ${channels.length - 1} channels are using the bot: ${channelList.join(', ')}`)
+        return client.say(channel, `imGlitch ${channels.length - 1} channels are currently using the bot: ${channelList.join(', ')}`)
       })
     }
   } else if (unmoderatedChannels.includes(channel) || channel === userChannel || userState.mod) {
