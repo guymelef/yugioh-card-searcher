@@ -60,7 +60,7 @@ function onConnectedHandler (server, port) {
         client
         .join(channel.name)
         .then(channelName => {
-          return !channel.moderated ? unmoderatedChannels.push(channel.name) : null
+          if (!channel.moderated) unmoderatedChannels.push(channel.name)
         })
         .catch(err => console.log(`✖ Something went wrong while joining ${channel.name}.`))
       })
