@@ -208,7 +208,7 @@ const scrapeYugipedia = (args) => {
     })
     .catch(error => args.client.say(args.channel, `${args.userName}, there was an error. Try again.`))
   })  
-  .catch(error => args.client.action(args.channel, "couldn't find any card(s) with that name, not even in the Shadow Realm. 👻"))
+  .catch(error => args.client.action(args.channel, `couldn't find any "${args.searchQuery}" card(s), not even in the Shadow Realm. 👻`))
 }
 
 
