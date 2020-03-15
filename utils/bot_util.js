@@ -121,8 +121,8 @@ const scrapeYugipedia = (args) => {
 
   return fetch(`https://yugipedia.com/api.php?action=query&format=json&redirects=true&list=search&srlimit=1&srwhat=nearmatch&srsearch=${encodeURIComponent(args.searchQuery)}`, requestOptions)
   .then(response => response.json())
-  .then(result => {
-    const pageTitle = result.query.search[0].title
+  .then(result => result.query.search[0].title)
+  .then(pageTitle => {
     fetch(`https://yugipedia.com/api.php?action=query&format=json&redirects=true&prop=revisions&rvprop=content&formatversion=2&titles=${encodeURIComponent(pageTitle)}`)
     .then(response => response.json())
     .then(response => {
@@ -207,7 +207,7 @@ const scrapeYugipedia = (args) => {
       }
     })
     .catch(error => args.client.say(args.channel, `${args.userName}, there was an error. Try again.`))
-  })  
+  })
   .catch(error => args.client.action(args.channel, `couldn't find any "${args.searchQuery}" card(s), not even in the Shadow Realm. 👻`))
 }
 
