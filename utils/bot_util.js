@@ -129,6 +129,11 @@ const scrapeYugipedia = (args) => {
       const cardRaw = response.query.pages[0].revisions[0].content
       const name = response.query.pages[0].title
 
+      const isACard = cardRaw.match(/{{CardTable2/g) || cardRaw.match(/{{Anime card/g)
+      if (!isACard) { 
+        return args.client.action(args.channel, `couldn't find any "${args.searchQuery}" card(s), not even in the Shadow Realm. 👻`)
+      }
+
       const getProperty = (key) => {
         const regex = new RegExp(`${key} += .*\n`, 'g')
 
@@ -151,9 +156,6 @@ const scrapeYugipedia = (args) => {
 
       const type = getProperty('type')
       const types = getProperty('types')
-
-      if (!type && !types) return args.client.action(args.channel, "couldn't find any card(s) with that name, not even in the Shadow Realm. 👻")
-
       switch (type) {
         case "Spell":
         case "Trap":
