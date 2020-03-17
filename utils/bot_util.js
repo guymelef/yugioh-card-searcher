@@ -101,7 +101,8 @@ const formatArrows = (array) => {
     "Bottom-Right": 6,
     "Middle-Right": 7,
     "Right": 7
-  }  
+  }
+
   const arrows = "↖⬆↗⬅↙⬇↘➡"
   let arrowArray = array
   arrowArray = arrowArray.map(arrow => markers[arrow]).sort()
@@ -109,6 +110,50 @@ const formatArrows = (array) => {
   return arrowArray
 }
 
+const getProperty = (cardRaw, key) => {
+  const regex = new RegExp(`\\| ${key} += .+\n`, 'g')
+
+  if (["lore", "pendulum_effect"].includes(key)) {
+    let cardLore = cardRaw.match(regex)
+
+    if (cardLore) {
+      const index = cardLore[0].indexOf('=')
+      return cardLore[0].slice(index + 2).replace(/<br \/>/g, ' ').replace(/(\[\[\w+( *\w+)*\|)?/g, '').replace(/\[\[/g, '').replace(/]]/g, '').replace(/'{3}/g, '').replace(/'{2}/g, '\'')
+    }
+
+    return null
+  } else {
+    const value = cardRaw.match(regex)
+    return value ? value[0].replace(/ +/g, ' ').trim().slice(key.length + 5) : null
+  }
+}
+
+const getLore = (cardRaw, monsterTypes) => {
+  const regular_lore = getProperty(cardRaw, "lore")
+
+  if(monsterTypes.includes("Pendulum")) {
+    const pendulum_lore = getProperty(cardRaw, "pendulum_effect")
+
+    if (pendulum_lore) {
+      return `[ Pendulum Effect ] ${pendulum_lore} [ Monster Effect ] ${regular_lore}`
+    } else {
+      return regular_lore
+    }
+  } else {
+    return regular_lore
+  }
+}
+
+const getAtkDef = (cardRaw, monsterTypes) => {
+  const atk = getProperty(cardRaw, "atk")
+  const def = getProperty(cardRaw, "def")
+  if (monsterTypes.includes("Link")) {
+    const markers = getProperty(cardRaw, "link_arrows").split(', ')
+    return `[ATK/${atk} LINK—${markers.length}] [${formatArrows(markers)}]`
+  } else {
+    return `[ATK/${atk} DEF/${def}]`
+  }
+}
 
 const scrapeYugipedia = (args) => {
   const requestOptions = {
@@ -123,7 +168,7 @@ const scrapeYugipedia = (args) => {
   .then(response => response.json())
   .then(result => result.query.search[0].title)
   .then(pageTitle => {
-    fetch(`https://yugipedia.com/api.php?action=query&format=json&redirects=true&prop=revisions&rvprop=content&formatversion=2&titles=${encodeURIComponent(pageTitle)}`)
+    fetch(`https://yugipedia.com/api.php?action=query&format=json&redirects=true&prop=revisions&rvprop=content&formatversion=2&titles=${encodeURIComponent(pageTitle)}`, requestOptions)
     .then(response => response.json())
     .then(response => {
       const cardRaw = response.query.pages[0].revisions[0].content
@@ -134,77 +179,31 @@ const scrapeYugipedia = (args) => {
         return args.client.action(args.channel, `couldn't find any "${args.searchQuery}" card(s), not even in the Shadow Realm. 👻`)
       }
 
-      const getProperty = (key) => {
-        const regex = new RegExp(`${key} += .*\n`, 'g')
-
-        if (["lore", "pendulum_effect"].includes(key)) {
-          const cardLore = cardRaw.match(regex)
-          if (cardLore) {
-            return cardRaw.match(regex)[0].replace(/ +/g, ' ').slice(key.length + 3).replace(/<br \/>/g, ' ').replace(/\[\[\w*( *\w*)*\|/g, '').replace(/\[\[/g, '').replace(/]]/g, '').replace(/'{3}/g, '').replace(/'{2}/g, '\'').trim()
-          }
-          return null
-        } else {
-          const value = cardRaw.match(regex)
-          return value ? value[0].replace(/ +/g, ' ').trim().slice(key.length + 3).trim() : null
-        }
-      }
-
       if (args.image) {
         const imageLink = `https://yugipedia.com/wiki/File:${getProperty('image')}`
         return shortenUrlAndReply(args.client, args.channel, args.userName, name, imageLink)
       }
 
-      const type = getProperty('type')
-      const types = getProperty('types')
+      const type = getProperty(cardRaw, 'card_type')
       switch (type) {
         case "Spell":
         case "Trap":
-          const race = getProperty("property")
-          const desc = getProperty("lore")
+          const race = getProperty(cardRaw, "property")
+          const desc = getProperty(cardRaw, "lore")
           let markers
           if (race === "Link")
-            markers = getProperty("link_arrows").split(', ')
+            markers = getProperty(cardRaw, "link_arrows").split(', ')
           
           args.client.say(args.channel, `🔎 ${name} [${race} ${type}] ${markers ? `[LINK—${markers.length}] [${formatArrows(markers)}]`: ''} : ${desc}`)
           break
         default:
-          let monsterTypes = [type, getProperty("type2"), getProperty("type3"), getProperty("type4")].filter(type => type).join('/')
+          const monsterTypes = getProperty(cardRaw,'types').replace(/ /g, '')
 
-          if (!type && types) monsterTypes = types.replace(/ /g, '')
+          const attribute = getProperty(cardRaw, "attribute")
+          const level = getProperty(cardRaw, "level") || getProperty(cardRaw, "rank")
+          const scale = monsterTypes.includes("Pendulum") ? getProperty(cardRaw, "pendulum_scale") : null
 
-          const attribute = getProperty("attribute")
-          const level = getProperty("level") || getProperty("rank")
-          const scale = getProperty("scale")
-
-          const atkdef = () => {
-            const atk = getProperty("atk")
-            const def = getProperty("def")
-            if (monsterTypes.includes("Link")) {
-              const markers = getProperty("link_arrows").split(', ')
-              return `[ATK/${atk} LINK—${markers.length}] [${formatArrows(markers)}]`
-            } else {
-              return `[ATK/${atk} DEF/${def}]`
-            }
-          }
-
-          const getLore = () => {
-            const regular_lore = getProperty("lore")
-
-            if(monsterTypes.includes("Pendulum")) {
-              const pendulum_lore = getProperty("pendulum_effect")
-
-              if (pendulum_lore) {
-                return `[ Pendulum Effect ] ${pendulum_lore} [ Monster Effect ] ${regular_lore}`
-              } else {
-                return `${regular_lore}`
-              }
-            } else {
-              return `${regular_lore}`
-            }
-          }
-
-          args.client.say(args.channel, `🔎 ${name} (${attribute}) ${level ? `[${level}⭐]`: ''} ${scale ? `[◀${scale}▶]`: ''} [${monsterTypes}] ${atkdef()} : ${getLore()}`)
-
+          args.client.say(args.channel, `🔎 ${name} (${attribute}) ${level ? `[${level}⭐]`: ''} ${scale ? `[◀${scale}▶]`: ''} [${monsterTypes}] ${getAtkDef(cardRaw, monsterTypes)} : ${getLore(cardRaw, monsterTypes)}`)
           break
       }
     })
