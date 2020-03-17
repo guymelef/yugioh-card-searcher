@@ -110,6 +110,7 @@ const formatArrows = (array) => {
   return arrowArray
 }
 
+
 const getProperty = (cardRaw, key) => {
   const regex = new RegExp(`\\| ${key} += .+\n`, 'g')
 
@@ -128,6 +129,7 @@ const getProperty = (cardRaw, key) => {
   }
 }
 
+
 const getLore = (cardRaw, monsterTypes) => {
   const regular_lore = getProperty(cardRaw, "lore")
 
@@ -144,6 +146,7 @@ const getLore = (cardRaw, monsterTypes) => {
   }
 }
 
+
 const getAtkDef = (cardRaw, monsterTypes) => {
   const atk = getProperty(cardRaw, "atk")
   const def = getProperty(cardRaw, "def")
@@ -154,6 +157,7 @@ const getAtkDef = (cardRaw, monsterTypes) => {
     return `[ATK/${atk} DEF/${def}]`
   }
 }
+
 
 const scrapeYugipedia = (args) => {
   const requestOptions = {
@@ -197,7 +201,7 @@ const scrapeYugipedia = (args) => {
           args.client.say(args.channel, `🔎 ${name} [${race} ${type}] ${markers ? `[LINK—${markers.length}] [${formatArrows(markers)}]`: ''} : ${desc}`)
           break
         default:
-          const monsterTypes = getProperty(cardRaw,'types').replace(/ /g, '')
+          const monsterTypes = getProperty(cardRaw,'types').replace(/ \/ /g, '/')
 
           const attribute = getProperty(cardRaw, "attribute")
           const level = getProperty(cardRaw, "level") || getProperty(cardRaw, "rank")
