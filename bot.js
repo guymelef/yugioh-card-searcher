@@ -62,7 +62,7 @@ function onConnectedHandler (server, port) {
         .then(channelName => {
           if (!channel.moderated) unmoderatedChannels.push(channel.name)
         })
-        .catch(err => console.log(`✖ Something went wrong while joining ${channel.name}.`))
+        .catch(err => console.log(`✖ Something went wrong while joining ${channel.name}. [${err}]`))
       })
     })
     .catch(err => console.log("❌ ERROR: ", err.message))
