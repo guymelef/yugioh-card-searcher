@@ -180,7 +180,7 @@ const scrapeYugipedia = (args) => {
       }
 
       if (args.image) {
-        const imageLink = `https://yugipedia.com/wiki/File:${getProperty('image')}`
+        const imageLink = `https://yugipedia.com/wiki/File:${getProperty(cardRaw, 'image')}`
         return shortenUrlAndReply(args.client, args.channel, args.userName, name, imageLink)
       }
 
