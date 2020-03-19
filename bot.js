@@ -10,8 +10,11 @@ const app = express()
 const port = process.env.PORT
 
 const Channel = require('./models/channel')
+const Skill = require('./models/skill')
+const Counter = require('./models/counter')
 const utils = require('./utils/bot_util')
 
+let unmoderatedChannels = []
 
 
 // EXPRESS SERVER START
@@ -23,7 +26,9 @@ app.listen(port, () => wakeUpDyno('https://ygo-card-searcher.herokuapp.com/'))
 // EXPRESS SERVER END
 
 
-// MONGOOSE START
+// CONNECT TO MONGOOSE & START TMI CLIENT
+let client
+let throwCount
 console.log("▶ Connecting to MongoDB...")
 mongoose
 .connect(process.env.MONGODB_URI, {
@@ -32,40 +37,46 @@ mongoose
   useFindAndModify: false,
   useCreateIndex: true
 })
-.then(_ => console.log("Ⓜ Connected to MongoDB!"))
-.catch(err => console.log("🛑 MongoDB Error:", err.message))
-// MONGOOSE END
+.then(data => { 
+  console.log("Ⓜ Connected to MongoDB!")
+  
+  Channel
+  .find({})
+  .then(channels => {
+    utils.options.channels = channels.map(channel => channel.name)
+    console.log("ALL CHANNELS:", utils.options.channels)
+    
+    client = new tmi.client(utils.options)
+    client.setMaxListeners(100)
 
+    channels.forEach(channel => {
+      if (!channel.moderated) unmoderatedChannels.push(channel.name)
+    })
+    console.log("OPEN CHANNELS:", unmoderatedChannels)
 
-// TMI CLIENT START
-const client = new tmi.client(utils.options)
-client.setMaxListeners(100)
+    client.connect()
 
-client.on('message', onMessageHandler)
-client.on('connected', onConnectedHandler)
+    // TMI EVENT LISTENERS
+    client.on('message', onMessageHandler)
+    client.on('connected', onConnectedHandler)
 
-client.connect()
-// TMI CLIENT END
-
+    // get current throw count
+    Counter.findOne({ name: "throw_counter"})
+    .then(response => { 
+      throwCount = response.count
+      console.log("😎 Received cards thrown count!")
+    })
+    .catch(err => console.log("❌ ERROR FETCHING COUNTER:", err.message))
+  })
+  .catch(err => console.log("❌ ERROR: ", err.message))
+})
+.catch(err => console.log("🛑 MongoDB Connection Error:", err.message))
+// CONNECT TO MONGOOSE & START TMI CLIENT END
 
 
 // HELPER FUNCTIONS BELOW
-let unmoderatedChannels = []
 function onConnectedHandler (server, port) {
   console.log(`🆗 Connected to ${server}:${port}`)
-  return Channel
-    .find({})
-    .then(channels => {
-      channels.forEach(channel => {
-        client
-        .join(channel.name)
-        .then(channelName => {
-          if (!channel.moderated) unmoderatedChannels.push(channel.name)
-        })
-        .catch(err => console.log(`✖ Something went wrong while joining ${channel.name}. [${err}]`))
-      })
-    })
-    .catch(err => console.log("❌ ERROR: ", err.message))
 }
 
 function onMessageHandler (channel, userState, message, self) {
@@ -83,65 +94,65 @@ function onMessageHandler (channel, userState, message, self) {
       }
       
       Channel
-        .findOne({
-          name: userChannel
-        })
-        .then(response => {
-          if (!response) {
-            new Channel({
-              name: userChannel,
-              moderated: messageArray[1] === "--strict" ? true : false
-            })
-            .save()
-            .then(response => {
-              if (!response.moderated) {
-                unmoderatedChannels.push(response.name)
-              }              
-              console.log("FREE CHANNELS", unmoderatedChannels)
-              client.join(userChannel)
-              client.say(channel, `${userName}, awesome! CardSearcher has now joined your channel. Don't forget to promote the bot to VIP or moderator.`)
-            })
-            .catch(err => client.say(channel, `${userName}, oops! There's an error. Please try again.`))
-          } else {
-            Channel
-              .findOneAndUpdate(
-                { name: userChannel },
-                { moderated: messageArray[1] === "--strict" ? true : false, updated: Date.now() },
-                { new: true }
-              )
-              .then(response => {
-                if (!response.moderated) {
-                  !unmoderatedChannels.includes(response.name) ? unmoderatedChannels.push(response.name) : null
-                } else {
-                  unmoderatedChannels = unmoderatedChannels.filter(item => item !== response.name)
-                }
+      .findOne({
+        name: userChannel
+      })
+      .then(response => {
+        if (!response) {
+          new Channel({
+            name: userChannel,
+            moderated: messageArray[1] === "--strict" ? true : false
+          })
+          .save()
+          .then(response => {
+            if (!response.moderated) {
+              unmoderatedChannels.push(response.name)
+            }              
+            console.log("OPEN CHANNELS:", unmoderatedChannels)
+            client.join(userChannel)
+            client.say(channel, `${userName}, awesome! CardSearcher has now joined your channel. Don't forget to promote the bot to VIP or moderator.`)
+          })
+          .catch(err => client.say(channel, `${userName}, oops! There's an error. Please try again.`))
+        } else {
+          Channel
+          .findOneAndUpdate(
+            { name: userChannel },
+            { moderated: messageArray[1] === "--strict" ? true : false, updated: Date.now() },
+            { new: true }
+          )
+          .then(response => {
+            if (!response.moderated) {
+              !unmoderatedChannels.includes(response.name) ? unmoderatedChannels.push(response.name) : null
+            } else {
+              unmoderatedChannels = unmoderatedChannels.filter(item => item !== response.name)
+            }
 
-                console.log("FREE CHANNELS", unmoderatedChannels)
-                return client.say(channel, `${userName}, your bot setting has been updated to "${messageArray[1].substring(2).toUpperCase()}".`)
-              })
-              .catch(err => client.say(channel, `${userName}, oops! There's an error. Please try again.`))
-          }
-        })
+            console.log("OPEN CHANNELS:", unmoderatedChannels)
+            return client.say(channel, `${userName}, your bot setting has been updated to "${messageArray[1].substring(2).toUpperCase()}".`)
+          })
+          .catch(err => client.say(channel, `${userName}, oops! There's an error. Please try again.`))
+        }
+      })
     } else if (message.startsWith("!killbot")) {
       Channel
-        .findOneAndDelete({
-          name: userChannel
-        })
-        .then(response => {
-          if (!response) {
-            return client.say(channel, `${userName}, the bot hasn't joined your channel yet. Use the !usebot command to enable it.`)
-          }
+      .findOneAndDelete({
+        name: userChannel
+      })
+      .then(response => {
+        if (!response) {
+          return client.say(channel, `${userName}, the bot hasn't joined your channel yet. Use the !usebot command to enable it.`)
+        }
 
-          client.part(userChannel)
-            .then(data => {
-              return client.say(channel, `${userName}, the bot has successfully left your channel.`)
-            })
-            .catch (err => client.say(channel, `${userName}, oops! There's an error. Please try again.`))
-          
-          unmoderatedChannels = unmoderatedChannels.filter(item => item !== userChannel)
-          return console.log("FREE CHANNELS", unmoderatedChannels)
+        client.part(userChannel)
+        .then(data => {
+          return client.say(channel, `${userName}, the bot has successfully left your channel.`)
         })
-        .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
+        .catch (err => client.say(channel, `${userName}, oops! There's an error. Please try again.`))
+        
+        unmoderatedChannels = unmoderatedChannels.filter(item => item !== userChannel)
+        return console.log("OPEN CHANNELS:", unmoderatedChannels)
+      })
+      .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
     } else if (message.startsWith("!channels")) {
       Channel
       .find({})
@@ -223,13 +234,48 @@ function onMessageHandler (channel, userState, message, self) {
             return fetch('https://db.ygoprodeck.com/api/v6/randomcard.php')
             .then(card => card.json())
             .then(card => {
-              return card.name.includes("Exodia") || card.name.includes("Forbidden One")
-              ? client.action(channel, `: ... CurseLit PowerUpL DarkMode PowerUpR CurseLit ... SAY GOODBYE TO EXODIAAA!!! ${userName.slice(1)} throws ${randomUserName}'s Exodia cards off the boat!`)
-              : client.action(channel, `: ${userName.slice(1)} throws ${randomUserName}'s "${card.name}" card off the boat! DarkMode`)
+              if (card.name.includes("Exodia") || card.name.includes("Forbidden One")) {
+                throwCount += 5
+                client.action(channel, `: ... CurseLit PowerUpL DarkMode PowerUpR CurseLit ... SAY GOODBYE TO EXODIAAA!!! ${userName.slice(1)} throws ${randomUserName}'s Exodia cards off the boat! 【Cards Thrown: ${throwCount.toLocaleString()}】`)
+                return Counter.findOneAndUpdate({
+                  name: "throw_counter",
+                  count: throwCount
+                })
+                .then(response => console.log("🆙 COUNTER INCREASED!"))
+                .catch(err => console.log("😓 ERROR UPDATING COUNTER", err.message))
+              } else {
+                throwCount += 1
+                client.action(channel, `: ${userName.slice(1)} throws ${randomUserName}'s "${card.name}" card off the boat! DarkMode 【Cards Thrown: ${throwCount.toLocaleString()}】`)
+                return Counter.findOneAndUpdate({
+                  name: "throw_counter",
+                  count: throwCount
+                })
+                .then(response => console.log("🆙 COUNTER INCREASED!"))
+                .catch(err => console.log("😓 ERROR UPDATING COUNTER", err.message))
+              }
             })
             .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
           })
           .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
+          break
+        case "--skill":
+          if (!query) {
+            Skill.find({})
+            .then(skills => client.say(channel, `❓ There are currently [${skills.length}] Duel Links skills. To search for one, follow this syntax: !search --skill <full/partial skill name>`))
+            .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
+          } else {
+            Skill.find({ name: { $regex: query, $options: 'i' } })
+            .then(skills => {
+              if (skills.length === 1) {
+                return client.say(channel, `✨ "${skills[0].name}" : ${skills[0].desc} 【${skills[0].characters.length === 1 ? `${skills[0].characters[0]}`: `${skills[0].characters.map(char => `• ${char}`).sort().join(', ')}`}】`)
+              } else if (skills.length > 1) {
+                return client.say(channel, `📜 [${skills.length} Skills] : ${skills.map(skill => `✨${skill.name}`).join(', ')}`)
+              } else {
+                return client.action(channel, `couldn't find any "${query}" skill, not even in the Shadow Realm. 👻`)
+              }
+            })
+            .catch(err => client.action(channel, `couldn't find any "${query}" skill, not even in the Shadow Realm. 👻`))
+          }
           break
         default:
           const searchQuery = messageArray.slice(1).join(' ').toLowerCase()

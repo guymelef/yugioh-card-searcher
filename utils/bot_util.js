@@ -1,7 +1,5 @@
 require('dotenv').config()
 const fetch = require('node-fetch')
-const jsdom = require("jsdom");
-const { JSDOM } = jsdom;
 
 
 
@@ -150,7 +148,10 @@ const getLore = (cardRaw, monsterTypes) => {
 const getAtkDef = (cardRaw, monsterTypes) => {
   const atk = getProperty(cardRaw, "atk")
   const def = getProperty(cardRaw, "def")
-  if (monsterTypes.includes("Link")) {
+
+  if (!atk && !def) {
+    return ''
+  } else if (monsterTypes.includes("Link")) {
     const markers = getProperty(cardRaw, "link_arrows").split(', ')
     return `[ATK/${atk} LINK—${markers.length}] [${formatArrows(markers)}]`
   } else {
