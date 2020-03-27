@@ -11,6 +11,7 @@ const port = process.env.PORT
 
 const Channel = require('./models/channel')
 const Skill = require('./models/skill')
+const Character = require('./models/character')
 const Counter = require('./models/counter')
 const utils = require('./utils/bot_util')
 
@@ -261,13 +262,13 @@ function onMessageHandler (channel, userState, message, self) {
         case "--skill":
           if (!query) {
             Skill.find({})
-            .then(skills => client.say(channel, `❓ There are currently [${skills.length}] Duel Links skills. To search for one, follow this syntax: !search --skill <full/partial skill name>`))
+            .then(skills => client.say(channel, `❓ Currently, there are 【${skills.length}】 Duel Links skills. Search for a skill with: !search --skill <full/partial skill name>`))
             .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
           } else {
             Skill.find({ name: { $regex: query, $options: 'i' } })
             .then(skills => {
               if (skills.length === 1) {
-                return client.say(channel, `✨ "${skills[0].name}" : ${skills[0].desc} 【${skills[0].characters.length === 1 ? `${skills[0].characters[0]}`: `${skills[0].characters.map(char => `• ${char}`).sort().join(', ')}`}】`)
+                return client.say(channel, `✨ "${skills[0].name}" : ${skills[0].desc} 【${skills[0].characters.length === 1 ? `${skills[0].characters[0]}`: `${skills[0].characters.map(char => `• ${char.name} (${char.how})`).sort().join(', ')}`}】`)
               } else if (skills.length > 1) {
                 return client.say(channel, `📜 [${skills.length} Skills] : ${skills.map(skill => `✨${skill.name}`).join(', ')}`)
               } else {
@@ -275,6 +276,33 @@ function onMessageHandler (channel, userState, message, self) {
               }
             })
             .catch(err => client.action(channel, `couldn't find any "${query}" skill, not even in the Shadow Realm. 👻`))
+          }
+          break
+        case "--skills":
+          if (!query) {
+            Character.find({})
+            .then(characters => client.say(channel, `❓ Currently, there are 【${characters.length}】 Duel Links characters. Search for a specific character's skills with: !search --skills <full/partial character name>`))
+            .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
+          } else {
+            Character.find({ name: { $regex: query.replace(/\(/g, '\\(').replace(/\)/g, '\\)'), $options: 'i' } })
+            .then(characters => {
+              if (characters.length === 0) {
+                throw new Error('No matching character!')
+              } else if (characters.length === 1) {
+                return characters[0].name
+              } else {
+                const character = characters.find(char => char.name.toLowerCase() === query)
+                return !character ? characters[0].name : character.name
+              }
+            })
+            .then(result => {
+              NewSkill.find({
+                "characters.name": result
+              })
+              .then(list => client.say(channel, `⚔ "${result}" [${list.length} Skills] : ${list.map(skill => `● ${skill.name} (${skill.characters.find(char => char.name === result).how})`).sort().join(', ')}`))
+              .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
+            })
+            .catch(err => client.action(channel, `couldn't find any "${query}" character, not even in the Shadow Realm. 👻`))
           }
           break
         default:
