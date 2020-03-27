@@ -175,7 +175,7 @@ function onMessageHandler (channel, userState, message, self) {
           client.say(channel, "❓ To search for cards, follow this syntax: !search <full/partial card name>")
           break
         case "--guide":
-          client.say(channel, `MONSTER: [💛: Normal, 🧡: Effect, 💙: Ritual, 💜: Fusion, 🤍: Synchro, 🖤: XYZ, 🌗: Pendulum, 🔗: Link, 🃏: Token], 💚: SPELL, ❤️: TRAP, ✨: SKILL`)
+          client.say(channel, `MONSTER: [💛: Normal, 🧡: Effect, 🤎: Tuner, 💙: Ritual, 💜: Fusion, 🤍: Synchro, 🖤: XYZ, 🌗: Pendulum, 🔗: Link, 🃏: Token], 💚: SPELL, ❤️: TRAP, ✨: SKILL`)
           break
         case "--random":
           fetch('https://db.ygoprodeck.com/api/v6/randomcard.php')
