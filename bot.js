@@ -296,7 +296,7 @@ function onMessageHandler (channel, userState, message, self) {
               }
             })
             .then(result => {
-              NewSkill.find({
+              Skill.find({
                 "characters.name": result
               })
               .then(list => client.say(channel, `⚔ "${result}" [${list.length} Skills] : ${list.map(skill => `● ${skill.name} (${skill.characters.find(char => char.name === result).how})`).sort().join(', ')}`))
