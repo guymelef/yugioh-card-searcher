@@ -268,7 +268,7 @@ function onMessageHandler (channel, userState, message, self) {
             Skill.find({ name: { $regex: query, $options: 'i' } })
             .then(skills => {
               if (skills.length === 1) {
-                return client.say(channel, `✨ "${skills[0].name}" : ${skills[0].desc} 【${skills[0].characters.length === 1 ? `${skills[0].characters[0].name} (${skills[0].characters[0].how})`: `${skills[0].characters.map(char => `• ${char.name} (${char.how})`).sort().join(', ')}`}】`)
+                return client.say(channel, `✨ 『${skills[0].name}』 : ${skills[0].desc} 【${skills[0].characters.length === 1 ? `${skills[0].characters[0].name} (${skills[0].characters[0].how})`: `${skills[0].characters.map(char => `• ${char.name} (${char.how})`).sort().join(', ')}`}】`)
               } else if (skills.length > 1) {
                 return client.say(channel, `📜 [${skills.length} Skills] : ${skills.map(skill => `✨${skill.name}`).join(', ')}`)
               } else {
