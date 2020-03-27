@@ -22,6 +22,7 @@ const cardSymbols = {
   Ritual: '💙',
   Fusion: '💜',
   Synchro: '🤍',
+  Tuner: '🤎',
   Spell: '💚',
   Trap: '❤️',
   XYZ: '🖤',
