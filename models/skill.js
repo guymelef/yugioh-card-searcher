@@ -15,10 +15,11 @@ const skillSchema = new mongoose.Schema({
     unique: true,
     uniqueCaseSensitive: true
   },
-  characters: [ String ]
+  characters: [ {name: String, how: String} ]
 }, { collation: { locale: 'en', strength: 2 } })
 
 skillSchema.plugin(uniqueValidator)
+
 
 
 module.exports = mongoose.model('Skill', skillSchema)
