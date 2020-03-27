@@ -299,7 +299,7 @@ function onMessageHandler (channel, userState, message, self) {
               Skill.find({
                 "characters.name": result
               })
-              .then(list => client.say(channel, `⚔ "${result}" [${list.length} Skills] : ${list.map(skill => `● ${skill.name} (${skill.characters.find(char => char.name === result).how})`).sort().join(', ')}`))
+              .then(list => client.say(channel, `⚔ 『${result}』 [${list.length} Skills] : ${list.map(skill => `• ${skill.name} (${skill.characters.find(char => char.name === result).how})`).sort().join(', ')}`))
               .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
             })
             .catch(err => client.action(channel, `couldn't find any "${query}" character, not even in the Shadow Realm. 👻`))
