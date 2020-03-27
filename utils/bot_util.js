@@ -80,7 +80,7 @@ const shortenUrlAndReply = (client, channel, userName, cardName, url) => {
   return fetch("https://api-ssl.bitly.com/v4/shorten", requestOptions)
     .then(response => response.json())
     .then(result => {
-      return client.say(channel, `🖼 "${cardName}" - [ ${result.link} ]`)
+      return client.say(channel, `📸 "${cardName}" - [ ${result.link} ]`)
     })
     .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
 }
