@@ -102,7 +102,7 @@ const formatArrows = (array) => {
     "Right": 7
   }
 
-  const arrows = "↖️⬆️↗️⬅️↙️⬇️↘️➡️"
+  const arrows = ['↖️', '⬆️', '↗️', '⬅️', '↙️', '⬇️', '↘️', '➡️']
   let arrowArray = array
   arrowArray = arrowArray.map(arrow => markers[arrow]).sort()
   arrowArray = arrowArray.map(arrow => arrows[arrow]).join('')
