@@ -270,6 +270,8 @@ function onMessageHandler (channel, userState, message, self) {
               if (skills.length === 1) {
                 return client.say(channel, `✨ 『${skills[0].name}』 : ${skills[0].desc} 【${skills[0].characters.length === 1 ? `${skills[0].characters[0].name} (${skills[0].characters[0].how})`: `${skills[0].characters.map(char => `• ${char.name} (${char.how})`).sort().join(', ')}`}】`)
               } else if (skills.length > 1) {
+                const found = skills.find(skill => skill.name.toLowerCase() === query)
+                if (found) return client.say(channel, `✨ 『${found.name}』 : ${found.desc} 【${found.characters.length === 1 ? `${found.characters[0].name} (${found.characters[0].how})`: `${found.characters.map(char => `• ${char.name} (${char.how})`).sort().join(', ')}`}】`)
                 return client.say(channel, `📜 [${skills.length} Skills] : ${skills.map(skill => `✨${skill.name}`).join(', ')}`)
               } else {
                 return client.action(channel, `couldn't find any "${query}" skill, not even in the Shadow Realm. 👻`)
