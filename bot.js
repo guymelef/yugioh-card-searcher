@@ -23,7 +23,7 @@ app.get("/", (request, response) => {
   response.send("https://www.twitch.tv/cardsearcher")
 })
 
-app.listen(port, () => wakeUpDyno('https://ygo-card-searcher.herokuapp.com/'))
+app.listen(port, () => wakeUpDyno(process.env.HOME_URL))
 // EXPRESS SERVER END
 
 
