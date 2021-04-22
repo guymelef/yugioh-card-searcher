@@ -192,6 +192,7 @@ function onMessageHandler (channel, userState, message, self) {
           } else {
             fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${query}`)
             .then(cards => cards.json())
+            .then(cards => cards.data)
             .then(cards => {
               if (cards.length > 1) {
                 const found = cards.find(card => card.name.toLowerCase() === query)
@@ -210,6 +211,7 @@ function onMessageHandler (channel, userState, message, self) {
           } else {
             fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${query}`)
             .then(cards => cards.json())
+            .then(cards => cards.data)            
             .then(cards => {
               if (cards.length > 100) {
                 return client.say(channel,`${userName}, your search yielded a total of ${cards.length.toLocaleString()} cards! Please refine your search and try again.`)
@@ -311,6 +313,7 @@ function onMessageHandler (channel, userState, message, self) {
           const searchQuery = messageArray.slice(1).join(' ').toLowerCase()
           fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${searchQuery}`)
           .then(cards => cards.json())
+          .then(cards => cards.data)
           .then(cards => {
             if (cards.length === 1) {
               return client.say(channel, utils.getCardInfo(cards[0]))
