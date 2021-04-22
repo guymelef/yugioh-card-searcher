@@ -17,15 +17,15 @@ const options = {
 
 
 const cardSymbols = {
-  Normal: '💛',
-  Effect: '🧡',
-  Ritual: '💙',
-  Fusion: '💜',
-  Synchro: '🤍',
-  Tuner: '🤎',
-  Spell: '💚',
-  Trap: '❤️',
-  XYZ: '🖤',
+  Normal: '🟡',
+  Effect: '🟠',
+  Ritual: '🔵',
+  Fusion: '🟣',
+  Synchro: '⚪',
+  Tuner: '🟤',
+  Spell: '🟢',
+  Trap: '🔴',
+  XYZ: '⚫',
   Token: '🃏',
   Link: '🔗',
   Pendulum: '🌗',
@@ -33,7 +33,7 @@ const cardSymbols = {
 }
 
 
-const getSymbol = (cardType) => cardSymbols[cardType] ? cardSymbols[cardType] : '🧡'
+const getSymbol = (cardType) => cardSymbols[cardType] ? cardSymbols[cardType] : '🟠'
 
 
 const getCardInfo = (card) => {
