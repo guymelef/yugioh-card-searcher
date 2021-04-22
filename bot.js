@@ -178,7 +178,7 @@ function onMessageHandler (channel, userState, message, self) {
           client.say(channel, `MONSTER: [💛: Normal, 🧡: Effect, 🤎: Tuner, 💙: Ritual, 💜: Fusion, 🤍: Synchro, 🖤: XYZ, 🌗: Pendulum, 🔗: Link, 🃏: Token], 💚: SPELL, ❤️: TRAP, ✨: SKILL`)
           break
         case "--random":
-          fetch('https://db.ygoprodeck.com/api/v6/randomcard.php')
+          fetch('https://db.ygoprodeck.com/api/v7/randomcard.php')
           .then(card => card.json())
           .then(card => {
             const cardInfo = utils.getCardInfo(card)
@@ -190,7 +190,7 @@ function onMessageHandler (channel, userState, message, self) {
           if (!query) {
             client.say(channel, `${userName}, please provide a unique card name to search for.`)
           } else {
-            fetch(`https://db.ygoprodeck.com/api/v6/cardinfo.php?fname=${query}`)
+            fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${query}`)
             .then(cards => cards.json())
             .then(cards => {
               if (cards.length > 1) {
@@ -208,7 +208,7 @@ function onMessageHandler (channel, userState, message, self) {
           if (!query) {
             client.say(channel, `${userName}, to view a list of cards, provide a search term. Example: !search --list blue-eyes`)
           } else {
-            fetch(`https://db.ygoprodeck.com/api/v6/cardinfo.php?fname=${query}`)
+            fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${query}`)
             .then(cards => cards.json())
             .then(cards => {
               if (cards.length > 100) {
@@ -232,7 +232,7 @@ function onMessageHandler (channel, userState, message, self) {
               randomUserName = channel.slice(1)
             }
 
-            return fetch('https://db.ygoprodeck.com/api/v6/randomcard.php')
+            return fetch('https://db.ygoprodeck.com/api/v7/randomcard.php')
             .then(card => card.json())
             .then(card => {
               if (card.name.includes("Exodia") || card.name.includes("Forbidden One")) {
@@ -309,7 +309,7 @@ function onMessageHandler (channel, userState, message, self) {
           break
         default:
           const searchQuery = messageArray.slice(1).join(' ').toLowerCase()
-          fetch(`https://db.ygoprodeck.com/api/v6/cardinfo.php?fname=${searchQuery}`)
+          fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${searchQuery}`)
           .then(cards => cards.json())
           .then(cards => {
             if (cards.length === 1) {
