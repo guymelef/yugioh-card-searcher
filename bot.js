@@ -2,7 +2,7 @@ require('dotenv').config()
 
 const tmi = require('tmi.js')
 const fetch = require('node-fetch')
-const wakeUpDyno = require('./wakeUpDyno')
+const wakeUpDyno = require('./utils/wakeUpDyno')
 
 const mongoose = require('mongoose')
 const express = require('express')
