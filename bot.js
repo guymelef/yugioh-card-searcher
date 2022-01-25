@@ -83,6 +83,7 @@ function onConnectedHandler (server, port) {
 function onMessageHandler (channel, userState, message, self) {
   if (self) return
   
+  message = message.toLowerCase()
   const userChannel = `#${userState.username}`
   const userName = `@${userState["display-name"]}`
 
