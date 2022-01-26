@@ -8,6 +8,7 @@ const mongoose = require('mongoose')
 const express = require('express')
 const app = express()
 const port = process.env.PORT
+const SEARCH_API = process.env.SEARCH_API
 
 const Channel = require('./models/channel')
 const Skill = require('./models/skill')
@@ -24,7 +25,6 @@ app.get("/", (request, response) => {
 })
 
 app.listen(port, () => wakeUpDyno(process.env.HOME_URL))
-// EXPRESS SERVER END
 
 
 // CONNECT TO MONGOOSE & START TMI CLIENT
@@ -44,17 +44,15 @@ mongoose
   Channel
   .find({})
   .then(channels => {
-    utils.options.channels = channels.map(channel => channel.name)
-    console.log("ALL CHANNELS:", utils.options.channels)
+    utils.tmiOptions.channels = channels.map(channel => channel.name)
+    console.log('ALL CHANNELS:', channels.map(channel => channel.name).sort())
     
-    client = new tmi.client(utils.options)
-    client.setMaxListeners(100)
-
     channels.forEach(channel => {
       if (!channel.moderated) unmoderatedChannels.push(channel.name)
     })
-    console.log("OPEN CHANNELS:", unmoderatedChannels)
 
+    client = new tmi.client(utils.tmiOptions)
+    client.setMaxListeners(100)
     client.connect()
 
     // TMI EVENT LISTENERS
@@ -65,25 +63,24 @@ mongoose
     Counter.findOne({ name: "throw_counter"})
     .then(response => { 
       throwCount = response.count
-      console.log("😎 Received cards thrown count!")
+      console.log("➕ Received cards thrown count!")
     })
     .catch(err => console.log("❌ ERROR FETCHING COUNTER:", err.message))
   })
-  .catch(err => console.log("❌ ERROR: ", err.message))
+  .catch(err => console.log("❌ ERROR FETCHING CHANNELS: ", err.message))
 })
 .catch(err => console.log("🛑 MongoDB Connection Error:", err.message))
-// CONNECT TO MONGOOSE & START TMI CLIENT END
 
 
 // HELPER FUNCTIONS BELOW
-function onConnectedHandler (server, port) {
+function onConnectedHandler(server, port) {
   console.log(`🆗 Connected to ${server}:${port}`)
 }
 
-function onMessageHandler (channel, userState, message, self) {
+function onMessageHandler(channel, userState, message, self) {
   if (self) return
   
-  message = message.toLowerCase()
+  message = String(message).toLowerCase()
   const userChannel = `#${userState.username}`
   const userName = `@${userState["display-name"]}`
 
@@ -92,7 +89,7 @@ function onMessageHandler (channel, userState, message, self) {
       const messageArray = message.split(' ')
       
       if (!["--strict", "--open"].includes(messageArray[1])) {
-        return client.say(channel, `${userName}, please provide an argument to the command. Read the panels for more info.`)
+        return client.say(channel, `${userName}, please provide a valid argument to the command. Read the panels for more info.`)
       }
       
       Channel
@@ -109,10 +106,10 @@ function onMessageHandler (channel, userState, message, self) {
           .then(response => {
             if (!response.moderated) {
               unmoderatedChannels.push(response.name)
-            }              
-            console.log("OPEN CHANNELS:", unmoderatedChannels)
+            }
+
             client.join(userChannel)
-            client.say(channel, `${userName}, awesome! CardSearcher has now joined your channel. Don't forget to promote the bot to VIP or moderator.`)
+            client.say(channel, `${userName}, awesome! CardSearcher has now joined your channel. Don't forget to promote the bot to VIP/mod.`)
           })
           .catch(err => client.say(channel, `${userName}, oops! There's an error. Please try again.`))
         } else {
@@ -129,7 +126,6 @@ function onMessageHandler (channel, userState, message, self) {
               unmoderatedChannels = unmoderatedChannels.filter(item => item !== response.name)
             }
 
-            console.log("OPEN CHANNELS:", unmoderatedChannels)
             return client.say(channel, `${userName}, your bot setting has been updated to "${messageArray[1].substring(2).toUpperCase()}".`)
           })
           .catch(err => client.say(channel, `${userName}, oops! There's an error. Please try again.`))
@@ -151,8 +147,8 @@ function onMessageHandler (channel, userState, message, self) {
         })
         .catch (err => client.say(channel, `${userName}, oops! There's an error. Please try again.`))
         
-        unmoderatedChannels = unmoderatedChannels.filter(item => item !== userChannel)
-        return console.log("OPEN CHANNELS:", unmoderatedChannels)
+        unmoderatedChannels = unmoderatedChannels.filter(channel => channel !== userChannel)
+        return console.log(`The bot has left ${userChannel}`, new Date())
       })
       .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
     } else if (message.startsWith("!channels")) {
@@ -162,7 +158,7 @@ function onMessageHandler (channel, userState, message, self) {
       .then(channels => {
         channelList = channels.map(channel => `● ${channel.name.slice(1)}`)
         channelList = channelList.filter(channel => channel !== '● cardsearcher')
-        return client.say(channel, `imGlitch ${channels.length - 1} channels are currently using the bot: ${channelList.join(', ')}`)
+        return client.say(channel, `imGlitch channel(s) using CardSearcher [${channels.length - 1}]: ${channelList.join(', ')}`)
       })
     }
   } else if (unmoderatedChannels.includes(channel) || channel === userChannel || userState.mod) {
@@ -179,7 +175,7 @@ function onMessageHandler (channel, userState, message, self) {
           client.say(channel, `MONSTER: [🟡: Normal, 🟠: Effect, 🟤: Tuner, 🔵: Ritual, 🟣: Fusion, ⚪: Synchro, ⚫: XYZ, 🌗: Pendulum, 🔗: Link, 🃏: Token], 🟢: SPELL, 🔴: TRAP, ✨: SKILL`)
           break
         case "--random":
-          fetch('https://db.ygoprodeck.com/api/v7/randomcard.php')
+          fetch(`${SEARCH_API}/randomcard.php`)
           .then(card => card.json())
           .then(card => {
             const cardInfo = utils.getCardInfo(card)
@@ -191,7 +187,7 @@ function onMessageHandler (channel, userState, message, self) {
           if (!query) {
             client.say(channel, `${userName}, please provide a unique card name to search for.`)
           } else {
-            fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${query}`)
+            fetch(`${SEARCH_API}/cardinfo.php?fname=${query}`)
             .then(cards => cards.json())
             .then(cards => cards.data)
             .then(cards => {
@@ -210,7 +206,7 @@ function onMessageHandler (channel, userState, message, self) {
           if (!query) {
             client.say(channel, `${userName}, to view a list of cards, provide a search term. Example: !search --list blue-eyes`)
           } else {
-            fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${query}`)
+            fetch(`${SEARCH_API}/cardinfo.php?fname=${query}`)
             .then(cards => cards.json())
             .then(cards => cards.data)            
             .then(cards => {
@@ -220,7 +216,7 @@ function onMessageHandler (channel, userState, message, self) {
                 return client.say(channel, utils.getCardArray(cards))
               }
             })
-            .catch (err => client.action(channel, "couldn't find any card(s) with that name, not even in the Shadow Realm. 👻"))
+            .catch (err => client.say(channel, utils.returnErrMsg(userName)))
           }
           break
         case "--throw":
@@ -231,16 +227,16 @@ function onMessageHandler (channel, userState, message, self) {
             const randomUserIndex = Math.floor(Math.random() * channelViewers.length)
             let randomUserName = channelViewers[randomUserIndex]
 
-            if (randomUserName === userName.slice(1).toLowerCase()) {
-              randomUserName = channel.slice(1)
-            }
+            if (randomUserName === userName.slice(1).toLowerCase()) randomUserName = channel.slice(1)
+            
+            if (!randomUserName) return client.say(channel, `${userName}, no users in chat right now.`)
 
-            return fetch('https://db.ygoprodeck.com/api/v7/randomcard.php')
+            return fetch('${SEARCH_API}/randomcard.php')
             .then(card => card.json())
             .then(card => {
               if (card.name.includes("Exodia") || card.name.includes("Forbidden One")) {
                 throwCount += 5
-                client.action(channel, `: ... CurseLit PowerUpL DarkMode PowerUpR CurseLit ... SAY GOODBYE TO EXODIAAA!!! ${userName.slice(1)} throws ${randomUserName}'s Exodia cards off the boat! 【Cards Thrown: ${throwCount.toLocaleString()}】`)
+                client.say(channel, `... CurseLit PowerUpL DarkMode PowerUpR CurseLit ... SAY GOODBYE TO EXODIAAA!!! ${userName.slice(1)} throws ${randomUserName}'s Exodia cards off the boat! 【Cards Thrown: ${throwCount.toLocaleString()}】`)
                 return Counter.findOneAndUpdate({
                   name: "throw_counter",
                   count: throwCount
@@ -249,7 +245,7 @@ function onMessageHandler (channel, userState, message, self) {
                 .catch(err => console.log("😓 ERROR UPDATING COUNTER", err.message))
               } else {
                 throwCount += 1
-                client.action(channel, `: ${userName.slice(1)} throws ${randomUserName}'s "${card.name}" card off the boat! DarkMode 【Cards Thrown: ${throwCount.toLocaleString()}】`)
+                client.say(channel, `${userName.slice(1)} throws ${randomUserName}'s "${card.name}" card off the boat! DarkMode 【Cards Thrown: ${throwCount.toLocaleString()}】`)
                 return Counter.findOneAndUpdate({
                   name: "throw_counter",
                   count: throwCount
@@ -277,10 +273,10 @@ function onMessageHandler (channel, userState, message, self) {
                 if (found) return client.say(channel, `✨ 『${found.name}』 : ${found.desc} 【${found.characters.length === 1 ? `${found.characters[0].name} (${found.characters[0].how})`: `${found.characters.map(char => `• ${char.name} (${char.how})`).sort().join(', ')}`}】`)
                 return client.say(channel, `📜 [${skills.length} Skills] : ${skills.map(skill => `✨${skill.name}`).join(', ')}`)
               } else {
-                return client.action(channel, `couldn't find any "${query}" skill, not even in the Shadow Realm. 👻`)
+                return client.say(channel, utils.returnErrMsg(userName))
               }
             })
-            .catch(err => client.action(channel, `couldn't find any "${query}" skill, not even in the Shadow Realm. 👻`))
+            .catch(err => client.say(channel, utils.returnErrMsg(userName)))
           }
           break
         case "--skills":
@@ -307,12 +303,12 @@ function onMessageHandler (channel, userState, message, self) {
               .then(list => client.say(channel, `⚔️ 『${result}』 [${list.length} Skills] : ${list.map(skill => `• ${skill.name} (${skill.characters.find(char => char.name === result).how})`).sort().join(', ')}`))
               .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
             })
-            .catch(err => client.action(channel, `couldn't find any "${query}" character, not even in the Shadow Realm. 👻`))
+            .catch(err => client.say(channel, utils.returnErrMsg(userName)))
           }
           break
         default:
           const searchQuery = messageArray.slice(1).join(' ').toLowerCase()
-          fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${searchQuery}`)
+          fetch(`${SEARCH_API}/cardinfo.php?fname=${searchQuery}`)
           .then(cards => cards.json())
           .then(cards => cards.data)
           .then(cards => {
@@ -335,7 +331,7 @@ function onMessageHandler (channel, userState, message, self) {
             const args = { client, channel, userName, searchQuery }
             return utils.scrapeYugipedia(args)
           })
-          break 
+          break
       }
     }
 

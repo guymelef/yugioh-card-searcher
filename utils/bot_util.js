@@ -2,8 +2,10 @@ require('dotenv').config()
 const fetch = require('node-fetch')
 
 
+const BITLY_API = process.env.BITLY_API
+const SCRAPE_API = process.env.SCRAPE_API
 
-const options = {
+const tmiOptions = {
   options: { debug: process.env.DEBUG ? true : false },
   connection: {
     secure: true,
@@ -14,7 +16,6 @@ const options = {
     password: process.env.OAUTH_TOKEN
   }
 }
-
 
 const cardSymbols = {
   Normal: '🟡',
@@ -32,9 +33,7 @@ const cardSymbols = {
   Skill: '✨'
 }
 
-
 const getSymbol = (cardType) => cardSymbols[cardType] ? cardSymbols[cardType] : '🟠'
-
 
 const getCardInfo = (card) => {
   let cardInfo
@@ -50,7 +49,6 @@ const getCardInfo = (card) => {
   return cardInfo
 }
 
-
 const getCardArray = (cards) => {
   const cardsArray = cards.map(card => {                
     const symbol = getSymbol(card.type.split(' ')[0])
@@ -58,7 +56,6 @@ const getCardArray = (cards) => {
   })
   return `📜 [${cards.length} ${cards.length === 1 ? 'Card' : 'Cards'}] : ${cardsArray.join(', ')}`
 }
-
 
 const shortenUrlAndReply = (client, channel, userName, cardName, url) => {
   const raw = JSON.stringify({
@@ -77,14 +74,13 @@ const shortenUrlAndReply = (client, channel, userName, cardName, url) => {
     redirect: "follow"
   }
 
-  return fetch("https://api-ssl.bitly.com/v4/shorten", requestOptions)
+  return fetch(BITLY_API, requestOptions)
     .then(response => response.json())
     .then(result => {
       return client.say(channel, `📸 "${cardName}" - [ ${result.link} ]`)
     })
     .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
 }
-
 
 const formatArrows = (array) => {
   const markers = {
@@ -109,7 +105,6 @@ const formatArrows = (array) => {
   return arrowArray
 }
 
-
 const getProperty = (cardRaw, key) => {
   const regex = new RegExp(`\\| ${key} += .+\n`, 'g')
 
@@ -128,7 +123,6 @@ const getProperty = (cardRaw, key) => {
   }
 }
 
-
 const getLore = (cardRaw, monsterTypes) => {
   const regular_lore = getProperty(cardRaw, "lore")
 
@@ -145,7 +139,6 @@ const getLore = (cardRaw, monsterTypes) => {
   }
 }
 
-
 const getAtkDef = (cardRaw, monsterTypes) => {
   const atk = getProperty(cardRaw, "atk")
   const def = getProperty(cardRaw, "def")
@@ -160,8 +153,8 @@ const getAtkDef = (cardRaw, monsterTypes) => {
   }
 }
 
-
 const scrapeYugipedia = (args) => {
+  console.log(`Searching for "${args.searchQuery}" card in Yugipedia...`)
   const requestOptions = {
     method: 'GET',
     headers: {
@@ -170,11 +163,11 @@ const scrapeYugipedia = (args) => {
     redirect: 'follow'
   }
 
-  return fetch(`https://yugipedia.com/api.php?action=query&format=json&redirects=true&list=search&srlimit=1&srwhat=nearmatch&srsearch=${encodeURIComponent(args.searchQuery)}`, requestOptions)
+  return fetch(`${SCRAPE_API}?action=query&format=json&redirects=true&list=search&srlimit=1&srwhat=nearmatch&srsearch=${encodeURIComponent(args.searchQuery)}`, requestOptions)
   .then(response => response.json())
   .then(result => result.query.search[0].title)
   .then(pageTitle => {
-    fetch(`https://yugipedia.com/api.php?action=query&format=json&redirects=true&prop=revisions&rvprop=content&formatversion=2&titles=${encodeURIComponent(pageTitle)}`, requestOptions)
+    fetch(`${SCRAPE_API}?action=query&format=json&redirects=true&prop=revisions&rvprop=content&formatversion=2&titles=${encodeURIComponent(pageTitle)}`, requestOptions)
     .then(response => response.json())
     .then(response => {
       const cardRaw = response.query.pages[0].revisions[0].content
@@ -182,7 +175,7 @@ const scrapeYugipedia = (args) => {
 
       const isACard = cardRaw.match(/{{CardTable2/g) || cardRaw.match(/{{Anime card/g)
       if (!isACard) { 
-        return args.client.action(args.channel, `couldn't find any "${args.searchQuery}" card(s), not even in the Shadow Realm. 👻`)
+        return args.client.say(args.channel, returnErrMsg(args.userName))
       }
 
       if (args.image) {
@@ -215,16 +208,17 @@ const scrapeYugipedia = (args) => {
     })
     .catch(error => args.client.say(args.channel, `${args.userName}, there was an error. Try again.`))
   })
-  .catch(error => args.client.action(args.channel, `couldn't find any "${args.searchQuery}" card(s), not even in the Shadow Realm. 👻`))
+  .catch(error => args.client.say(args.channel, returnErrMsg(args.userName)))
 }
 
-
+const returnErrMsg = (userName) => `${userName}, the Shadow Realm search team came back empty-handed. 💀`
 
 module.exports = {
-  options,
+  tmiOptions,
   getSymbol,
   getCardInfo,
   getCardArray,
   shortenUrlAndReply,
-  scrapeYugipedia
+  scrapeYugipedia,
+  returnErrMsg
 }
