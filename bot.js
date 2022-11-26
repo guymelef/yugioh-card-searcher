@@ -32,12 +32,7 @@ let client
 let throwCount
 console.log("▶ Connecting to MongoDB...")
 mongoose
-.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  useFindAndModify: false,
-  useCreateIndex: true
-})
+.connect(process.env.MONGODB_URI)
 .then(data => { 
   console.log("Ⓜ Connected to MongoDB!")
   
