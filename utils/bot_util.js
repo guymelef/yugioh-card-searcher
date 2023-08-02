@@ -4,7 +4,7 @@ const fetch = require('node-fetch')
 
 
 const tmiOptions = {
-  options: { debug: process.env.DEBUG ? true : false },
+  options: { debug: process.env.DEBUG == "true" ? true : false },
   connection: {
     secure: true,
     reconnect: true
