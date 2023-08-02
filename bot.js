@@ -185,7 +185,7 @@ function onMessageHandler(channel, userState, message, self) {
           if (cardToShow.length > 1) {
             const responseMessage = botUtils.getCardArray(cardToShow)
             if (responseMessage.length > 500)
-              return client.say(channel,`${userName}, search yielded ${cardToShow.length.toLocaleString()} total cards. Refine your search and try again.`)
+              return client.say(channel,`${userName}, search yielded ${cardToShow.length.toLocaleString()} total possible cards.`)
             else
               return client.say(channel, botUtils.getCardArray(cardToShow))
           }
@@ -202,7 +202,7 @@ function onMessageHandler(channel, userState, message, self) {
           }
 
           if (cards.length > 100)
-            return client.say(channel,`${userName}, search yielded ${cards.length.toLocaleString()} total cards. Refine your search and try again.`)
+            return client.say(channel,`${userName}, search yielded ${cards.length.toLocaleString()} total possible cards.`)
           else
             return client.say(channel, botUtils.getCardArray(cards))
         default:
@@ -220,7 +220,7 @@ function onMessageHandler(channel, userState, message, self) {
           if (closestCard.length > 1) {
             const responseMessage = botUtils.getCardArray(closestCard)
             if (responseMessage.length > 500)
-              return client.say(channel,`${userName}, search yielded ${closestCard.length.toLocaleString()} total cards. Refine your search and try again.`)
+              return client.say(channel,`${userName}, search yielded ${closestCard.length.toLocaleString()} total possible cards.`)
             else
               return client.say(channel, botUtils.getCardArray(closestCard))
           }
