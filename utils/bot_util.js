@@ -158,7 +158,7 @@ const returnErrMsg = () => {
   ]
 
   const randomIndex = Math.floor(Math.random() * errorMessages.length)
-  return `💀 ${errorMessages[randomIndex]}`
+  return `${errorMessages[randomIndex]} 💀`
 }
 
 
