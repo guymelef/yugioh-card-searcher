@@ -32,7 +32,7 @@ const findClosestCard = (str) => {
   str = normalizeString(str)
   const DISTANCEARRAY = []
 
-  console.log(`🔎 SEARCHING FOR: "${str}"...`)
+  console.log(`🚀 SEARCHING FOR: "${str}"...`)
 
   let exactMatch = []
   let firstMatch = []
@@ -114,7 +114,7 @@ const filterCardsbyKeyword = (keyword) => {
     .split(' ')
   keyword = normalizeString(keyword)
 
-  console.log(`🔎 SEARCHING LIST FOR: "${keyword}"...`)
+  console.log(`🚀 SEARCHING LIST FOR: "${keyword}"...`)
   
   const keywordMatches = []
   const partialMatches = []
