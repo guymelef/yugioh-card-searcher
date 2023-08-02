@@ -88,8 +88,16 @@ function onMessageHandler(channel, userState, message, self) {
               unmoderatedChannels.push(response.name)
             }
 
-            client.join(userChannel).then(data => console.log(data.status))
-            client.say(channel, `${userName}, awesome! CardSearcher has joined your channel. Don't forget to promote the bot to VIP/mod.`)
+            client
+            .join(userChannel)
+            .then(_ => {
+              console.log(`The bot joined ${userChannel}`, new Date().toLocaleString('en-ph'))
+              return client.say(channel, `${userName}, awesome! CardSearcher has joined your channel. Don't forget to promote the bot to VIP/mod.`)
+            })
+            .catch(err => {
+              console.log("ERROR: Channel join error", err)
+              return client.say(channel, `${userName}, oops! There's an error. Please try again.`)
+            })
           })
           .catch(err => {
             console.log("ERROR: Channel save error", err)
@@ -147,7 +155,7 @@ function onMessageHandler(channel, userState, message, self) {
       .find({})
       .sort({ name: 1 })
       .then(channels => {
-        channelList = channels.map(channel => `● ${channel.name.slice(1)}`)
+        const channelList = channels.map(channel => `● ${channel.name.slice(1)}`)
         channelList = channelList.filter(channel => channel !== '● cardsearcher')
         return client.say(channel, `imGlitch channel(s) using CardSearcher [${channels.length - 1}]: ${channelList.join(', ')}`)
       })
@@ -175,6 +183,8 @@ function onMessageHandler(channel, userState, message, self) {
         case "--image":
           if (!query) return client.say(channel, `❓Usage: !search --image <full/partial card name>`)
           
+          if (!cardUtils.normalizeString(query)) return
+
           const cardToShow = cardUtils.findClosestCard(query)
           
           if (!cardToShow.length) {
@@ -194,8 +204,10 @@ function onMessageHandler(channel, userState, message, self) {
         case "--list":
           if (!query) return client.say(channel, `❓Usage (max 100 cards): !search --list <keyword> `)
           
+          if (!cardUtils.normalizeString(query)) return
+
           const cards = cardUtils.filterCardsbyKeyword(query)
-          
+
           if (!cards.length) {
             console.log("❎ Search Failed: could not find:", query)
             return client.say(channel,`${botUtils.returnErrMsg()}`)
@@ -211,7 +223,6 @@ function onMessageHandler(channel, userState, message, self) {
           if (!cardUtils.normalizeString(searchQuery)) return
 
           const closestCard = cardUtils.findClosestCard(searchQuery)
-
           if (!closestCard.length) {
             console.log("❎ Search Failed: could not find:", searchQuery)
             return client.say(channel,`${botUtils.returnErrMsg()}`)
