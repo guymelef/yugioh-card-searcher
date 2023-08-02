@@ -1,20 +1,13 @@
 require('dotenv').config()
-
-const tmi = require('tmi.js')
-const fetch = require('node-fetch')
-const wakeUpDyno = require('./utils/wakeUpDyno')
-
 const mongoose = require('mongoose')
 const express = require('express')
 const app = express()
-const port = process.env.PORT
-const SEARCH_API = process.env.SEARCH_API
+const tmi = require('tmi.js')
 
 const Channel = require('./models/channel')
-const Skill = require('./models/skill')
-const Character = require('./models/character')
-const Counter = require('./models/counter')
-const utils = require('./utils/bot_util')
+const botUtils = require('./utils/bot_util')
+const cardUtils = require('./utils/card_util')
+const wakeUpDyno = require('./utils/wakeUpDyno')
 
 let unmoderatedChannels = []
 
@@ -24,47 +17,39 @@ app.get("/", (request, response) => {
   response.send("https://www.twitch.tv/cardsearcher")
 })
 
-app.listen(port, () => wakeUpDyno(process.env.HOME_URL))
+app.listen(process.env.PORT, () => wakeUpDyno(process.env.HOME_URL))
 
 
 // CONNECT TO MONGOOSE & START TMI CLIENT
 let client
-let throwCount
-console.log("▶ Connecting to MongoDB...")
+console.log("▶️  Connecting to MongoDB...")
 mongoose
 .connect(process.env.MONGODB_URI)
-.then(data => { 
-  console.log("Ⓜ Connected to MongoDB!")
-  
+.then(_ => { 
+  console.log("Ⓜ️  Connected to MongoDB!")
+
   Channel
   .find({})
   .then(channels => {
-    utils.tmiOptions.channels = channels.map(channel => channel.name)
+    botUtils.tmiOptions.channels = channels.map(channel => channel.name)
     console.log('ALL CHANNELS:', channels.map(channel => channel.name).sort())
     
-    channels.forEach(channel => {
-      if (!channel.moderated) unmoderatedChannels.push(channel.name)
-    })
+    channels.forEach(channel => !channel.moderated ? unmoderatedChannels.push(channel.name) : '')
 
-    client = new tmi.client(utils.tmiOptions)
+    client = new tmi.client(botUtils.tmiOptions)
     client.setMaxListeners(100)
     client.connect()
 
     // TMI EVENT LISTENERS
     client.on('message', onMessageHandler)
     client.on('connected', onConnectedHandler)
-
-    // get current throw count
-    Counter.findOne({ name: "throw_counter"})
-    .then(response => { 
-      throwCount = response.count
-      console.log("➕ Received cards thrown count!")
-    })
-    .catch(err => console.log("❌ ERROR FETCHING COUNTER:", err.message))
   })
-  .catch(err => console.log("❌ ERROR FETCHING CHANNELS: ", err.message))
+  .catch(err => console.log("❌ ERROR FETCHING CHANNELS: ", err))
 })
-.catch(err => console.log("🛑 MongoDB Connection Error:", err.message))
+.catch(err => console.log("🛑 MONGODB CONNECTION ERROR:", err))
+
+
+
 
 
 // HELPER FUNCTIONS BELOW
@@ -75,16 +60,16 @@ function onConnectedHandler(server, port) {
 function onMessageHandler(channel, userState, message, self) {
   if (self) return
   
-  message = String(message).toLowerCase()
+  message = message.toLowerCase()
   const userChannel = `#${userState.username}`
   const userName = `@${userState["display-name"]}`
 
   if (channel === "#cardsearcher") {
-    if (message.startsWith("!usebot")) {
+    if (message.startsWith("!join")) {
       const messageArray = message.split(' ')
       
-      if (!["--strict", "--open"].includes(messageArray[1])) {
-        return client.say(channel, `${userName}, please provide a valid argument to the command. Read the panels for more info.`)
+      if (!["close", "open"].includes(messageArray[1])) {
+        return client.say(channel, `${userName}, ❓Usage: !join <open|close>`)
       }
       
       Channel
@@ -95,7 +80,7 @@ function onMessageHandler(channel, userState, message, self) {
         if (!response) {
           new Channel({
             name: userChannel,
-            moderated: messageArray[1] === "--strict" ? true : false
+            moderated: messageArray[1] === "close" ? true : false
           })
           .save()
           .then(response => {
@@ -103,49 +88,60 @@ function onMessageHandler(channel, userState, message, self) {
               unmoderatedChannels.push(response.name)
             }
 
-            client.join(userChannel)
-            client.say(channel, `${userName}, awesome! CardSearcher has now joined your channel. Don't forget to promote the bot to VIP/mod.`)
+            client.join(userChannel).then(data => console.log(data.status))
+            client.say(channel, `${userName}, awesome! CardSearcher has joined your channel. Don't forget to promote the bot to VIP/mod.`)
           })
-          .catch(err => client.say(channel, `${userName}, oops! There's an error. Please try again.`))
+          .catch(err => {
+            console.log("ERROR: Channel save error", err)
+            client.say(channel, `${userName}, oops! There's an error. Please try again.`)
+          })
         } else {
           Channel
           .findOneAndUpdate(
             { name: userChannel },
-            { moderated: messageArray[1] === "--strict" ? true : false, updated: Date.now() },
+            { moderated: messageArray[1] === "close" ? true : false, updated: Date.now() },
             { new: true }
           )
           .then(response => {
-            if (!response.moderated) {
+            if (!response.moderated)
               !unmoderatedChannels.includes(response.name) ? unmoderatedChannels.push(response.name) : null
-            } else {
+            else 
               unmoderatedChannels = unmoderatedChannels.filter(item => item !== response.name)
-            }
 
-            return client.say(channel, `${userName}, your bot setting has been updated to "${messageArray[1].substring(2).toUpperCase()}".`)
+            return client.say(channel, `${userName}, your bot setting is now set to "${messageArray[1].toUpperCase()}".`)
           })
-          .catch(err => client.say(channel, `${userName}, oops! There's an error. Please try again.`))
+          .catch(err => {
+            console.log("ERROR: Channel update error", err)
+            client.say(channel, `${userName}, oops! There's an error. Please try again.`)
+          })
         }
       })
-    } else if (message.startsWith("!killbot")) {
+    } else if (message.startsWith("!part")) {
       Channel
       .findOneAndDelete({
         name: userChannel
       })
       .then(response => {
         if (!response) {
-          return client.say(channel, `${userName}, the bot hasn't joined your channel yet. Use the !usebot command to enable it.`)
+          return client.say(channel, `${userName}, CardSearcher hasn't joined your channel yet. ❓Usage: !join <open|close>`)
         }
 
-        client.part(userChannel)
-        .then(data => {
+        client
+        .part(userChannel)
+        .then(_ => {
+          unmoderatedChannels = unmoderatedChannels.filter(channel => channel !== userChannel)
+          console.log(`The bot left ${userChannel}`, new Date().toLocaleString('en-ph'))
           return client.say(channel, `${userName}, the bot has successfully left your channel.`)
         })
-        .catch (err => client.say(channel, `${userName}, oops! There's an error. Please try again.`))
-        
-        unmoderatedChannels = unmoderatedChannels.filter(channel => channel !== userChannel)
-        return console.log(`The bot has left ${userChannel}`, new Date())
+        .catch(err => {
+          console.log("ERROR: Channel part error", err)
+          return client.say(channel, `${userName}, oops! There's an error. Please try again.`)
+        })
       })
-      .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
+      .catch(err => {
+        console.log("ERROR: Channel delete error", err)
+        client.say(channel, `${userName}, there was an error. Try again.`)
+      })
     } else if (message.startsWith("!channels")) {
       Channel
       .find({})
@@ -155,181 +151,82 @@ function onMessageHandler(channel, userState, message, self) {
         channelList = channelList.filter(channel => channel !== '● cardsearcher')
         return client.say(channel, `imGlitch channel(s) using CardSearcher [${channels.length - 1}]: ${channelList.join(', ')}`)
       })
+      .catch(err => {
+        console.log("ERROR: Channels search error", err)
+        return client.say(channel, `${userName}, oops! There's an error. Please try again.`)
+      })
     }
   } else if (unmoderatedChannels.includes(channel) || channel === userChannel || userState.mod) {
     if (message.startsWith("!search")) {
       const messageArray = message.split(' ')
       const searchArg = messageArray[1]
-      const query = messageArray.slice(2).join(' ').toLowerCase()
+      const query = messageArray.slice(2).join(' ')
 
       switch (searchArg) {
         case undefined:
-          client.say(channel, "❓ To search for cards, follow this syntax: !search <full/partial card name>")
-          break
+          return client.say(channel, "❓Usage: !search <full/partial card name>")
         case "--guide":
-          client.say(channel, `MONSTER: [🟡: Normal, 🟠: Effect, 🟤: Tuner, 🔵: Ritual, 🟣: Fusion, ⚪: Synchro, ⚫: XYZ, 🌗: Pendulum, 🔗: Link, 🃏: Token], 🟢: SPELL, 🔴: TRAP, ✨: SKILL`)
-          break
+          return client.say(channel, `MONSTER: [🟡: Normal, 🟠: Effect, 🟤: Tuner, 🔵: Ritual, 🟣: Fusion, ⚪: Synchro, ⚫: XYZ, 🌗: Pendulum, 🔗: Link, 🃏: Token], 🟢: SPELL, 🔴: TRAP, ✨: SKILL`)
         case "--random":
-          fetch(`${SEARCH_API}/randomcard.php`)
-          .then(card => card.json())
-          .then(card => {
-            const cardInfo = utils.getCardInfo(card)
-            return client.say(channel, cardInfo)
-          })
-          .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
-          break
+          const card = cardUtils.getRandomCard()
+          const cardInfo = botUtils.getCardInfo(card)
+
+          return client.say(channel, cardInfo)
         case "--image":
-          if (!query) {
-            client.say(channel, `${userName}, please provide a unique card name to search for.`)
-          } else {
-            fetch(`${SEARCH_API}/cardinfo.php?fname=${query}`)
-            .then(cards => cards.json())
-            .then(cards => cards.data)
-            .then(cards => {
-              if (cards.length > 1) {
-                const found = cards.find(card => card.name.toLowerCase() === query)
-                return found ? utils.shortenUrlAndReply(client, channel, userName, found.name, found.card_images[0].image_url)
-                : client.say(channel, `${userName}, your search returned multiple cards. Please provide a unique card name.`)
-              } else {
-                return utils.shortenUrlAndReply(client, channel, userName, cards[0].name, cards[0].card_images[0].image_url)
-              }
-            })
-            .catch (err => utils.scrapeYugipedia({ client, channel, userName, searchQuery: query, image: true }))
+          if (!query) return client.say(channel, `❓Usage: !search --image <full/partial card name>`)
+          
+          const cardToShow = cardUtils.findClosestCard(query)
+          
+          if (!cardToShow.length) {
+            console.log("❎ Search Failed: could not find:", query)
+            return client.say(channel,`${botUtils.returnErrMsg()}`)
           }
-          break
+          
+          if (cardToShow.length > 1) {
+            const responseMessage = botUtils.getCardArray(cardToShow)
+            if (responseMessage.length > 500)
+              return client.say(channel,`${userName}, search yielded ${cardToShow.length.toLocaleString()} total cards. Refine your search and try again.`)
+            else
+              return client.say(channel, botUtils.getCardArray(cardToShow))
+          }
+          
+          return botUtils.shortenUrlAndReply(client, channel, userName, cardToShow[0])
         case "--list":
-          if (!query) {
-            client.say(channel, `${userName}, to view a list of cards, provide a search term. Example: !search --list blue-eyes`)
-          } else {
-            fetch(`${SEARCH_API}/cardinfo.php?fname=${query}`)
-            .then(cards => cards.json())
-            .then(cards => cards.data)            
-            .then(cards => {
-              if (cards.length > 100) {
-                return client.say(channel,`${userName}, your search yielded a total of ${cards.length.toLocaleString()} cards! Please refine your search and try again.`)
-              } else {
-                return client.say(channel, utils.getCardArray(cards))
-              }
-            })
-            .catch (err => client.say(channel, utils.returnErrMsg(userName)))
+          if (!query) return client.say(channel, `❓Usage (max 100 cards): !search --list <keyword> `)
+          
+          const cards = cardUtils.filterCardsbyKeyword(query)
+          
+          if (!cards.length) {
+            console.log("❎ Search Failed: could not find:", query)
+            return client.say(channel,`${botUtils.returnErrMsg()}`)
           }
-          break
-        case "--throw":
-          fetch(`https://tmi.twitch.tv/group/user/${channel.slice(1)}/chatters`)
-          .then(response => response.json())
-          .then(response => {
-            const channelViewers = response.chatters.viewers
-            const randomUserIndex = Math.floor(Math.random() * channelViewers.length)
-            let randomUserName = channelViewers[randomUserIndex]
 
-            if (randomUserName === userName.slice(1).toLowerCase()) randomUserName = channel.slice(1)
-            
-            if (!randomUserName) return client.say(channel, `${userName}, no users in chat right now.`)
-
-            return fetch('${SEARCH_API}/randomcard.php')
-            .then(card => card.json())
-            .then(card => {
-              if (card.name.includes("Exodia") || card.name.includes("Forbidden One")) {
-                throwCount += 5
-                client.say(channel, `... CurseLit PowerUpL DarkMode PowerUpR CurseLit ... SAY GOODBYE TO EXODIAAA!!! ${userName.slice(1)} throws ${randomUserName}'s Exodia cards off the boat! 【Cards Thrown: ${throwCount.toLocaleString()}】`)
-                return Counter.findOneAndUpdate({
-                  name: "throw_counter",
-                  count: throwCount
-                })
-                .then(response => console.log("🆙 COUNTER INCREASED!"))
-                .catch(err => console.log("😓 ERROR UPDATING COUNTER", err.message))
-              } else {
-                throwCount += 1
-                client.say(channel, `${userName.slice(1)} throws ${randomUserName}'s "${card.name}" card off the boat! DarkMode 【Cards Thrown: ${throwCount.toLocaleString()}】`)
-                return Counter.findOneAndUpdate({
-                  name: "throw_counter",
-                  count: throwCount
-                })
-                .then(response => console.log("🆙 COUNTER INCREASED!"))
-                .catch(err => console.log("😓 ERROR UPDATING COUNTER", err.message))
-              }
-            })
-            .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
-          })
-          .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
-          break
-        case "--skill":
-          if (!query) {
-            Skill.find({})
-            .then(skills => client.say(channel, `❓ Currently, there are 【${skills.length}】 Duel Links skills. Search for a skill with: !search --skill <full/partial skill name>`))
-            .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
-          } else {
-            Skill.find({ name: { $regex: query, $options: 'i' } })
-            .then(skills => {
-              if (skills.length === 1) {
-                return client.say(channel, `✨ 『${skills[0].name}』 : ${skills[0].desc} 【${skills[0].characters.length === 1 ? `${skills[0].characters[0].name} (${skills[0].characters[0].how})`: `${skills[0].characters.map(char => `• ${char.name} (${char.how})`).sort().join(', ')}`}】`)
-              } else if (skills.length > 1) {
-                const found = skills.find(skill => skill.name.toLowerCase() === query)
-                if (found) return client.say(channel, `✨ 『${found.name}』 : ${found.desc} 【${found.characters.length === 1 ? `${found.characters[0].name} (${found.characters[0].how})`: `${found.characters.map(char => `• ${char.name} (${char.how})`).sort().join(', ')}`}】`)
-                return client.say(channel, `📜 [${skills.length} Skills] : ${skills.map(skill => `✨${skill.name}`).join(', ')}`)
-              } else {
-                return client.say(channel, utils.returnErrMsg(userName))
-              }
-            })
-            .catch(err => client.say(channel, utils.returnErrMsg(userName)))
-          }
-          break
-        case "--skills":
-          if (!query) {
-            Character.find({})
-            .then(characters => client.say(channel, `❓ Currently, there are 【${characters.length}】 Duel Links characters. Search for a specific character's skills with: !search --skills <full/partial character name>`))
-            .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
-          } else {
-            Character.find({ name: { $regex: query.replace(/\(/g, '\\(').replace(/\)/g, '\\)'), $options: 'i' } })
-            .then(characters => {
-              if (characters.length === 0) {
-                throw new Error('No matching character!')
-              } else if (characters.length === 1) {
-                return characters[0].name
-              } else {
-                const character = characters.find(char => char.name.toLowerCase() === query)
-                return !character ? characters[0].name : character.name
-              }
-            })
-            .then(result => {
-              Skill.find({
-                "characters.name": result
-              })
-              .then(list => client.say(channel, `⚔️ 『${result}』 [${list.length} Skills] : ${list.map(skill => `• ${skill.name} (${skill.characters.find(char => char.name === result).how})`).sort().join(', ')}`))
-              .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
-            })
-            .catch(err => client.say(channel, utils.returnErrMsg(userName)))
-          }
-          break
+          if (cards.length > 100)
+            return client.say(channel,`${userName}, search yielded ${cards.length.toLocaleString()} total cards. Refine your search and try again.`)
+          else
+            return client.say(channel, botUtils.getCardArray(cards))
         default:
-          const searchQuery = messageArray.slice(1).join(' ').toLowerCase()
-          fetch(`${SEARCH_API}/cardinfo.php?fname=${searchQuery}`)
-          .then(cards => cards.json())
-          .then(cards => cards.data)
-          .then(cards => {
-            if (cards.length === 1) {
-              return client.say(channel, utils.getCardInfo(cards[0]))
-            } else {
-              const found = cards.find(card => card.name.toLowerCase() === searchQuery)
-              if (found) return client.say(channel, utils.getCardInfo(found))
-              
-              if (cards.length <= 20) {
-                return client.say(channel, utils.getCardArray(cards))
-              } else if (cards.length <= 100) {
-                return client.say(channel,`${userName}, your search yielded ${cards.length} cards. Be more specific or view the list with: !search --list ${searchQuery}`)
-              } else {
-                return client.say(channel,`${userName}, your search yielded a total of ${cards.length.toLocaleString()} cards! Please refine your search and try again.`)
-              }
-            }
-          })
-          .catch (err => {
-            const args = { client, channel, userName, searchQuery }
-            return utils.scrapeYugipedia(args)
-          })
-          break
+          const searchQuery = messageArray.slice(1).join(' ')
+          
+          if (!cardUtils.normalizeString(searchQuery)) return
+
+          const closestCard = cardUtils.findClosestCard(searchQuery)
+
+          if (!closestCard.length) {
+            console.log("❎ Search Failed: could not find:", searchQuery)
+            return client.say(channel,`${botUtils.returnErrMsg()}`)
+          }
+          
+          if (closestCard.length > 1) {
+            const responseMessage = botUtils.getCardArray(closestCard)
+            if (responseMessage.length > 500)
+              return client.say(channel,`${userName}, search yielded ${closestCard.length.toLocaleString()} total cards. Refine your search and try again.`)
+            else
+              return client.say(channel, botUtils.getCardArray(closestCard))
+          }
+
+          return client.say(channel, botUtils.getCardInfo(closestCard[0]))
       }
     }
-
-    return
   }
 }

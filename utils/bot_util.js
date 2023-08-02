@@ -2,8 +2,6 @@ require('dotenv').config()
 const fetch = require('node-fetch')
 
 
-const BITLY_API = process.env.BITLY_API
-const SCRAPE_API = process.env.SCRAPE_API
 
 const tmiOptions = {
   options: { debug: process.env.DEBUG ? true : false },
@@ -57,11 +55,11 @@ const getCardArray = (cards) => {
   return `📜 [${cards.length} ${cards.length === 1 ? 'Card' : 'Cards'}] : ${cardsArray.join(', ')}`
 }
 
-const shortenUrlAndReply = (client, channel, userName, cardName, url) => {
+const shortenUrlAndReply = (client, channel, userName, card) => {
   const raw = JSON.stringify({
     group_guid: `${process.env.BITLY_GUID}`,
     domain: "bit.ly",
-    long_url: `${url}`
+    long_url: `https://images.ygoprodeck.com/images/cards/${card.id}.jpg`
   })
 
   const requestOptions = {
@@ -74,10 +72,10 @@ const shortenUrlAndReply = (client, channel, userName, cardName, url) => {
     redirect: "follow"
   }
 
-  return fetch(BITLY_API, requestOptions)
+  return fetch(process.env.BITLY_API, requestOptions)
     .then(response => response.json())
     .then(result => {
-      return client.say(channel, `📸 "${cardName}" - [ ${result.link} ]`)
+      return client.say(channel, `📸 "${card.name}" - [ ${result.link} ]`)
     })
     .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
 }
@@ -105,113 +103,67 @@ const formatArrows = (array) => {
   return arrowArray
 }
 
-const getProperty = (cardRaw, key) => {
-  const regex = new RegExp(`\\| ${key} += .+\n`, 'g')
+const returnErrMsg = () => {
+  const errorMessages = [
+    "Error 404: Card not found... but we did find a Blue-Eyes White Rabbit hopping around!",
+    "Pikachu used Thunderbolt, and now our search system is electrified and confused!",
+    "Sorry, but Mewtwo teleported the card you're looking for to another dimension.",
+    "Kaiba has sent the card you seek to the Shadow Realm for safekeeping!",
+    "Error 404: Card not found... maybe it's in the Millennium Puzzle?",
+    "Our search algorithm got trapped in a time warp with Doctor Who and can't find your card.",
+    "Looks like the card you want is hiding with Waldo. Keep searching!",
+    "It seems the card you're after is trapped in Jumanji. Good luck getting it out!",
+    "Yoda says, 'Card not found, it is. Patience, young duelist, you must have.'",
+    "Sorry, but the card you're searching for was devoured by a hungry Hungry Hippo.",
+    "Bowser kidnapped the card you're seeking to challenge Mario!",
+    "We searched everywhere but couldn't find the card. Maybe try using the Force?",
+    "Our search system got caught in a real-life Among Us game and can't find the imposter card!",
+    "Waldo has disguised the card you're looking for as himself. Can you spot it?",
+    "Error 404: Card not found... but there's a talking donkey offering to help you find it!",
+    "Looks like the card is on vacation in the Pokémon Resort. It's having a great time!",
+    "Gandalf the Grey can't find the card you're seeking, but he'll keep searching the Mines of Moria.",
+    "Sorry, but the card is at a tea party with the Mad Hatter. Tea time is a priority!",
+    "Our search system got caught in a duel between Mario and Bowser. It's-a me, not your card!",
+    "Marty McFly went back in time and accidentally misplaced the card you're looking for.",
+    "Error 404: Card not found... It must have fallen into a black hole!",
+    "Scooby-Doo and the gang can't find the card, but they found Slimer instead. He's pretty slimy!",
+    "The Minions accidentally hid the card in their banana stash. They're very protective!",
+    "The Road Runner is too fast for our search algorithm. Beep, beep!",
+    "Error 404: Card not found... maybe it's in the Upside Down with Eleven and the Demogorgon?",
+    "The Ghostbusters tried searching, but they found Slimer instead. He's pretty slimy!",
+    "Sorry, but the card you're looking for is playing hide-and-seek with Elmo!",
+    "The card is chilling with Olaf in the Enchanted Forest. Warm hugs for everyone!",
+    "Error 404: Card not found... but there's a Minotaur looking for a maze partner!",
+    "Sonic the Hedgehog can't find the card, but he ran circles around our search system!",
+    "The Teenage Mutant Ninja Turtles can't find the card, but they found pizza instead!",
+    "The card is disguised as a Minion, speaking Minionese! Banana!",
+    "Error 404: Card not found... but there's a magical wardrobe that might lead to Narnia!",
+    "Our search system encountered a wild Pikachu, and it got distracted.",
+    "Sorry, but the card is stuck in a dance battle with Baby Groot. It's an adorable competition!",
+    "Error 404: Card not found... it must be on a quest with Frodo to Mount Doom!",
+    "Homer Simpson found the card, but he's too busy eating donuts to give it back!",
+    "The card joined a band with the Trolls! They're rocking out in Troll Village!",
+    "Error 404: Card not found... maybe it's in Atlantis with SpongeBob and Patrick?",
+    "Sorry, but the card is in a rap battle with Deadpool. It's a battle of words!",
+    "The card got caught in a Spider-Man web-slinging adventure. Spidey is busy being amazing!",
+    "Error 404: Card not found... it's trapped in the Toy Story toy box with Woody and Buzz!",
+    "The card is stuck in a dance-off with the Kung Fu Panda. It's a furry showdown!",
+    "Sorry, but the card is being guarded by the dragon Smaug. Bring some dwarves and a hobbit!",
+    "The card is playing hide-and-seek with Winnie the Pooh in the Hundred Acre Wood!",
+    "Error 404: Card not found... but there's a wild Wookiee ready to help you search!",
+    "The Minions accidentally launched the card into outer space. Houston, we have a problem!",
+    "The card went on a cruise with SpongeBob and Patrick. It's soaking up the sun in Bikini Bottom!",
+    "Error 404: Card not found... it's trapped in the land of Ooo with Finn and Jake!",
+    "Sorry, but the card is at a party with the Trolls. They know how to celebrate!",
+  ]
 
-  if (["lore", "pendulum_effect"].includes(key)) {
-    let cardLore = cardRaw.match(regex)
-
-    if (cardLore) {
-      const index = cardLore[0].indexOf('=')
-      return cardLore[0].slice(index + 2).replace(/<br \/>/g, ' ').replace(/(\[\[\w+( *\w+)*\|)?/g, '').replace(/\[\[/g, '').replace(/]]/g, '').replace(/'{3}/g, '').replace(/'{2}/g, '\'')
-    }
-
-    return null
-  } else {
-    const value = cardRaw.match(regex)
-    return value ? value[0].replace(/ +/g, ' ').trim().slice(key.length + 5) : null
-  }
+  const randomIndex = Math.floor(Math.random() * errorMessages.length)
+  return `💀 ${errorMessages[randomIndex]}`
 }
 
-const getLore = (cardRaw, monsterTypes) => {
-  const regular_lore = getProperty(cardRaw, "lore")
 
-  if(monsterTypes.includes("Pendulum")) {
-    const pendulum_lore = getProperty(cardRaw, "pendulum_effect")
 
-    if (pendulum_lore) {
-      return `[ Pendulum Effect ] ${pendulum_lore} [ Monster Effect ] ${regular_lore}`
-    } else {
-      return regular_lore
-    }
-  } else {
-    return regular_lore
-  }
-}
 
-const getAtkDef = (cardRaw, monsterTypes) => {
-  const atk = getProperty(cardRaw, "atk")
-  const def = getProperty(cardRaw, "def")
-
-  if (!atk && !def) {
-    return ''
-  } else if (monsterTypes.includes("Link")) {
-    const markers = getProperty(cardRaw, "link_arrows").split(', ')
-    return `[ATK/${atk} LINK—${markers.length}] [${formatArrows(markers)}]`
-  } else {
-    return `[ATK/${atk} DEF/${def}]`
-  }
-}
-
-const scrapeYugipedia = (args) => {
-  console.log(`Searching for "${args.searchQuery}" card in Yugipedia...`)
-  const requestOptions = {
-    method: 'GET',
-    headers: {
-      "User-Agent": "Twitch Bot https://www.twitch.tv/cardsearcher"
-    },
-    redirect: 'follow'
-  }
-
-  return fetch(`${SCRAPE_API}?action=query&format=json&redirects=true&list=search&srlimit=1&srwhat=nearmatch&srsearch=${encodeURIComponent(args.searchQuery)}`, requestOptions)
-  .then(response => response.json())
-  .then(result => result.query.search[0].title)
-  .then(pageTitle => {
-    fetch(`${SCRAPE_API}?action=query&format=json&redirects=true&prop=revisions&rvprop=content&formatversion=2&titles=${encodeURIComponent(pageTitle)}`, requestOptions)
-    .then(response => response.json())
-    .then(response => {
-      const cardRaw = response.query.pages[0].revisions[0].content
-      const name = response.query.pages[0].title
-
-      const isACard = cardRaw.match(/{{CardTable2/g) || cardRaw.match(/{{Anime card/g)
-      if (!isACard) { 
-        return args.client.say(args.channel, returnErrMsg(args.userName))
-      }
-
-      if (args.image) {
-        const imageLink = `https://yugipedia.com/wiki/File:${getProperty(cardRaw, 'image')}`
-        return shortenUrlAndReply(args.client, args.channel, args.userName, name, imageLink)
-      }
-
-      const type = getProperty(cardRaw, 'card_type')
-      switch (type) {
-        case "Spell":
-        case "Trap":
-          const race = getProperty(cardRaw, "property")
-          const desc = getProperty(cardRaw, "lore")
-          let markers
-          if (race === "Link")
-            markers = getProperty(cardRaw, "link_arrows").split(', ')
-          
-          args.client.say(args.channel, `🔎 ${name} [${race} ${type}] ${markers ? `[LINK—${markers.length}] [${formatArrows(markers)}]`: ''} : ${desc}`)
-          break
-        default:
-          const monsterTypes = getProperty(cardRaw,'types').replace(/ \/ /g, '/')
-
-          const attribute = getProperty(cardRaw, "attribute")
-          const level = getProperty(cardRaw, "level") || getProperty(cardRaw, "rank")
-          const scale = monsterTypes.includes("Pendulum") ? getProperty(cardRaw, "pendulum_scale") : null
-
-          args.client.say(args.channel, `🔎 ${name} (${attribute}) ${level ? `[${level}⭐]`: ''} ${scale ? `[◀${scale}▶]`: ''} [${monsterTypes}] ${getAtkDef(cardRaw, monsterTypes)} : ${getLore(cardRaw, monsterTypes)}`)
-          break
-      }
-    })
-    .catch(error => args.client.say(args.channel, `${args.userName}, there was an error. Try again.`))
-  })
-  .catch(error => args.client.say(args.channel, returnErrMsg(args.userName)))
-}
-
-const returnErrMsg = (userName) => `${userName}, the Shadow Realm search team came back empty-handed. 💀`
 
 module.exports = {
   tmiOptions,
@@ -219,6 +171,5 @@ module.exports = {
   getCardInfo,
   getCardArray,
   shortenUrlAndReply,
-  scrapeYugipedia,
-  returnErrMsg
+  returnErrMsg,
 }
