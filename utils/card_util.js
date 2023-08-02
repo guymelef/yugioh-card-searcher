@@ -52,7 +52,10 @@ const findClosestCard = (str) => {
     if (strArr.length === 1) {
       const nameArr = CARDS[card.index].name.toLowerCase().split(' ')
       for (let i = 0; i < nameArr.length; i++) {
-        if (distance(nameArr[i], str) === 1) possibleMatch.push(CARDS[card.index])
+        if (distance(nameArr[i], str) === 1) {
+          possibleMatch.push(CARDS[card.index])
+          break
+        }
       }
     }
 
@@ -109,6 +112,14 @@ const filterCardsbyKeyword = (keyword) => {
     if (distance(name, keyword) === (name.length - keyword.length)) {
       const strArr = keyword.split(' ')
       if (name.slice(0, strArr[0].length) === strArr[0]) return card
+    }
+
+    const keywordArr = keyword.split(' ')
+    if (keywordArr.length === 1) {
+      const nameArr = card.name.toLowerCase().split(' ')
+      for (let i = 0; i < nameArr.length; i++) {
+        if (distance(nameArr[i], keyword) === 1) return card
+      }
     }
   })
 }
