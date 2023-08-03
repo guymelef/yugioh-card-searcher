@@ -20,6 +20,7 @@ function normalizeString(str) {
 
 const findClosestCard = (str) => {
   console.log(`🚀 SEARCHING FOR: "${str}"...`)
+
   const strArr = str
     .trim()
     .normalize("NFD")
@@ -60,8 +61,18 @@ const findClosestCard = (str) => {
       }
     }
 
-    if (distance(name, str) === (name.length - str.length))
-      if (name.slice(0, strArr[0].length) === strArr[0]) partialMatches.push(CARDS[card.index])
+    if (distance(name, str) === (name.length - str.length)) {
+      console.log(card.name)
+      let nameArr = CARDS[card.index].name.toLowerCase().split(' ')
+      nameArr = nameArr.map(word => normalizeString(word))
+      const matchAll = strArr.reduce((acc, curr) => {
+        if (!acc) return false
+        if (name.includes(curr)) return true
+        return false
+      }, true)
+
+      if (matchAll) partialMatches.push(CARDS[card.index])
+    }
 
     if (name.includes(str)) {
       if (!firstMatch.length && name.startsWith(str)) firstMatch.push(CARDS[card.index])
@@ -125,7 +136,16 @@ const filterCardsbyKeyword = (keyword) => {
     if (name.includes(keyword)) keywordMatches.push(card)
 
     if (distance(name, keyword) === (name.length - keyword.length)) {
-      if (name.slice(0, strArr[0].length) === strArr[0]) return partialMatches.push(card)
+      console.log(card.name)
+      let nameArr = card.name.toLowerCase().split(' ')
+      nameArr = nameArr.map(word => normalizeString(word))
+      const matchAll = strArr.reduce((acc, curr) => {
+        if (!acc) return false
+        if (name.includes(curr)) return true
+        return false
+      }, true)
+
+      if (matchAll) partialMatches.push(card)
     }
 
     if (strArr.length === 1) {
