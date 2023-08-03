@@ -8,6 +8,8 @@ const CARDNAMES = CARDS.map((item, index) => ({ name: normalizeString(item.name)
 const getRandomCard = () => CARDS[Math.floor(Math.random() * CARDS.length)]
 
 function normalizeString(str) {
+  console.log(`🚀 SEARCHING FOR: "${str}"...`)
+
   return str
     .trim()
     .normalize("NFD")
@@ -31,8 +33,6 @@ const findClosestCard = (str) => {
     .split(' ')
   str = normalizeString(str)
   const DISTANCEARRAY = []
-
-  console.log(`🚀 SEARCHING FOR: "${str}"...`)
 
   let exactMatch = []
   let firstMatch = []
@@ -102,6 +102,8 @@ const findClosestCard = (str) => {
 }
 
 const filterCardsbyKeyword = (keyword) => {
+  console.log(`🚀 SEARCHING LIST FOR: "${keyword}"...`)
+
   const strArr = keyword
     .trim()
     .normalize("NFD")
@@ -113,8 +115,6 @@ const filterCardsbyKeyword = (keyword) => {
     .trim()
     .split(' ')
   keyword = normalizeString(keyword)
-
-  console.log(`🚀 SEARCHING LIST FOR: "${keyword}"...`)
   
   const keywordMatches = []
   const partialMatches = []

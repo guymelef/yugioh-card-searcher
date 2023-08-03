@@ -188,7 +188,7 @@ function onMessageHandler(channel, userState, message, self) {
           const cardToShow = cardUtils.findClosestCard(query)
           
           if (!cardToShow.length) {
-            console.log("❎ Search Failed: could not find:", query)
+            console.log(`❎ Search Failed: could not find: "${query}"`)
             return client.say(channel,`${botUtils.returnErrMsg()}`)
           }
           
@@ -209,7 +209,7 @@ function onMessageHandler(channel, userState, message, self) {
           const cards = cardUtils.filterCardsbyKeyword(query)
 
           if (!cards.length) {
-            console.log("❎ Search Failed: could not find:", query)
+            console.log(`❎ Search Failed: could not find: "${query}"`)
             return client.say(channel,`${botUtils.returnErrMsg()}`)
           }
 
@@ -224,7 +224,7 @@ function onMessageHandler(channel, userState, message, self) {
 
           const closestCard = cardUtils.findClosestCard(searchQuery)
           if (!closestCard.length) {
-            console.log("❎ Search Failed: could not find:", searchQuery)
+            console.log(`❎ Search Failed: could not find: "${searchQuery}"`)
             return client.say(channel,`${botUtils.returnErrMsg()}`)
           }
           
