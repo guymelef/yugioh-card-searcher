@@ -8,8 +8,6 @@ const CARDNAMES = CARDS.map((item, index) => ({ name: normalizeString(item.name)
 const getRandomCard = () => CARDS[Math.floor(Math.random() * CARDS.length)]
 
 function normalizeString(str) {
-  console.log(`🚀 SEARCHING FOR: "${str}"...`)
-
   return str
     .trim()
     .normalize("NFD")
@@ -21,6 +19,7 @@ function normalizeString(str) {
 }
 
 const findClosestCard = (str) => {
+  console.log(`🚀 SEARCHING FOR: "${str}"...`)
   const strArr = str
     .trim()
     .normalize("NFD")
