@@ -62,7 +62,6 @@ const findClosestCard = (str) => {
     }
 
     if (distance(name, str) === (name.length - str.length)) {
-      console.log(card.name)
       let nameArr = CARDS[card.index].name.toLowerCase().split(' ')
       nameArr = nameArr.map(word => normalizeString(word))
       const matchAll = strArr.reduce((acc, curr) => {
@@ -136,7 +135,6 @@ const filterCardsbyKeyword = (keyword) => {
     if (name.includes(keyword)) keywordMatches.push(card)
 
     if (distance(name, keyword) === (name.length - keyword.length)) {
-      console.log(card.name)
       let nameArr = card.name.toLowerCase().split(' ')
       nameArr = nameArr.map(word => normalizeString(word))
       const matchAll = strArr.reduce((acc, curr) => {
