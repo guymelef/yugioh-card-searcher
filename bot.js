@@ -155,7 +155,7 @@ function onMessageHandler(channel, userState, message, self) {
       .find({})
       .sort({ name: 1 })
       .then(channels => {
-        const channelList = channels.map(channel => `● ${channel.name.slice(1)}`)
+        let channelList = channels.map(channel => `● ${channel.name.slice(1)}`)
         channelList = channelList.filter(channel => channel !== '● cardsearcher')
         return client.say(channel, `imGlitch channel(s) using CardSearcher [${channels.length - 1}]: ${channelList.join(', ')}`)
       })
