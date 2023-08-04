@@ -1,170 +1,152 @@
 const { distance } = require("fastest-levenshtein")
-
-
-
 const CARDS = require('../data/cards.json')
-const CARDNAMES = CARDS.map((item, index) => ({ name: normalizeString(item.name), index }))
+
+
 
 const getRandomCard = () => CARDS[Math.floor(Math.random() * CARDS.length)]
 
-function normalizeString(str) {
-  return str
+function normalizeString(string) {
+  return string
     .trim()
+    .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[-★☆]/g, " ")
-    .replace(/\s+/g, " ")
+    .replace(/[★☆\s+]/g, "")
     .replace(/[^\w/@#.]|_/g, "")
-    .toLowerCase()
 }
 
-const findClosestCard = (str) => {
-  console.log(`🚀 SEARCHING FOR: "${str}"...`)
-
-  const strArr = str
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[-★☆]/g, " ")
-    .replace(/\s+/g, " ")
-    .replace(/[^\w\s/@#.]|_/g, "")
-    .toLowerCase()
-    .trim()
-    .split(' ')
-  str = normalizeString(str)
+const findClosestCard = (keyword, bulk = false) => {
+  let keywordArr = keyword.toLowerCase().trim().replace(/\s+/g, " ").split(' ')
+  keywordArr = keywordArr.map(word => normalizeString(word))
+  keyword = normalizeString(keyword)
   const DISTANCEARRAY = []
 
   let exactMatch = []
   let firstMatch = []
   let partialMatches = []
   let keywordMatches = []
-  let possibleMatch = []
+  let possibleMatches = []
+  let possibleMatchesWithDistance3 = []
+  let possibleMatchesWithDistance4 = []
   let remoteMatch = []
 
-  for (let card of CARDNAMES) {
-    const name = card.name
+  for (let card of CARDS) {
+    const name = normalizeString(card.name)
+    let nameArr = card.name.toLowerCase().split(' ')
+    nameArr = nameArr.map(word => normalizeString(word))
 
-    if (name === str) {
-      exactMatch.push(CARDS[card.index])
+    if (name === keyword && !bulk) {
+      exactMatch.push(card)
       return exactMatch
     }
 
-    if (strArr.length === 1) {
-      if (distance(strArr[0], name.slice(0, strArr[0].length)) === 1) possibleMatch.push(CARDS[card.index])
+    if (keywordArr.length === 1) {
+      if (distance(keywordArr[0], name.slice(0, keywordArr[0].length)) == 1) possibleMatches.push(card)
 
-      const nameArr = CARDS[card.index].name.toLowerCase().split(' ')
-      for (let i = 0; i < nameArr.length; i++) {
-        if (distance(nameArr[i], str) === 1) {
-          possibleMatch.push(CARDS[card.index])
+      for (let word of nameArr) {
+        const distanceLength = distance(word, keyword)
+        if (distanceLength < 3) {
+          if (word.startsWith(keyword[0])) possibleMatches.push(card)
+          break
+        }
+        
+        if (distanceLength === 3) {
+          if (word.startsWith(keyword[0])) possibleMatchesWithDistance3.push(card)
+          break
+        }
+
+        if (distanceLength === 4) {
+          if (word.startsWith(keyword[0])) possibleMatchesWithDistance4.push(card)
           break
         }
       }
     }
 
-    if (distance(name, str) === (name.length - str.length)) {
-      let nameArr = CARDS[card.index].name.toLowerCase().split(' ')
-      nameArr = nameArr.map(word => normalizeString(word))
-      const matchAll = strArr.reduce((acc, curr) => {
+    if (keywordArr.length > 1) {
+      const matchAll = keywordArr.reduce((acc, word) => {
         if (!acc) return false
-        if (name.includes(curr)) return true
+        if (name.includes(word)) return true
         return false
       }, true)
-
-      if (matchAll) partialMatches.push(CARDS[card.index])
-    }
-
-    if (name.includes(str)) {
-      if (!firstMatch.length && name.startsWith(str)) firstMatch.push(CARDS[card.index])
-      keywordMatches.push(CARDS[card.index])
-    }
-
-    DISTANCEARRAY.push(distance(name, str))
-  }
-
-  if (firstMatch.length) return firstMatch
-
-  if (keywordMatches.length === 1) return keywordMatches
-
-  if (partialMatches.length || keywordMatches.length) {
-    if (partialMatches.length > keywordMatches.length) return partialMatches
-    return keywordMatches
-  }
-
-  if (possibleMatch.length) return possibleMatch
-
-  if (!exactMatch.length && !partialMatches.length && !keywordMatches.length) {
-    const min = Math.min(...DISTANCEARRAY)
-    
-    if (min === str.length) return []
-
-    const minArray = []
-    DISTANCEARRAY.forEach((num, index) => { if (num === min) minArray.push(index) })
-    for (let index of minArray) {
-      if (CARDNAMES[index].name[0] === str[0]) {
-        remoteMatch.push(CARDS[index])
-        break
-      }
-    }
-    if (remoteMatch.length) return remoteMatch
-  }
-  return remoteMatch
-}
-
-const filterCardsbyKeyword = (keyword) => {
-  console.log(`🚀 SEARCHING LIST FOR: "${keyword}"...`)
-
-  const strArr = keyword
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[-★☆]/g, " ")
-    .replace(/\s+/g, " ")
-    .replace(/[^\w\s/@#.]|_/g, "")
-    .toLowerCase()
-    .trim()
-    .split(' ')
-  keyword = normalizeString(keyword)
-  
-  const keywordMatches = []
-  const partialMatches = []
-  const possibleMatches = []
-  
-  CARDS.forEach(card => {
-    const name = normalizeString(card.name)
-    
-    if (name.includes(keyword)) keywordMatches.push(card)
-
-    if (distance(name, keyword) === (name.length - keyword.length)) {
-      let nameArr = card.name.toLowerCase().split(' ')
-      nameArr = nameArr.map(word => normalizeString(word))
-      const matchAll = strArr.reduce((acc, curr) => {
-        if (!acc) return false
-        if (name.includes(curr)) return true
-        return false
-      }, true)
-
+      
       if (matchAll) partialMatches.push(card)
     }
 
-    if (strArr.length === 1) {
-      if (distance(strArr[0], name.slice(0, strArr[0].length)) === 1) possibleMatches.push(card)
-
-      const nameArr = card.name.toLowerCase().split(' ')
-      for (let i = 0; i < nameArr.length; i++) {
-        if (distance(nameArr[i], keyword) === 1) return possibleMatches.push(card)
-      }
+    if (name.includes(keyword)) {
+      if (!firstMatch.length && name.startsWith(keyword)) firstMatch.push(card)
+      keywordMatches.push(card)
     }
-  })
 
-  let searchResult = []
-  if (keywordMatches.length && partialMatches.length) {
-    searchResult = keywordMatches.concat(partialMatches)
-    searchResult = searchResult.filter((value, index, self) => self.indexOf(value) == index)
-  } else if (keywordMatches.length) searchResult = keywordMatches
-  else if (partialMatches.length) searchResult = partialMatches
-  else if (possibleMatches.length) searchResult = possibleMatches
+    DISTANCEARRAY.push(distance(name, keyword))
+  }
 
-  return searchResult
+  const min = Math.min(...DISTANCEARRAY)
+  if (min === keyword.length) remoteMatch = []
+
+  const minArray = []
+  DISTANCEARRAY.forEach((num, index) => { if (num === min) minArray.push(index) })
+  for (let index of minArray) {
+    if (normalizeString(CARDS[index].name)[0] === keyword[0]) {
+      remoteMatch.push(CARDS[index])
+      break
+    }
+  }
+
+  if (bulk) {
+    if (keywordMatches.length && partialMatches.length) {
+      let searchResult = []
+      searchResult = keywordMatches.concat(partialMatches)
+      searchResult = searchResult.filter((value, index, self) => self.indexOf(value) == index)
+      
+      console.log("🚩 sending keyword + partial matches...")
+      return searchResult
+    } else if (keywordMatches.length) {
+      console.log("🚩 sending keyword matches...")
+      return keywordMatches
+    } else if (partialMatches.length) {
+      console.log("🚩 sending partial matches...")
+      return partialMatches
+    } else if (possibleMatches.length || possibleMatchesWithDistance3.length || possibleMatchesWithDistance4.length) {
+      console.log("🚩 sending possible matches...")
+      if (possibleMatches.length) return possibleMatches
+      if (possibleMatchesWithDistance3.length) return possibleMatchesWithDistance3
+      if (possibleMatchesWithDistance4.length) return possibleMatchesWithDistance4
+    } else {
+      if (remoteMatch.length) {
+        console.log("🚩 sending matches based on 1st remote match...")
+        return CARDS.filter(card => card.name.includes(remoteMatch[0].name))
+      }
+
+      console.log("🚩 sending remote match...")
+      return remoteMatch
+    }
+  } else {
+    if (firstMatch.length) {
+      console.log("🚩 sending first match...")
+      return firstMatch
+    }
+
+    if (keywordMatches.length) {
+      console.log("🚩 sending keyword matches...")
+      return keywordMatches
+    }
+
+    if (partialMatches.length) {
+      console.log("🚩 sending partial matches...")
+      return partialMatches
+    }
+
+    if (possibleMatches.length || possibleMatchesWithDistance3.length || possibleMatchesWithDistance4.length) {
+      console.log("🚩 sending possible matches...")
+
+      if (possibleMatches.length) return possibleMatches
+      if (possibleMatchesWithDistance3.length) return possibleMatchesWithDistance3
+      if (possibleMatchesWithDistance4.length) return possibleMatchesWithDistance4
+    }
+
+    console.log("🚩 sending remote match...")
+    return remoteMatch
+  }
 }
 
 
@@ -172,8 +154,7 @@ const filterCardsbyKeyword = (keyword) => {
 
 
 module.exports = {
-  findClosestCard,
-  filterCardsbyKeyword,
+  normalizeString,
   getRandomCard,
-  normalizeString
+  findClosestCard
 }
