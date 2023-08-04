@@ -31,19 +31,20 @@ const findClosestCard = (keyword, bulk = false) => {
   let remoteMatch = []
 
   for (let card of CARDS) {
-    const name = normalizeString(card.name)
-    let nameArr = card.name.toLowerCase().split(' ')
-    nameArr = nameArr.map(word => normalizeString(word))
+    const cardName = normalizeString(card.name)
+    let cardNameArr = card.name.toLowerCase().split(' ')
+    cardNameArr = cardNameArr.map(word => normalizeString(word))
 
-    if (name === keyword && !bulk) {
+    if (cardName === keyword && !bulk) {
       exactMatch.push(card)
+      console.log("🚩 sending exact match...")
       return exactMatch
     }
 
     if (keywordArr.length === 1) {
-      if (distance(keywordArr[0], name.slice(0, keywordArr[0].length)) == 1) possibleMatches.push(card)
+      if (distance(keywordArr[0], cardName.slice(0, keywordArr[0].length)) == 1) possibleMatches.push(card)
 
-      for (let word of nameArr) {
+      for (let word of cardNameArr) {
         const distanceLength = distance(word, keyword)
         if (distanceLength < 3) {
           if (word.startsWith(keyword[0])) possibleMatches.push(card)
@@ -63,21 +64,23 @@ const findClosestCard = (keyword, bulk = false) => {
     }
 
     if (keywordArr.length > 1) {
-      const matchAll = keywordArr.reduce((acc, word) => {
+      const matchAllCheck = (card, strArr) => strArr.reduce((acc, word) => {
         if (!acc) return false
-        if (name.includes(word)) return true
+        if (card.includes(word)) return true
         return false
       }, true)
       
-      if (matchAll) partialMatches.push(card)
+      if (matchAllCheck(cardName, keywordArr)) partialMatches.push(card)
+
+      if (cardNameArr.length > 1) if (matchAllCheck(keyword, cardNameArr)) partialMatches.push(card)
     }
 
-    if (name.includes(keyword)) {
-      if (!firstMatch.length && name.startsWith(keyword)) firstMatch.push(card)
+    if (cardName.includes(keyword)) {
+      if (!firstMatch.length && cardName.startsWith(keyword)) firstMatch.push(card)
       keywordMatches.push(card)
     }
 
-    DISTANCEARRAY.push(distance(name, keyword))
+    DISTANCEARRAY.push(distance(cardName, keyword))
   }
 
   const min = Math.min(...DISTANCEARRAY)
