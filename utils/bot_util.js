@@ -4,7 +4,7 @@ const fetch = require('node-fetch')
 
 
 const tmiOptions = {
-  options: { debug: process.env.DEBUG == "true" ? true : false },
+  options: { debug: process.env.DEBUG === "true" },
   connection: {
     secure: true,
     reconnect: true
@@ -15,51 +15,69 @@ const tmiOptions = {
   }
 }
 
-const cardSymbols = {
-  Normal: '🟡',
-  Effect: '🟠',
-  Ritual: '🔵',
-  Fusion: '🟣',
-  Synchro: '⚪',
-  Tuner: '🟤',
-  Spell: '🟢',
-  Trap: '🔴',
-  XYZ: '⚫',
-  Token: '🃏',
-  Link: '🔗',
-  Pendulum: '🌗',
-  Skill: '✨'
-}
-
-const getSymbol = (cardType) => cardSymbols[cardType] ? cardSymbols[cardType] : '🟠'
-
-const getCardInfo = (card) => {
-  let cardInfo
-
-  if (["Spell Card", "Trap Card"].includes(card.type)) {
-    cardInfo = `🔎 ${card.name} [${card.race} ${card.type.replace(' Card', '')}] : ${card.desc}`
-  } else {
-    cardInfo = `
-      🔎 ${card.name} ${card.attribute ? `(${card.attribute})`: ''} ${card.level ? `[${card.level}⭐]`: ''} ${card.scale ? `[◀${card.scale}▶]` : ''} [${card.race}${card.type === "Skill Card" ? ` ${card.type}` : `/${card.type.replace(/ Monster/g, '').replace(/ /g, '/')}`}] ${card.atk ? `[ATK/${card.atk}${card.def || card.def === 0 ? ` DEF/${card.def}`: ''}${card.linkval ? ` LINK—${card.linkval}] [${formatArrows(card.linkmarkers)}]` : ']'}` : ''} : ${card.desc.replace(/-{40}/g, '')}
-    `
+const getSymbol = (cardType) => {
+  const cardSymbols = {
+    Normal: '🟡',
+    Effect: '🟠',
+    Ritual: '🔵',
+    Fusion: '🟣',
+    Synchro: '⚪',
+    Tuner: '🟤',
+    Spell: '🟢',
+    Trap: '🔴',
+    XYZ: '⚫',
+    Token: '🃏',
+    Link: '🔗',
+    Pendulum: '🌗',
+    Skill: '✨'
   }
 
-  return cardInfo
+  return cardSymbols[cardType] || '🟡'
+}
+
+const getCardInfo = (card) => {
+  if (["Spell", "Trap"].includes(card.type)) {
+    return `🔎 ${card.name} [${card.property} ${card.type}] : ${card.lore}`
+  } else if (card.type === "Skill") {
+    return `🔎 ${card.name} [${card.types}] : ${card.lore}`
+  } else {
+    if (card.types.includes("Pendulum")) {
+      return `
+        🔎 ${card.name} (${card.attribute}) [${card.level}⭐] [◀${card.scale}▶] [${card.types}] [ATK/${card.atk} DEF/${card.def}] : ${card.lore.replace(/-{2,}]/, '')}
+      `
+    } else if (card.types.includes("Link")) {
+      return `
+        🔎 ${card.name} (${card.attribute}) [${card.types}] [ATK/${card.atk} LINK—${card.linkRating}] [${formatArrows(card.linkArrows)}] : ${card.lore}
+      `
+    } else {
+      return `
+        🔎 ${card.name} (${card.attribute}) [${card.level}⭐] [${card.types}] [ATK/${card.atk} DEF/${card.def}] : ${card.lore}
+      `
+    }
+  }
 }
 
 const getCardArray = (cards) => {
   const cardsArray = cards.map(card => {                
-    const symbol = getSymbol(card.type.split(' ')[0])
+    let symbol = ""
+    if (card.type === "Monster") {
+      symbol = card.types.split('/')
+      if (symbol.includes("Pendulum")) symbol = getSymbol("Pendulum")
+      else if (symbol.length > 1) symbol = getSymbol(symbol[1])
+      else symbol = getSymbol(symbol[0])
+    } else {
+      symbol = getSymbol(card.type)
+    }
     return `${symbol}${card.name}`
   })
-  return `📜 [${cards.length} ${cards.length === 1 ? 'Card' : 'Cards'}] : ${cardsArray.join(', ')}`
+  return `📜 [${cards.length} ${cards.length > 1 ? 'Cards' : 'Card'}] : ${cardsArray.join(', ')}`
 }
 
 const shortenUrlAndReply = (client, channel, userName, card) => {
   const raw = JSON.stringify({
     group_guid: `${process.env.BITLY_GUID}`,
     domain: "bit.ly",
-    long_url: `https://images.ygoprodeck.com/images/cards/${card.id}.jpg`
+    long_url: card.image
   })
 
   const requestOptions = {
@@ -82,25 +100,16 @@ const shortenUrlAndReply = (client, channel, userName, card) => {
 
 const formatArrows = (array) => {
   const markers = {
-    "Top-Left": 0,
-    "Top": 1,
-    "Top-Center": 1,
-    "Top-Right": 2,
-    "Middle-Left": 3,
-    "Left": 3,
-    "Bottom-Left": 4,
-    "Bottom-Center": 5,
-    "Bottom": 5,
-    "Bottom-Right": 6,
-    "Middle-Right": 7,
-    "Right": 7
+    "Top-Left": '↖️',
+    "Top-Center": '⬆️',
+    "Top-Right": '↗️',
+    "Middle-Left": '⬅️',
+    "Bottom-Left": '↙️',
+    "Bottom-Center": '⬇️',
+    "Bottom-Right": '↘️',
+    "Middle-Right": '➡️',
   }
-
-  const arrows = ['↖️', '⬆️', '↗️', '⬅️', '↙️', '⬇️', '↘️', '➡️']
-  let arrowArray = array
-  arrowArray = arrowArray.map(arrow => markers[arrow]).sort()
-  arrowArray = arrowArray.map(arrow => arrows[arrow]).join('')
-  return arrowArray
+  return array.map(arrow => markers[arrow.trim()]).join('')
 }
 
 const returnErrMsg = () => {
