@@ -10,7 +10,7 @@ const wakeUpDyno = (url, minutes = 13) => {
     } catch (err) {
       console.log(`ERROR: Fetch failed due to: [[ ${err.message} ]] \nWill retry in ${minutes} minutes...`)
     } finally {
-      return wakeUpDyno(url, minutes, callback)
+      return wakeUpDyno(url, minutes)
     }
   }, milliseconds)
 }
