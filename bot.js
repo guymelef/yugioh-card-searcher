@@ -52,9 +52,10 @@ mongoose
 function onMessageHandler(channel, userState, message, self) {
   if (self) return
   
-  message = message.toLowerCase()
+  const ORIGINAL_MESSAGE = message
   const userChannel = `#${userState.username}`
   const userName = `@${userState["display-name"]}`
+  message = message.toLowerCase()
 
   if (channel === "#cardsearcher") {
     if (message.startsWith("!join")) {
@@ -171,61 +172,64 @@ function onMessageHandler(channel, userState, message, self) {
           if (!cardUtils.normalizeString(query)) return
 
           console.log(`🚀 [${channel}] SEARCHING FOR: "${query}"...`)
-          const cardToShow = cardUtils.findClosestCard(query)
-          
-          if (!cardToShow.length) {
-            console.log(`❎ Search Failed: could not find: "${query}"`)
-            return client.say(channel,`${botUtils.returnErrMsg()}`)
-          }
-          
-          if (cardToShow.length > 1) {
-            const responseMessage = botUtils.getCardArray(cardToShow)
-            if (responseMessage.length > 500)
-              return client.say(channel,`${userName}, your search yielded ${cardToShow.length.toLocaleString()} total possible cards.`)
-            else
-              return client.say(channel, botUtils.getCardArray(cardToShow))
-          }
-          
-          return botUtils.shortenUrlAndReply(client, channel, userName, cardToShow[0])
+          return cardUtils.findClosestCard(query)
+            .then(cardToShow => {
+              if (!cardToShow.length) {
+                console.log(`❎ Search Failed: could not find: "${query}"`)
+                return client.say(channel,`${botUtils.returnErrMsg()}`)
+              }
+              
+              if (cardToShow.length > 1) {
+                const responseMessage = botUtils.getCardArray(cardToShow)
+                if (responseMessage.length > 500)
+                  return client.say(channel,`${userName}, your search yielded ${cardToShow.length.toLocaleString()} total possible cards.`)
+                else
+                  return client.say(channel, botUtils.getCardArray(cardToShow))
+              }
+              
+              return botUtils.shortenUrlAndReply(client, channel, userName, cardToShow[0])
+            })
         case "--list":
           if (!query) return client.say(channel, `❓Usage (max 100 cards): !search --list <keyword> `)
           
           if (!cardUtils.normalizeString(query)) return
 
           console.log(`🚀 [${channel}] SEARCHING LIST FOR: "${query}"...`)
-          const cards = cardUtils.findClosestCard(query, true)
-
-          if (!cards.length) {
-            console.log(`❎ Search Failed: could not find: "${query}"`)
-            return client.say(channel,`${botUtils.returnErrMsg()}`)
-          }
-
-          if (cards.length > 100)
-            return client.say(channel,`${userName}, your search yielded ${cards.length.toLocaleString()} total possible cards.`)
-          else
-            return client.say(channel, botUtils.getCardArray(cards))
+          return cardUtils.findClosestCard(query, true)
+            .then(cards => {
+              if (!cards.length) {
+                console.log(`❎ Search Failed: could not find: "${query}"`)
+                return client.say(channel,`${botUtils.returnErrMsg()}`)
+              }
+    
+              if (cards.length > 100)
+                return client.say(channel,`${userName}, your search yielded ${cards.length.toLocaleString()} total possible cards.`)
+              else
+                return client.say(channel, botUtils.getCardArray(cards))
+            })
         default:
-          const searchQuery = messageArray.slice(1).join(' ')
+          const searchQuery = ORIGINAL_MESSAGE.split(' ').slice(1).join(' ')
           
           if (!cardUtils.normalizeString(searchQuery)) return
 
           console.log(`🚀 [${channel}] SEARCHING FOR: "${searchQuery}"...`)
-          const closestCard = cardUtils.findClosestCard(searchQuery)
-
-          if (!closestCard.length) {
-            console.log(`❎ Search Failed: could not find: "${searchQuery}"`)
-            return client.say(channel,`${botUtils.returnErrMsg()}`)
-          }
-          
-          if (closestCard.length > 1) {
-            const responseMessage = botUtils.getCardArray(closestCard)
-            if (responseMessage.length > 500)
-              return client.say(channel,`${userName}, your search yielded ${closestCard.length.toLocaleString()} total possible cards.`)
-            else
-              return client.say(channel, botUtils.getCardArray(closestCard))
-          }
-
-          return client.say(channel, botUtils.getCardInfo(closestCard[0]))
+          return cardUtils.findClosestCard(searchQuery)
+            .then(result => {
+              if (!result.length) {
+                console.log(`❎ Search Failed: could not find: "${searchQuery}"`)
+                return client.say(channel,`${botUtils.returnErrMsg()}`)
+              }
+              
+              if (result.length > 1) {
+                const responseMessage = botUtils.getCardArray(result)
+                if (responseMessage.length > 500)
+                  return client.say(channel,`${userName}, your search yielded ${result.length.toLocaleString()} total possible cards.`)
+                else
+                  return client.say(channel, botUtils.getCardArray(result))
+              }
+              
+              return client.say(channel, botUtils.getCardInfo(result[0]))
+            })
       }
     }
   }

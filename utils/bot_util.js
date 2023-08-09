@@ -38,8 +38,8 @@ const getCardInfo = (card) => {
   if (["Spell", "Trap"].includes(card.type)) {
     return `🔎 ${card.name} [${card.property} ${card.type}] : ${card.lore}`
   } else if (card.type === "Skill") {
-    return `🔎 ${card.name} [${card.types}] : ${card.lore}`
-  } else {
+    return `🔎 ${card.name} ${card?.types ? `[${card.types}]` : ''} : ${card.lore}`
+  } else if (card.type === "Monster" || card.type === "Token") {
     if (card.types.includes("Pendulum")) {
       return `
         🔎 ${card.name} (${card.attribute}) [${card.level}⭐] [◀${card.scale}▶] [${card.types}] [ATK/${card.atk} DEF/${card.def}] : ${card.lore.replace(/-{2,}]/, '')}
@@ -50,9 +50,11 @@ const getCardInfo = (card) => {
       `
     } else {
       return `
-        🔎 ${card.name} (${card.attribute}) [${card.level}⭐] [${card.types}] [ATK/${card.atk} DEF/${card.def}] : ${card.lore}
+        🔎 ${card.name} (${card.attribute}) [${card.level}⭐] ${card?.types ? `[${card.types}]` : ''} [ATK/${card.atk} DEF/${card.def}] : ${card.lore}
       `
     }
+  } else {
+    return `🔎 ${card.name} : ${card.lore}`
   }
 }
 
