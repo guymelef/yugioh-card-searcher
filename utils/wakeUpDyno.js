@@ -1,23 +1,15 @@
-const wakeUpDyno = (url, interval = 13, callback) => {
-  const milliseconds = interval * 60000
+const wakeUpDyno = (url, minutes = 13) => {
+  const milliseconds = minutes * 60000
   setTimeout(() => {
-
-    try { 
-      console.log(`setTimeout called.`)
+    try {
+      console.log(`⏰ Keeping app awake...`)
       fetch(url)
-        .then(() => console.log(`Fetching ${url}.`))
-        .catch(err => console.log("there was an error fetching"))
+      .then(() => console.log(`🏠 Fetching homepage...`))
+      .catch(err => console.log("ERROR: Could not refresh app!", err))
     } catch (err) {
-      console.log(`Error fetching ${url}: ${err.message} 
-      Will try again in ${interval} minutes...`)
+      console.log(`ERROR: Fetch failed due to: [[ ${err.message} ]] \nWill retry in ${minutes} minutes...`)
     } finally {
-      try {
-        callback()
-      } catch (e) {
-        callback ? console.log("Callback failed: ", e.message) : null
-      } finally {
-        return wakeUpDyno(url, interval, callback)
-      }
+      return wakeUpDyno(url, minutes, callback)
     }
   }, milliseconds)
 }
