@@ -1,38 +1,29 @@
-const fetch = require("node-fetch")
-
-
 const wakeUpDyno = (url, interval = 13, callback) => {
   const milliseconds = interval * 60000
   setTimeout(() => {
 
     try { 
       console.log(`setTimeout called.`)
-      // HTTP GET request to the dyno's url
       fetch(url)
         .then(() => console.log(`Fetching ${url}.`))
         .catch(err => console.log("there was an error fetching"))
-    }
-    catch (err) { // catch fetch errors
+    } catch (err) {
       console.log(`Error fetching ${url}: ${err.message} 
       Will try again in ${interval} minutes...`)
-    }
-    finally {
-
+    } finally {
       try {
-        callback() // execute callback, if passed
-      }
-      catch (e) { // catch callback error
+        callback()
+      } catch (e) {
         callback ? console.log("Callback failed: ", e.message) : null
-      }
-      finally {
-        // do it all again
+      } finally {
         return wakeUpDyno(url, interval, callback)
       }
-        
     }
-
   }, milliseconds)
 }
+
+
+
 
 
 module.exports = wakeUpDyno
