@@ -1,5 +1,6 @@
 const wakeUpDyno = (url, minutes = 13) => {
   const milliseconds = minutes * 60000
+  
   setTimeout(() => {
     try {
       console.log(`⏰ Keeping app awake...`)
