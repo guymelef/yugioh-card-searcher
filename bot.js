@@ -7,7 +7,6 @@ const tmi = require('tmi.js')
 const Channel = require('./models/channel')
 const botUtils = require('./utils/bot_util')
 const cardUtils = require('./utils/card_util')
-const wakeUpDyno = require('./utils/wakeUpDyno')
 
 let unmoderatedChannels = []
 
@@ -16,7 +15,7 @@ let unmoderatedChannels = []
 // EXPRESS SERVER
 app.get("/", (_, response) => response.send("https://www.twitch.tv/cardsearcher"))
 
-app.listen(process.env.PORT, () => wakeUpDyno(process.env.HOME_URL))
+app.listen(process.env.PORT, () => console.log(`🐶 THE SERVER IS UP!`))
 
 
 // CONNECT TO MONGOOSE & START TMI CLIENT
