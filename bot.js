@@ -12,10 +12,9 @@ const wakeUpDyno = require('./utils/wakeUpDyno')
 let unmoderatedChannels = []
 
 
-// EXPRESS SERVER START
-app.get("/", (request, response) => {
-  response.send("https://www.twitch.tv/cardsearcher")
-})
+
+// EXPRESS SERVER
+app.get("/", (_, response) => response.send("https://www.twitch.tv/cardsearcher"))
 
 app.listen(process.env.PORT, () => wakeUpDyno(process.env.HOME_URL))
 
@@ -32,7 +31,7 @@ mongoose
   .find({})
   .then(channels => {
     botUtils.tmiOptions.channels = channels.map(channel => channel.name)
-    console.log('ALL CHANNELS:', channels.map(channel => channel.name).sort())
+    console.log(`ALL CHANNELS [${channels.length}]:`, channels.map(channel => channel.name).sort())
     
     channels.forEach(channel => !channel.moderated ? unmoderatedChannels.push(channel.name) : '')
 
@@ -42,21 +41,15 @@ mongoose
 
     // TMI EVENT LISTENERS
     client.on('message', onMessageHandler)
-    client.on('connected', onConnectedHandler)
+    client.on('connected', (server, port) => console.log(`🆗 Connected to ${server}:${port}`))
   })
-  .catch(err => console.log("❌ ERROR FETCHING CHANNELS: ", err))
+  .catch(err => console.log("❌ FETCHING CHANNELS ERROR: ", err))
 })
 .catch(err => console.log("🛑 MONGODB CONNECTION ERROR:", err))
 
 
 
-
-
-// HELPER FUNCTIONS BELOW
-function onConnectedHandler(server, port) {
-  console.log(`🆗 Connected to ${server}:${port}`)
-}
-
+// TMI MESSAGE HANDLER
 function onMessageHandler(channel, userState, message, self) {
   if (self) return
   
@@ -68,31 +61,26 @@ function onMessageHandler(channel, userState, message, self) {
     if (message.startsWith("!join")) {
       const messageArray = message.split(' ')
       
-      if (!["close", "open"].includes(messageArray[1])) {
+      if (!["close", "open"].includes(messageArray[1]))
         return client.say(channel, `${userName}, ❓Usage: !join <open|close>`)
-      }
       
       Channel
-      .findOne({
-        name: userChannel
-      })
+      .findOne({ name: userChannel })
       .then(response => {
         if (!response) {
           new Channel({
             name: userChannel,
-            moderated: messageArray[1] === "close" ? true : false
+            moderated: messageArray[1] === "close"
           })
           .save()
           .then(response => {
-            if (!response.moderated) {
-              unmoderatedChannels.push(response.name)
-            }
+            if (!response.moderated) unmoderatedChannels.push(response.name)
 
             client
             .join(userChannel)
             .then(_ => {
               console.log(`The bot joined ${userChannel}`, new Date().toLocaleString('en-ph'))
-              return client.say(channel, `${userName}, awesome! CardSearcher has joined your channel. Don't forget to promote the bot to VIP/mod.`)
+              return client.say(channel, `${userName}, awesome! CardSearcher has joined your channel. Don't forget to promote the bot to VIP or moderator.`)
             })
             .catch(err => {
               console.log("ERROR: Channel join error", err)
@@ -113,7 +101,7 @@ function onMessageHandler(channel, userState, message, self) {
           .then(response => {
             if (!response.moderated)
               !unmoderatedChannels.includes(response.name) ? unmoderatedChannels.push(response.name) : null
-            else 
+            else
               unmoderatedChannels = unmoderatedChannels.filter(item => item !== response.name)
 
             return client.say(channel, `${userName}, your bot setting is now set to "${messageArray[1].toUpperCase()}".`)
@@ -126,9 +114,7 @@ function onMessageHandler(channel, userState, message, self) {
       })
     } else if (message.startsWith("!part")) {
       Channel
-      .findOneAndDelete({
-        name: userChannel
-      })
+      .findOneAndDelete({ name: userChannel })
       .then(response => {
         if (!response) {
           return client.say(channel, `${userName}, CardSearcher hasn't joined your channel yet. ❓Usage: !join <open|close>`)
