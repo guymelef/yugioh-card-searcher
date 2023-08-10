@@ -25,6 +25,7 @@ const findClosestCard = async (keyword, bulk = false) => {
   let exactMatch = []
   let firstMatch = []
   let partialMatches = []
+  let somePartialMatches = []
   let keywordMatches = []
   let possibleMatches = []
   let possibleMatchesWithDistance3 = []
@@ -65,15 +66,20 @@ const findClosestCard = async (keyword, bulk = false) => {
     }
 
     if (keywordArr.length > 1) {
-      const matchAllCheck = (card, strArr) => strArr.reduce((acc, word) => {
+      const matchAllCheck = (str, strArr) => strArr.reduce((acc, word) => {
         if (!acc) return false
-        if (card.includes(word)) return true
+        if (str.includes(word)) return true
         return false
       }, true)
       
       if (matchAllCheck(cardName, keywordArr)) partialMatches.push(card)
 
-      if (cardNameArr.length > 1) if (matchAllCheck(keyword, cardNameArr)) partialMatches.push(card)
+      if (cardNameArr.length > 1)
+        if (matchAllCheck(keyword, cardNameArr)) partialMatches.push(card)
+
+      keywordArr.forEach(word => {
+        if (cardName.includes(word)) somePartialMatches.push(card)
+      })
     }
 
     if (cardName.includes(keyword)) {
@@ -110,6 +116,9 @@ const findClosestCard = async (keyword, bulk = false) => {
     } else if (partialMatches.length) {
       console.log("🚩 sending partial matches...")
       return partialMatches
+    } else if (somePartialMatches.length) {
+      console.log("🚩 sending some partial matches...")
+      return somePartialMatches
     } else if (possibleMatches.length || possibleMatchesWithDistance3.length || possibleMatchesWithDistance4.length) {
       console.log("🚩 sending possible matches...")
       if (possibleMatches.length) return possibleMatches
@@ -138,6 +147,11 @@ const findClosestCard = async (keyword, bulk = false) => {
     if (partialMatches.length) {
       console.log("🚩 sending partial matches...")
       return partialMatches
+    }
+
+    if (somePartialMatches.length) {
+      console.log("🚩 sending some partial matches...")
+      return somePartialMatches
     }
 
     const yugipediaCard = await createCard(USER_KEYWORD)
