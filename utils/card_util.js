@@ -78,7 +78,7 @@ const findClosestCard = async (keyword, bulk = false) => {
         if (matchAllCheck(keyword, cardNameArr)) partialMatches.push(card)
 
       keywordArr.forEach(word => {
-        if (cardName.includes(word)) somePartialMatches.push(card)
+        if (cardName.includes(word) && word.length >= 3) somePartialMatches.push(card)
       })
     }
 
