@@ -1,3 +1,4 @@
+require('dotenv').config()
 const { distance } = require("fastest-levenshtein")
 const cheerio = require('cheerio')
 let CARDS = require('../data/cards.json')
@@ -166,12 +167,12 @@ const createCard = async (card) => {
 
   console.log(`📖 SEARCHING YUGIPEDIA FOR [[ ${card} ]]...`)
   try {
-    let html = await fetch(`https://yugipedia.com/wiki/${USER_STRING}`)
+    let html = await fetch(`${process.env.SCRAPE_URL}/${USER_STRING}`)
     html = await html.text()
     let $ = cheerio.load(html)
 
     if ($('.card-table').length === 0) {
-      html = await fetch(`https://yugipedia.com/wiki/${card}`)
+      html = await fetch(`${process.env.SCRAPE_URL}/${card}`)
       html = await html.text()
       $ = cheerio.load(html)
 
@@ -243,7 +244,7 @@ const createCard = async (card) => {
 }
 
 const updateCards = async () => {
-  return fetch("https://db.ygoprodeck.com/api/v7/cardinfo.php")
+  return fetch(process.env.SEARCH_API)
   .then(data => data.json())
   .then(cards => {
     cards = cards.data
@@ -316,8 +317,15 @@ const updateCards = async () => {
     const newCardsArray = newCards.map(card => createCard(card.name))
     return Promise.all(newCardsArray)
     .then(cards => {
-      cards = cards.flat()
+      cards = cards.reduce((acc, curr) => {
+        if (curr.length) acc.push(curr[0])
+        else acc.push(undefined)
+        return acc
+      }, [])
+
       cards.forEach((card, index) => {
+        if (!card) return
+        
         const lore = newCards[index].desc
         card.lore = lore
         CARDS.push(card)
