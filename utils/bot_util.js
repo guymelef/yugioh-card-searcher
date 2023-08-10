@@ -42,7 +42,7 @@ const getCardInfo = (card) => {
   } else if (card.type === "Monster" || card.type === "Token") {
     if (card.types.includes("Pendulum")) {
       return `
-        🔎 ${card.name} (${card.attribute}) [${card.level}⭐] [◀${card.scale}▶] [${card.types}] [ATK/${card.atk} DEF/${card.def}] : ${card.lore.replace(/-{2,}]/, '')}
+        🔎 ${card.name} (${card.attribute}) [${card.level}⭐] [◀${card.scale}▶] [${card.types}] [ATK/${card.atk} DEF/${card.def}] : ${card.lore.replace(/-{2,}/, '')}
       `
     } else if (card.types.includes("Link")) {
       return `
