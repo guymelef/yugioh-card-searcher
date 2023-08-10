@@ -1,20 +1,18 @@
 const { distance } = require("fastest-levenshtein")
-const CARDS = require('../data/cards.json')
 const cheerio = require('cheerio')
+let CARDS = require('../data/cards.json')
 
 
+
+const normalizeString = (string) => string
+  .trim()
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[★☆\s+]/g, "")
+  .replace(/[^\w/@#.]|_/g, "")
 
 const getRandomCard = () => CARDS[Math.floor(Math.random() * CARDS.length)]
-
-function normalizeString(string) {
-  return string
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[★☆\s+]/g, "")
-    .replace(/[^\w/@#.]|_/g, "")
-}
 
 const findClosestCard = async (keyword, bulk = false) => {
   const USER_KEYWORD = keyword
@@ -161,7 +159,7 @@ const findClosestCard = async (keyword, bulk = false) => {
   }
 }
 
-async function createCard(card) {
+const createCard = async (card) => {
   const USER_STRING = card
   card = card.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
   const CARD = []
@@ -238,10 +236,105 @@ async function createCard(card) {
     }
 
     return CARD
-  } catch (e) {
-    console.log(`ERROR: couldn't create card [[ ${card} ]] :`, e.message)
+  } catch (err) {
+    console.log(`ERROR: couldn't create card [[ ${card} ]] :`, err.message)
     return CARD
   }
+}
+
+const updateCards = async () => {
+  return fetch("https://db.ygoprodeck.com/api/v7/cardinfo.php")
+  .then(data => data.json())
+  .then(cards => {
+    cards = cards.data
+    
+    console.log("=====================================")
+    console.log("DB CARD COUNT:", CARDS.length)
+    console.log("YGOPRODECK CARD COUNT:", cards.length)
+    console.log("=====================================")
+    
+    let newCards = []
+    if (cards.length - CARDS.length) {
+      console.log("⭕ DATABASE MAY NEED UPDATE!")
+  
+      const cardstoIgnore = [
+        "Blaze Accelerator Deployment (Skill Card)",
+        "Call of the Haunted (Skill Card)",
+        "Cocoon of Ultra Evolution (Skill Card)",
+        "Cyberdark Style (Skill Card)",
+        "Destiny Draw (Skill Card)",
+        "Double Evolution Pill (Skill Card)",
+        "Heavy Metal Raiders (Skill Card)",
+        "Land of the Ojamas (Skill Card)",
+        "Middle Age Mechs (Skill Card)",
+        "Millennium Eye (Skill Card)",
+        "Millennium Necklace (Skill Card)",
+        "Mind Scan (Skill Card)",
+        "Power Bond (Skill Card)",
+        "Spell of Mask (Skill Card)",
+        "Zombie Master (Skill Card)",
+        'Crimson Dragon (card)',
+        'Cu Chulainn the Awakened',
+        'Damage Vaccine Omega MAX',
+        'Esprit Bird Token',
+        'Falchion Beta',
+        'Fiendish Engine Omega',
+        'Gamma the Magnet Warrior',
+        'Great Dragon Token',
+        'Machine Lord Ur',
+        'Man-Eating Black Shark',
+        'Marina, Princess of Sunflowers',
+        'Nemurelia Louve',
+        'Nemurelia Réaliser, the Dreamaterializer Sleeping Princess',
+        "Nemurelia's Dreameater - Réveil",
+        'Spell Reactor RE',
+        'Summon Reactor SK',
+        'Synchro Blast Wave',
+        'Synchronized Realm',
+        'Trap Reactor Y FI',
+        'Tri-gate Wizard',
+        'Tribute to the Doomed',
+        'Twin Long Rods 1',
+        'Vanquish Soul - Dr. Madlove',
+        'Vanquish Soul - Panthera',
+        'Vanquish Soul - Pluton HG'
+      ]
+  
+      cards.forEach(card => {
+        if (!cardstoIgnore.includes(card.name) && !CARDS.find(i => i.name === card.name)) {
+          console.log("⭐ NEW CARD:", card.name)
+          newCards.push(card)
+        }
+      })
+    }
+
+    if (!newCards.length) {
+      console.log("❎ NO NEW CARDS FOUND.")
+      return { message: "database is already up to date" }
+    }
+
+    const newCardsArray = newCards.map(card => createCard(card.name))
+    return Promise.all(newCardsArray)
+    .then(cards => {
+      cards = cards.flat()
+      cards.forEach((card, index) => {
+        const lore = newCards[index].desc
+        card.lore = lore
+        CARDS.push(card)
+        newCards[index] = card
+      })
+    })
+    .then(_ => {
+      CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
+      console.log(`✅ NEW CARD(S) (${newCards.length}) ADDED:`)
+      console.log(`${JSON.stringify(newCards)}`)
+      return { newCards }
+    })
+  })
+  .catch(err => {
+    console.log("ERROR: DATABASE UPDATE FAILED!", err.message)
+    return { error: "can't update database" }
+  })
 }
 
 
@@ -251,5 +344,6 @@ async function createCard(card) {
 module.exports = {
   normalizeString,
   getRandomCard,
-  findClosestCard
+  findClosestCard,
+  updateCards
 }
