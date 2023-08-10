@@ -15,9 +15,12 @@ let unmoderatedChannels = []
 // EXPRESS SERVER
 app.get("/", (_, response) => response.send("https://www.twitch.tv/cardsearcher"))
 
-app.get("/update", async (_, response) => {
-  const result = await cardUtils.updateCards()
-  response.json(result)
+app.get("/update", (_, response) => {
+  cardUtils.updateCards()
+  .then(res => console.log(res))
+  .catch(err => console.log("ERROR:", err))
+  
+  response.json({ message: "updating database now" })
 })
 
 app.listen(process.env.PORT, () => console.log(`🐶 THE SERVER IS UP!`))
