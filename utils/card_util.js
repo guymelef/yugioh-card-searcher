@@ -342,17 +342,16 @@ const updateCards = async () => {
       cards.forEach((card, index) => {
         if (!card) return
         
-        const lore = newCards[index].desc
-        card.lore = lore
+        delete card.heading
+        card.lore = newCards[index].desc
+        if (card.name === "") card.title = newCards[index].name
         CARDS.push(card)
         newCards[index] = card
       })
     })
     .then(_ => {
       CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
-      console.log(`✅ NEW CARD(S) (${newCards.length}) ADDED:`)
-      console.log(`${JSON.stringify(newCards)}`)
-      return { newCards }
+      return console.log(`✅ NEW CARD(S) (${newCards.length}) ADDED!`)
     })
   })
   .catch(err => {
