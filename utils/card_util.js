@@ -23,44 +23,44 @@ const findClosestCard = async (keyword, bulk = false) => {
   const DISTANCEARRAY = []
 
   let exactMatch = []
-  let firstMatch = []
-  let partialMatches = []
-  let somePartialMatches = []
   let keywordMatches = []
   let possibleMatches = []
-  let possibleMatchesWithDistance3 = []
-  let possibleMatchesWithDistance4 = []
+  let partialMatches = []
   let remoteMatch = []
 
   for (let card of CARDS) {
     const cardName = normalizeString(card.name)
     let cardNameArr = card.name.toLowerCase().split(' ')
     cardNameArr = cardNameArr.map(word => normalizeString(word))
+    
+    DISTANCEARRAY.push(distance(cardName, keyword))
 
     if (cardName === keyword && !bulk) {
       exactMatch.push(card)
       console.log("🚩 sending exact match...")
       return exactMatch
     }
+    
+    if (cardName.includes(keyword)) {
+      keywordMatches.push(card)
+      continue
+    }
 
+    if (distance(cardName, keyword) < 4 && keywordArr.length > 1) {
+      console.log(card.name)
+      possibleMatches.push(card)
+    }
+    
     if (keywordArr.length === 1) {
-      if (distance(keywordArr[0], cardName.slice(0, keywordArr[0].length)) == 1) possibleMatches.push(card)
-
-      for (let word of cardNameArr) {
-        const distanceLength = distance(word, keyword)
-        if (distanceLength < 3) {
-          if (word.startsWith(keyword[0])) possibleMatches.push(card)
-          break
-        }
-        
-        if (distanceLength === 3) {
-          if (word.startsWith(keyword[0])) possibleMatchesWithDistance3.push(card)
-          break
-        }
-
-        if (distanceLength === 4) {
-          if (word.startsWith(keyword[0])) possibleMatchesWithDistance4.push(card)
-          break
+      if (keyword.length > 3) {
+        if (distance(keywordArr[0], cardName.slice(0, keywordArr[0].length)) < 2) possibleMatches.push(card)
+  
+        for (let word of cardNameArr) {
+          const distanceLength = distance(word, keyword)
+          if (distanceLength < 3 && word.length > 3 && word.startsWith(keyword[0])) {
+            if (word.startsWith(keyword[0])) possibleMatches.push(card)
+            break
+          }
         }
       }
     }
@@ -74,22 +74,25 @@ const findClosestCard = async (keyword, bulk = false) => {
         return false
       }, true)
       
-      if (matchAllCheck(cardName, keywordArr)) partialMatches.push(card)
+      if (matchAllCheck(cardName, keywordArr)) {
+        keywordMatches.push(card)
+        continue
+      }
 
-      if (cardNameArr.length > 1)
-        if (matchAllCheck(keyword, cardNameArr)) partialMatches.push(card)
+      if (cardNameArr.length > 1) {
+        if (matchAllCheck(keyword, cardNameArr) && cardName.length >= keyword.length) {
+          keywordMatches.push(card)
+          continue
+        }
+      }
 
-      keywordArr.forEach(word => {
-        if (cardName.includes(word) && word.length >= 3) somePartialMatches.push(card)
-      })
+      let matches = 0
+      keywordArr.forEach(word => cardName.includes(word) ? matches++ : undefined)
+
+      if (matches === keywordArr.length) keywordMatches.push(card)
+      else if (keywordArr.length === 2 && matches === 1) partialMatches.push(card)
+      else if (keywordArr.length > 2 && matches / keywordArr.length > 0.6) partialMatches.push(card)
     }
-
-    if (cardName.includes(keyword)) {
-      if (!firstMatch.length && cardName.startsWith(keyword)) firstMatch.push(card)
-      keywordMatches.push(card)
-    }
-
-    DISTANCEARRAY.push(distance(cardName, keyword))
   }
 
   const min = Math.min(...DISTANCEARRAY)
@@ -103,29 +106,17 @@ const findClosestCard = async (keyword, bulk = false) => {
       break
     }
   }
-
+  
   if (bulk) {
-    if (keywordMatches.length && partialMatches.length) {
-      let searchResult = []
-      searchResult = keywordMatches.concat(partialMatches)
-      searchResult = searchResult.filter((value, index, self) => self.indexOf(value) == index)
-      
-      console.log("🚩 sending keyword + partial matches...")
-      return searchResult
-    } else if (keywordMatches.length) {
+    if (keywordMatches.length) {
       console.log("🚩 sending keyword matches...")
       return keywordMatches
+    } else if (possibleMatches.length) {
+      console.log("🚩 sending possible matches...")
+      if (possibleMatches.length) return possibleMatches
     } else if (partialMatches.length) {
       console.log("🚩 sending partial matches...")
       return partialMatches
-    } else if (somePartialMatches.length) {
-      console.log("🚩 sending some partial matches...")
-      return somePartialMatches
-    } else if (possibleMatches.length || possibleMatchesWithDistance3.length || possibleMatchesWithDistance4.length) {
-      console.log("🚩 sending possible matches...")
-      if (possibleMatches.length) return possibleMatches
-      if (possibleMatchesWithDistance3.length) return possibleMatchesWithDistance3
-      if (possibleMatchesWithDistance4.length) return possibleMatchesWithDistance4
     } else {
       if (remoteMatch.length) {
         console.log("🚩 sending matches based on 1st remote match...")
@@ -136,26 +127,16 @@ const findClosestCard = async (keyword, bulk = false) => {
       return remoteMatch
     }
   } else {
-    if (firstMatch.length) {
-      console.log("🚩 sending first match...")
-      return firstMatch
-    }
-
     if (keywordMatches.length) {
       console.log("🚩 sending keyword matches...")
       return keywordMatches
     }
-
-    if (partialMatches.length) {
-      console.log("🚩 sending partial matches...")
-      return partialMatches
+    
+    if (possibleMatches.length) {
+      console.log("🚩 sending possible matches...")
+      return possibleMatches
     }
-
-    if (somePartialMatches.length) {
-      console.log("🚩 sending some partial matches...")
-      return somePartialMatches
-    }
-
+    
     const yugipediaCard = await createCard(USER_KEYWORD)
     if (yugipediaCard.length) {
       console.log('👑 Yugipedia entry found!', yugipediaCard[0])
@@ -163,12 +144,9 @@ const findClosestCard = async (keyword, bulk = false) => {
       return yugipediaCard
     }
 
-    if (possibleMatches.length || possibleMatchesWithDistance3.length || possibleMatchesWithDistance4.length) {
-      console.log("🚩 sending possible matches...")
-
-      if (possibleMatches.length) return possibleMatches
-      if (possibleMatchesWithDistance3.length) return possibleMatchesWithDistance3
-      if (possibleMatchesWithDistance4.length) return possibleMatchesWithDistance4
+    if (partialMatches.length) {
+      console.log("🚩 sending partial matches...")
+      return partialMatches
     }
 
     console.log("🚩 sending remote match...")
