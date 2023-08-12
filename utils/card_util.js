@@ -47,7 +47,6 @@ const findClosestCard = async (keyword, bulk = false) => {
     }
 
     if (distance(cardName, keyword) < 4 && keywordArr.length > 1) {
-      console.log(card.name)
       possibleMatches.push(card)
     }
     
