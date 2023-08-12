@@ -317,18 +317,23 @@ const updateCards = async () => {
       }, [])
 
       cards.forEach((card, index) => {
-        if (!card) return
-        
-        delete card.heading
-        card.lore = newCards[index].desc
-        if (card.name === "") card.title = newCards[index].name
-        CARDS.push(card)
-        newCards[index] = card
+        if (!card) {
+          return console.log("ERROR: Yugipedia page not found for:", newCards[index].name)
+        } else {
+          console.log("☑️ Found Yugipedia entry for:", newCards[index].name)
+
+          delete card.heading
+          card.lore = newCards[index].desc
+          if (card.name === "") card.title = newCards[index].name
+          CARDS.push(card)
+          newCards[index] = card
+        }
       })
     })
     .then(_ => {
       CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
-      return console.log(`✅ NEW CARD(S) (${newCards.length}) ADDED!`)
+      console.log(`✅ NEW CARD(S) (${newCards.length}) ADDED!`)
+      return newCards
     })
   })
   .catch(err => {
