@@ -1,7 +1,8 @@
 require('dotenv').config()
 const { distance } = require("fastest-levenshtein")
 const cheerio = require('cheerio')
-let CARDS = require('../data/cards.json')
+let CARDS = [...require('../data/tcg-ocg.json'), ...require('../data/rush-duel.json')]
+CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
 
 
 
@@ -46,8 +47,19 @@ const findClosestCard = async (keyword, bulk = false) => {
       continue
     }
 
+    const matches = keywordArr.reduce((sum, word) => {
+      if (cardName.includes(word)) sum++
+      return sum
+    }, 0)
+
+    if (matches === keywordArr.length) {
+      keywordMatches.push(card)
+      continue
+    }
+
     if (distance(cardName, keyword) < 4 && keywordArr.length > 1) {
       possibleMatches.push(card)
+      continue
     }
     
     if (keywordArr.length === 1) {
@@ -65,7 +77,10 @@ const findClosestCard = async (keyword, bulk = false) => {
     }
 
     if (keywordArr.length > 1) {
-      if (distance(keyword, cardName.slice(0, keyword.length)) < 3) partialMatches.push(card)
+      if (distance(keyword, cardName.slice(0, keyword.length)) < 3) {
+        possibleMatches.push(card)
+        continue
+      }
 
       const matchAllCheck = (str, strArr) => strArr.reduce((acc, word) => {
         if (!acc) return false
@@ -85,11 +100,7 @@ const findClosestCard = async (keyword, bulk = false) => {
         }
       }
 
-      let matches = 0
-      keywordArr.forEach(word => cardName.includes(word) ? matches++ : undefined)
-
-      if (matches === keywordArr.length) keywordMatches.push(card)
-      else if (keywordArr.length === 2 && matches === 1) partialMatches.push(card)
+      if (keywordArr.length === 2 && matches === 1) partialMatches.push(card)
       else if (keywordArr.length > 2 && matches / keywordArr.length > 0.6) partialMatches.push(card)
     }
   }
@@ -131,18 +142,22 @@ const findClosestCard = async (keyword, bulk = false) => {
       return keywordMatches
     }
     
+    const yugipediaCard = await createCard(USER_KEYWORD)
+    if (yugipediaCard.length) {
+      if (yugipediaCard[0].heading.includes('(Rush Duel)')) yugipediaCard[0].name += ' (Rush Duel)'
+      delete yugipediaCard[0].heading
+
+      console.log(`👑 Yugipedia entry found: "${yugipediaCard[0].name}"`)
+      console.log(yugipediaCard[0])
+      CARDS.push(yugipediaCard[0])
+      return yugipediaCard
+    }
+
     if (possibleMatches.length) {
       console.log("🚩 sending possible matches...")
       return possibleMatches
     }
     
-    const yugipediaCard = await createCard(USER_KEYWORD)
-    if (yugipediaCard.length) {
-      console.log('👑 Yugipedia entry found!', yugipediaCard[0])
-      CARDS.push(yugipediaCard[0])
-      return yugipediaCard
-    }
-
     if (partialMatches.length) {
       console.log("🚩 sending partial matches...")
       return partialMatches
