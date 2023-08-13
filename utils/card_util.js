@@ -188,7 +188,8 @@ const createCard = async (card) => {
     }
 
     const heading = $('h1').text().trim().replace('Yugipedia', '')
-    const name = $('.heading').text().trim()
+    let name = $('.heading').text().trim()
+    if (heading.includes('(Rush Duel)')) name += ' (Rush Duel)'
     const lore = $('.lore').text().trim()
     const tableClass = $('.card-table').attr('class')
     
@@ -203,7 +204,7 @@ const createCard = async (card) => {
     if (["Spell", "Trap"].includes(type)) {
       const property = $('.innertable tr:contains("Property") td:nth-child(2)').text().trim()
       
-      CARD.push({ heading, name, type, property, lore, image })
+      CARD.push({ name, type, property, lore, image })
     } else if (type === "Skill" || tableClass.includes('skill')) {
       type = "Skill"
       types = $('.innertable tr:contains("Types") td:nth-child(2)')
@@ -212,9 +213,9 @@ const createCard = async (card) => {
         types.text().trim()
         types = types.replace(/ \/ /g, '/')
 
-        CARD.push({ heading, name, type, types, lore, image })
+        CARD.push({ name, type, types, lore, image })
       } else {
-        CARD.push({ heading, name, type, lore, image })
+        CARD.push({ name, type, lore, image })
       }
     } else {
       if (tableClass.includes('token')) type = "Token"
@@ -229,7 +230,7 @@ const createCard = async (card) => {
         let linkArrows = $('.innertable tr:contains("Link Arrows") td:nth-child(2)').text().trim().split(',')
         linkArrows = linkArrows.map(arrow => arrow.trim())
         
-        CARD.push({ heading, name, type, attribute, types, linkArrows, atk, linkRating, lore, image })
+        CARD.push({ name, type, attribute, types, linkArrows, atk, linkRating, lore, image })
       } else {
         const [atk, def] = $('.innertable tr:contains("ATK / DEF") td:nth-child(2)').text().trim().split(' / ')
         const level = $('.innertable tr:contains("Level") td:nth-child(2)').text().trim()
@@ -237,9 +238,9 @@ const createCard = async (card) => {
         if (types.includes("Pendulum")) {
           const scale = $('.innertable tr:contains("Pendulum Scale") td:nth-child(2)').text().trim()
           
-          CARD.push({ heading, name, type, attribute, types, level, scale, atk, def, lore, image })
+          CARD.push({ name, type, attribute, types, level, scale, atk, def, lore, image })
         } else {
-          CARD.push({ heading, name, type, attribute, types, level, atk, def, lore, image })
+          CARD.push({ name, type, attribute, types, level, atk, def, lore, image })
         }
       }
     }
@@ -317,10 +318,7 @@ const updateCards = async () => {
       })
     }
 
-    if (!newCards.length) {
-      console.log("❎ NO NEW CARDS FOUND.")
-      return { message: "database is already up to date" }
-    }
+    if (!newCards.length) return console.log("❎ NO NEW CARDS FOUND.")
 
     const newCardsArray = newCards.map(card => createCard(card.name))
     return Promise.all(newCardsArray)
@@ -336,8 +334,6 @@ const updateCards = async () => {
           return console.log("ERROR: Yugipedia page not found for:", newCards[index].name)
         } else {
           console.log("☑️ Found Yugipedia entry for:", newCards[index].name)
-
-          delete card.heading
           card.lore = newCards[index].desc
           if (card.name === "") card.title = newCards[index].name
           CARDS.push(card)
