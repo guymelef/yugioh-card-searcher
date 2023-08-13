@@ -144,9 +144,6 @@ const findClosestCard = async (keyword, bulk = false) => {
     
     const yugipediaCard = await createCard(USER_KEYWORD)
     if (yugipediaCard.length) {
-      if (yugipediaCard[0].heading.includes('(Rush Duel)')) yugipediaCard[0].name += ' (Rush Duel)'
-      delete yugipediaCard[0].heading
-
       console.log(`👑 Yugipedia entry found: "${yugipediaCard[0].name}"`)
       console.log(yugipediaCard[0])
       CARDS.push(yugipediaCard[0])
