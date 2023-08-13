@@ -197,6 +197,9 @@ function onMessageHandler(channel, userState, message, self) {
               
               return botUtils.shortenUrlAndReply(client, channel, userName, cardToShow[0])
             })
+            .catch(err => {
+              console.log("ERROR: Can't process search result!", err.message)
+            })
         case "--list":
           if (!query) return client.say(channel, `❓Usage (max 100 cards): !search --list <keyword> `)
           
@@ -214,6 +217,9 @@ function onMessageHandler(channel, userState, message, self) {
                 return client.say(channel,`${userName}, your search yielded ${cards.length.toLocaleString()} total possible cards.`)
               else
                 return client.say(channel, botUtils.getCardArray(cards))
+            })
+            .catch(err => {
+              console.log("ERROR: Can't process search result!", err.message)
             })
         default:
           const searchQuery = ORIGINAL_MESSAGE.split(' ').slice(1).join(' ')
@@ -237,6 +243,9 @@ function onMessageHandler(channel, userState, message, self) {
               }
               
               return client.say(channel, botUtils.getCardInfo(result[0]))
+            })
+            .catch(err => {
+              console.log("ERROR: Can't process search result!", err.message)
             })
       }
     }
