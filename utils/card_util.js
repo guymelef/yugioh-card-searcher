@@ -47,10 +47,20 @@ const findClosestCard = async (keyword, bulk = false) => {
       continue
     }
 
-    const matches = keywordArr.reduce((sum, word) => {
-      if (cardName.includes(word)) sum++
-      return sum
-    }, 0)
+    let matches = 0
+    if (cardNameArr.length > 1 && keywordArr.length > 1) {
+      keywordArr.forEach(word => {
+        if (word.length > 3) {
+          cardNameArr.forEach(string => {
+            if (distance(word, string) < 2) matches++
+          })
+        }
+      })
+    } else {
+      keywordArr.forEach(word => {
+        if (cardName.includes(word)) matches++      
+      })
+    }
 
     if (matches === keywordArr.length) {
       keywordMatches.push(card)
