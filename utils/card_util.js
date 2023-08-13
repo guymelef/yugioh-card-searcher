@@ -64,12 +64,15 @@ const findClosestCard = async (keyword, bulk = false) => {
     
     if (keywordArr.length === 1) {
       if (keyword.length > 3) {
-        if (distance(keywordArr[0], cardName.slice(0, keywordArr[0].length)) < 2) possibleMatches.push(card)
+        if (distance(keywordArr[0], cardName.slice(0, keywordArr[0].length)) < 2) {
+          possibleMatches.push(card)
+          continue
+        }
   
         for (let word of cardNameArr) {
           const distanceLength = distance(word, keyword)
           if (distanceLength < 3 && word.length > 3 && word.startsWith(keyword[0])) {
-            if (word.startsWith(keyword[0])) possibleMatches.push(card)
+            possibleMatches.push(card)
             break
           }
         }
