@@ -123,7 +123,7 @@ const findClosestCard = async (keyword, bulk = false) => {
       return keywordMatches
     } else if (possibleMatches.length) {
       console.log("🚩 sending possible matches...")
-      if (possibleMatches.length) return possibleMatches
+      return possibleMatches
     } else if (partialMatches.length) {
       console.log("🚩 sending partial matches...")
       return partialMatches
