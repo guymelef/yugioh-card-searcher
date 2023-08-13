@@ -17,7 +17,7 @@ app.get("/", (_, response) => response.send("https://www.twitch.tv/cardsearcher"
 
 app.get("/update", (_, response) => {
   cardUtils.updateCards()
-  .then(res => console.log(res))
+  .then(_ => console.log("✔️  DB CHECK COMPLETE!"))
   .catch(err => console.log("ERROR:", err))
   
   response.json({ message: "updating database now" })
