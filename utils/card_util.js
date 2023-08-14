@@ -1,9 +1,9 @@
 require('dotenv').config()
 const { distance } = require("fastest-levenshtein")
 const cheerio = require('cheerio')
+
 let CARDS = [...require('../data/tcg-ocg.json'), ...require('../data/rush-duel.json')]
 CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
-
 let lastYgoProDeckCardCount = process.env.YGOPROCOUNT
 
 
@@ -275,7 +275,7 @@ const updateCards = async () => {
     console.log("YGOPRODECK CARD COUNT:", cards.length)
     console.log("=====================================")
 
-    if (+lastYgoProDeckCardCount === cards.length) return console.log("😐  Card database is up to date!")
+    if (+lastYgoProDeckCardCount === cards.length) return console.log("🤩  CARD DB IS UP TO DATE!")
     else lastYgoProDeckCardCount = cards.length
     
     let newCards = []
@@ -346,7 +346,7 @@ const updateCards = async () => {
 
       cards.forEach((card, index) => {
         if (!card) {
-          return console.log("ERROR: Yugipedia page not found for:", newCards[index].name)
+          return console.log("ERROR: Yugipedia page not found:", newCards[index].name)
         } else {
           console.log("☑️ Found Yugipedia entry for:", newCards[index].name)
           card.lore = newCards[index].desc
