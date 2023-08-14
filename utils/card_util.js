@@ -4,6 +4,8 @@ const cheerio = require('cheerio')
 let CARDS = [...require('../data/tcg-ocg.json'), ...require('../data/rush-duel.json')]
 CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
 
+let lastYgoProDeckCardCount = process.env.YGOPROCOUNT
+
 
 
 const normalizeString = (string) => string
@@ -272,6 +274,9 @@ const updateCards = async () => {
     console.log("DB CARD COUNT:", CARDS.length)
     console.log("YGOPRODECK CARD COUNT:", cards.length)
     console.log("=====================================")
+
+    if (+lastYgoProDeckCardCount === cards.length) return console.log("😐  Card database is up to date!")
+    else lastYgoProDeckCardCount = cards.length
     
     let newCards = []
     if (cards.length - CARDS.length) {
