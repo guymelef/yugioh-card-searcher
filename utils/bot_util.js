@@ -1,7 +1,3 @@
-require('dotenv').config()
-
-
-
 const tmiOptions = {
   options: { debug: process.env.DEBUG === "true" },
   connection: {
@@ -74,11 +70,11 @@ const getCardArray = (cards) => {
   return `📜 [${cards.length} ${cards.length > 1 ? 'Cards' : 'Card'}] : ${cardsArray.join(', ')}`
 }
 
-const shortenUrlAndReply = (client, channel, userName, card) => {
+const transformToBitlyUrl = async (url) => {
   const raw = JSON.stringify({
     group_guid: `${process.env.BITLY_GUID}`,
     domain: "bit.ly",
-    long_url: card.image
+    long_url: url
   })
 
   const requestOptions = {
@@ -91,12 +87,11 @@ const shortenUrlAndReply = (client, channel, userName, card) => {
     redirect: "follow"
   }
 
-  return fetch(process.env.BITLY_API, requestOptions)
-    .then(response => response.json())
-    .then(result => {
-      return client.say(channel, `📸 "${card.name}" - [ ${result.link} ]`)
-    })
-    .catch(err => client.say(channel, `${userName}, there was an error. Try again.`))
+  let link = await fetch(process.env.BITLY_API, requestOptions)
+  link = await link.json()
+  link = link.link
+
+  return link
 }
 
 const formatArrows = (array) => {
@@ -116,8 +111,8 @@ const formatArrows = (array) => {
 const returnErrMsg = () => {
   const errorMessages = require('../data/error-messages.json')
 
-  const randomIndex = Math.floor(Math.random() * errorMessages.length)
-  return `${errorMessages[randomIndex]} 💀`
+  const index = Math.floor(Math.random() * errorMessages.length)
+  return `${errorMessages[index]} 💀`
 }
 
 
@@ -129,6 +124,6 @@ module.exports = {
   getSymbol,
   getCardInfo,
   getCardArray,
-  shortenUrlAndReply,
+  transformToBitlyUrl,
   returnErrMsg,
 }

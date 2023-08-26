@@ -1,5 +1,4 @@
 const mongoose = require('mongoose')
-mongoose.set('strictQuery', true)
 const uniqueValidator = require('mongoose-unique-validator')
 
 

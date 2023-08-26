@@ -1,22 +1,51 @@
-require('dotenv').config()
 const { distance } = require("fastest-levenshtein")
 const cheerio = require('cheerio')
 
-let CARDS = [...require('../data/tcg-ocg.json'), ...require('../data/rush-duel.json')]
-CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
-let lastYgoProDeckCardCount = process.env.YGOPROCOUNT
+const { OcgCard, RushCard, StrayCard } = require('../models/card')
+const BotVariable = require('../models/variable')
+
+let CARDS
+let LAST_RANDOM_CARD
+let YGOPDCOUNT
 
 
 
-const normalizeString = (string) => string
-  .trim()
-  .toLowerCase()
-  .normalize("NFD")
-  .replace(/[\u0300-\u036f]/g, '')
-  .replace(/[★☆\s+]/g, "")
-  .replace(/[^\w/@#.]|_/g, "")
+const fetchAllData = async () => {
+    try {
+      const ocgCards = await OcgCard.find({}).select('-_id -__v').lean().exec()
+      const rushCards = await RushCard.find({}).select('-_id -__v').lean().exec()
+      const strayCards = await StrayCard.find({}).select('-_id -__v').lean().exec()
+      CARDS = [...ocgCards, ...rushCards, ...strayCards].sort((a, b) => a.name.localeCompare(b.name))
+      console.log(`🟩 All [${CARDS.length.toLocaleString()}] cards fetched!`)
 
-const getRandomCard = () => CARDS[Math.floor(Math.random() * CARDS.length)]
+      const ygopdCount = await BotVariable.findOne({ name: 'YGOPRODeck' })
+      YGOPDCOUNT = ygopdCount.card_count
+      console.log(`🟩 YGOPD card count (${ygopdCount.last_update}): ${YGOPDCOUNT.toLocaleString()}`)
+    } catch (err) {
+      console.log("🔴 CARDS FETCH ERROR:", err.message)
+      console.log("🔷 STACK:", err.stack)
+    }
+}
+
+const normalizeString = (string) => {
+  return string
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[★☆\s+]/g, "")
+    .replace(/[^\w/@#.]|_/g, "")
+}
+
+const getRandomCard = () => {
+  const index = Math.floor(Math.random() * CARDS.length)
+  const card = CARDS[index]
+  
+  if (LAST_RANDOM_CARD === card.name) return getRandomCard()
+  else LAST_RANDOM_CARD = card.name
+
+  return card
+}
 
 const findClosestCard = async (keyword, bulk = false) => {
   const USER_KEYWORD = keyword
@@ -40,7 +69,7 @@ const findClosestCard = async (keyword, bulk = false) => {
 
     if (cardName === keyword && !bulk) {
       exactMatch.push(card)
-      console.log("🚩 sending exact match...")
+      console.log("↪️  sending exact match...")
       return exactMatch
     }
     
@@ -134,48 +163,52 @@ const findClosestCard = async (keyword, bulk = false) => {
   
   if (bulk) {
     if (keywordMatches.length) {
-      console.log("🚩 sending keyword matches...")
+      console.log("↪️  sending keyword matches...")
       return keywordMatches
     } else if (possibleMatches.length) {
-      console.log("🚩 sending possible matches...")
+      console.log("↪️  sending possible matches...")
       return possibleMatches
     } else if (partialMatches.length) {
-      console.log("🚩 sending partial matches...")
+      console.log("↪️  sending partial matches...")
       return partialMatches
     } else {
       if (remoteMatch.length) {
-        console.log("🚩 sending matches based on 1st remote match...")
+        console.log("↪️  sending matches based on 1st remote match...")
         return CARDS.filter(card => card.name.includes(remoteMatch[0].name))
       }
 
-      console.log("🚩 sending remote match...")
+      console.log("↪️  sending remote match...")
       return remoteMatch
     }
   } else {
     if (keywordMatches.length) {
-      console.log("🚩 sending keyword matches...")
+      console.log("↪️  sending keyword matches...")
       return keywordMatches
     }
     
     const yugipediaCard = await createCard(USER_KEYWORD)
     if (yugipediaCard.length) {
-      console.log(`👑 Yugipedia entry found: "${yugipediaCard[0].name}"`)
+      const category = yugipediaCard[0].category
+      delete yugipediaCard[0].category
+      console.log(`👑 YUGIPEDIA ENTRY FOUND: "${yugipediaCard[0].name}"`)
       console.log(yugipediaCard[0])
+      addNewCardsToDb(yugipediaCard, category)
       CARDS.push(yugipediaCard[0])
+      CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
       return yugipediaCard
     }
 
     if (possibleMatches.length) {
-      console.log("🚩 sending possible matches...")
+      console.log("↪️  sending possible matches...")
       return possibleMatches
     }
     
     if (partialMatches.length) {
-      console.log("🚩 sending partial matches...")
+      console.log("↪️  sending partial matches...")
       return partialMatches
     }
 
-    console.log("🚩 sending remote match...")
+    console.log("↪️  sending remote match...")
     return remoteMatch
   }
 }
@@ -191,12 +224,12 @@ const createCard = async (card) => {
     html = await html.text()
     let $ = cheerio.load(html)
 
-    if ($('.card-table').length === 0) {
+    if (!$('.card-table').length) {
       html = await fetch(`${process.env.SCRAPE_URL}/${card}`)
       html = await html.text()
       $ = cheerio.load(html)
 
-      if ($('.card-table').length === 0) return CARD
+      if (!$('.card-table').length) return CARD
     }
 
     const heading = $('h1').text().trim().replace('Yugipedia', '')
@@ -206,7 +239,7 @@ const createCard = async (card) => {
     const tableClass = $('.card-table').attr('class')
     
     let type = $('.innertable tr:contains("Card type") td:nth-child(2)').text().trim()
-    if ($('.token-card').length === 1) type = "Token"
+    if ($('.token-card').length) type = "Token"
     
     let image = $('.cardtable-main_image-wrapper > a > img').attr('srcset')
     if (!image) image = $('.cardtable-main_image-wrapper > a > img').attr('src')
@@ -256,77 +289,54 @@ const createCard = async (card) => {
         }
       }
     }
+    
+    const categoryList = $('#mw-normal-catlinks').text()
+    let cardCategory = ''
+    if (categoryList.includes('Rush Duel cards'))
+      cardCategory = 'rush'
+    else if (categoryList.includes('TCG cards') || categoryList.includes('OCG cards'))
+      cardCategory = 'ocg'
+    else
+      cardCategory = 'stray'
 
+    CARD[0].category = cardCategory
     return CARD
   } catch (err) {
-    console.log(`ERROR: couldn't create card [[ ${card} ]] :`, err.message)
+    console.log(`🔴 [[ ${card} ]] CARD CREATION ERROR:`, err.message)
+    console.log("🔷 STACK:", err.stack)
     return CARD
   }
 }
 
 const updateCards = async () => {
-  return fetch(process.env.SEARCH_API)
-  .then(data => data.json())
-  .then(cards => {
-    cards = cards.data
-    
+  try {
+    let ygoProDeckCards = await fetch(process.env.YGOPD_API)
+    ygoProDeckCards = await ygoProDeckCards.json()
+    ygoProDeckCards = ygoProDeckCards.data
+      
     console.log("=====================================")
     console.log("DB CARD COUNT:", CARDS.length)
-    console.log("YGOPRODECK CARD COUNT:", cards.length)
+    console.log("YGOPRODECK CARD COUNT:", ygoProDeckCards.length)
     console.log("=====================================")
 
-    if (+lastYgoProDeckCardCount === cards.length) return console.log("🤩  CARD DB IS UP TO DATE!")
-    else lastYgoProDeckCardCount = cards.length
+    if (YGOPDCOUNT === ygoProDeckCards.length)
+      return console.log("👍  CARD DB IS UP TO DATE!")
+    else YGOPDCOUNT = ygoProDeckCards.length
+
+    await BotVariable.findOneAndUpdate(
+      { name: 'YGOPRODeck' },
+      { card_count: YGOPDCOUNT, last_update: new Date().toLocaleString('en-ph') }
+    )
     
     let newCards = []
-    if (cards.length - CARDS.length) {
-      console.log("⭕ DATABASE MAY NEED UPDATE!")
-  
-      const cardstoIgnore = [
-        "Blaze Accelerator Deployment (Skill Card)",
-        "Call of the Haunted (Skill Card)",
-        "Cocoon of Ultra Evolution (Skill Card)",
-        "Cyberdark Style (Skill Card)",
-        "Destiny Draw (Skill Card)",
-        "Double Evolution Pill (Skill Card)",
-        "Heavy Metal Raiders (Skill Card)",
-        "Land of the Ojamas (Skill Card)",
-        "Middle Age Mechs (Skill Card)",
-        "Millennium Eye (Skill Card)",
-        "Millennium Necklace (Skill Card)",
-        "Mind Scan (Skill Card)",
-        "Power Bond (Skill Card)",
-        "Spell of Mask (Skill Card)",
-        "Zombie Master (Skill Card)",
-        'Crimson Dragon (card)',
-        'Cu Chulainn the Awakened',
-        'Damage Vaccine Omega MAX',
-        'Esprit Bird Token',
-        'Falchion Beta',
-        'Fiendish Engine Omega',
-        'Gamma the Magnet Warrior',
-        'Great Dragon Token',
-        'Machine Lord Ur',
-        'Man-Eating Black Shark',
-        'Marina, Princess of Sunflowers',
-        'Nemurelia Louve',
-        'Nemurelia Réaliser, the Dreamaterializer Sleeping Princess',
-        "Nemurelia's Dreameater - Réveil",
-        'Spell Reactor RE',
-        'Summon Reactor SK',
-        'Synchro Blast Wave',
-        'Synchronized Realm',
-        'Trap Reactor Y FI',
-        'Tri-gate Wizard',
-        'Tribute to the Doomed',
-        'Twin Long Rods 1',
-        'Vanquish Soul - Dr. Madlove',
-        'Vanquish Soul - Panthera',
-        'Vanquish Soul - Pluton HG'
-      ]
-  
-      cards.forEach(card => {
-        if (!cardstoIgnore.includes(card.name) && !CARDS.find(i => i.name === card.name)) {
+    if (ygoProDeckCards.length - CARDS.length) {
+      console.log("❓ DATABASE MAY NEED UPDATE...")
+
+      const cardstoIgnore = require('../data/cards-to-ignore.json')
+      CARDS.forEach(card => cardstoIgnore.push(card.name))
+      
+      ygoProDeckCards.forEach(card => {
+        if (!cardstoIgnore.includes(card.name)) {
           console.log("⭐ NEW CARD:", card.name)
           newCards.push(card)
         }
@@ -336,35 +346,53 @@ const updateCards = async () => {
     if (!newCards.length) return console.log("❎ NO NEW CARDS FOUND.")
 
     const newCardsArray = newCards.map(card => createCard(card.name))
-    return Promise.all(newCardsArray)
-    .then(cards => {
-      cards = cards.reduce((acc, curr) => {
-        if (curr.length) acc.push(curr[0])
-        else acc.push(undefined)
-        return acc
-      }, [])
+    let newYugipediaCards = await Promise.all(newCardsArray)
+    newYugipediaCards = newYugipediaCards.reduce((acc, curr) => {
+      if (curr.length) acc.push(curr[0])
+      else acc.push(undefined)
+      return acc
+    }, [])
+    
+    newYugipediaCards.forEach((card, index) => {
+      if (!card) {
+        return console.log("🔴 YUGIPEDIA 404 PAGE ERROR:", newCards[index].name)
+      } else {
+        console.log("👑 Yugipedia entry found:", newCards[index].name)
+        card.lore = newCards[index].desc
+        if (card.name === "") card.title = newCards[index].name
+        CARDS.push(card)
+        newCards[index] = card
+      }
+    })
+    
+    CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
+    console.log(`✅ NEW CARD(S) (${newCards.length}) ADDED!`)
+    
+    return addNewCardsToDb(newCards)
+  } catch (err) {
+    console.log("🔴 CARD DATABASE UPDATE ERROR:", err.message)
+    console.log("🔷 STACK:", err.stack)
+    return { error: err.message }
+  }
+}
 
-      cards.forEach((card, index) => {
-        if (!card) {
-          return console.log("ERROR: Yugipedia page not found:", newCards[index].name)
-        } else {
-          console.log("☑️ Found Yugipedia entry for:", newCards[index].name)
-          card.lore = newCards[index].desc
-          if (card.name === "") card.title = newCards[index].name
-          CARDS.push(card)
-          newCards[index] = card
-        }
-      })
-    })
-    .then(_ => {
-      CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
-      console.log(`✅ NEW CARD(S) (${newCards.length}) ADDED!`)
-      return newCards
-    })
-  })
-  .catch(err => {
-    console.log("ERROR: DATABASE UPDATE FAILED!", err.message)
-    return { error: "can't update database" }
+const addNewCardsToDb = (cards, category = "ocg") => {
+  cards.forEach(async (card) => {
+    try {
+      delete card.category
+      let savedCard
+      if (category === 'ocg')
+        savedCard = await new OcgCard(card).save()
+      else if (category === 'rush')
+        savedCard = await new RushCard(card).save()
+      else
+        savedCard = await new StrayCard(card).save()
+  
+      console.log(`💾 [[${savedCard.name}]] saved to MongoDb!`)
+    } catch (err) {
+      console.log("🔴 NEW CARD SAVE ERROR:", err.message)
+      console.log("🔷 STACK:", err.stack)
+    }
   })
 }
 
@@ -373,6 +401,7 @@ const updateCards = async () => {
 
 
 module.exports = {
+  fetchAllData,
   normalizeString,
   getRandomCard,
   findClosestCard,
