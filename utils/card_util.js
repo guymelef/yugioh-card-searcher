@@ -78,19 +78,33 @@ const findClosestCard = async (keyword, bulk = false) => {
       continue
     }
 
+    if (keywordArr.length === 2) {
+      let closeMatch = false
+      for (const word of cardNameArr) {
+        if (word.length > 3 && distance(word, keyword) < 3) {
+           possibleMatches.push(card)
+           closeMatch = true
+           break
+        }
+      }
+
+      if (closeMatch) continue
+    }
+
     let matches = 0
+    let closeMatches = 0
     if (cardNameArr.length > 1 && keywordArr.length > 1) {
+      
       keywordArr.forEach(word => {
+        if (cardName.includes(word)) matches++
+        
         if (word.length > 3) {
           cardNameArr.forEach(string => {
-            if (distance(word, string) < 2) matches++
+            if (string.length > 3 && distance(word, string) < 2)
+              closeMatches++
           })
         }
-      })
-    } else {
-      keywordArr.forEach(word => {
-        if (cardName.includes(word)) matches++      
-      })
+      })      
     }
 
     if (matches === keywordArr.length) {
@@ -98,7 +112,40 @@ const findClosestCard = async (keyword, bulk = false) => {
       continue
     }
 
-    if (distance(cardName, keyword) < 4 && keywordArr.length > 1) {
+    if (keywordArr.length > 1) {
+      const matchAllCheck = (str, strArr) => strArr.reduce((acc, word) => {
+        if (!acc) return false
+        if (str.includes(word)) return true
+        return false
+      }, true)
+      
+      if (matchAllCheck(cardName, keywordArr)) {
+        keywordMatches.push(card)
+        continue
+      }
+
+      if (cardNameArr.length > 1) {
+        if (cardName.length >= keyword.length && matchAllCheck(keyword, cardNameArr)) {
+          keywordMatches.push(card)
+          continue
+        }
+      }
+
+      if (distance(keyword, cardName.slice(0, keyword.length)) < 3) {
+        possibleMatches.push(card)
+        continue
+      }
+
+      if (keywordArr.length === 2 && matches === 1) partialMatches.push(card)
+      else if (keywordArr.length > 2 && matches / keywordArr.length > 0.6) partialMatches.push(card)
+    }
+
+    if (closeMatches === keywordArr.length) {
+      possibleMatches.push(card)
+      continue
+    }
+
+    if (keywordArr.length > 1 && distance(cardName, keyword) < 4) {
       possibleMatches.push(card)
       continue
     }
@@ -112,40 +159,15 @@ const findClosestCard = async (keyword, bulk = false) => {
   
         for (let word of cardNameArr) {
           const distanceLength = distance(word, keyword)
-          if (distanceLength < 3 && word.length > 3 && word.startsWith(keyword[0])) {
+          if (word.length > 3 && distanceLength < 3) {
+            possibleMatches.push(card)
+            break
+          } else if (word.length >= 10 && distanceLength < 4) {
             possibleMatches.push(card)
             break
           }
         }
       }
-    }
-
-    if (keywordArr.length > 1) {
-      if (distance(keyword, cardName.slice(0, keyword.length)) < 3) {
-        possibleMatches.push(card)
-        continue
-      }
-
-      const matchAllCheck = (str, strArr) => strArr.reduce((acc, word) => {
-        if (!acc) return false
-        if (str.includes(word)) return true
-        return false
-      }, true)
-      
-      if (matchAllCheck(cardName, keywordArr)) {
-        keywordMatches.push(card)
-        continue
-      }
-
-      if (cardNameArr.length > 1) {
-        if (matchAllCheck(keyword, cardNameArr) && cardName.length >= keyword.length) {
-          keywordMatches.push(card)
-          continue
-        }
-      }
-
-      if (keywordArr.length === 2 && matches === 1) partialMatches.push(card)
-      else if (keywordArr.length > 2 && matches / keywordArr.length > 0.6) partialMatches.push(card)
     }
   }
 
@@ -185,7 +207,7 @@ const findClosestCard = async (keyword, bulk = false) => {
       console.log("↪️  sending keyword matches...")
       return keywordMatches
     }
-    
+
     const yugipediaCard = await createCard(USER_KEYWORD)
     if (yugipediaCard.length) {
       const category = yugipediaCard[0].category
@@ -357,7 +379,7 @@ const updateCards = async () => {
       if (!card) {
         return console.log("🔴 YUGIPEDIA 404 PAGE ERROR:", newCards[index].name)
       } else {
-        console.log("👑 Yugipedia entry found:", newCards[index].name)
+        console.log("👑 YUGIPEDIA ENTRY FOUND:", newCards[index].name)
         card.lore = newCards[index].desc
         if (card.name === "") card.title = newCards[index].name
         CARDS.push(card)
