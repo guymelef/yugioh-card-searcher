@@ -146,7 +146,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
               const responseMessage = botUtils.getCardArray(cardToShow)
               if (responseMessage.length > 500)
                 return client.say(channel,`
-                  ${userName}, your search yielded ${cardToShow.length.toLocaleString()} total possible cards.
+                  ${userName}, your search yielded 【${cardToShow.length.toLocaleString()}】 total possible cards.
                 `)
               else
                 return client.say(channel, botUtils.getCardArray(cardToShow))
@@ -169,7 +169,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
   
             if (cardList.length > 100)
               return client.say(channel,`
-                ${userName}, your search yielded ${cardList.length.toLocaleString()} total possible cards.
+                ${userName}, your search yielded 【${cardList.length.toLocaleString()}】 total possible cards.
               `)
             else
               return client.say(channel, botUtils.getCardArray(cardList))
@@ -190,7 +190,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
               const responseMessage = botUtils.getCardArray(searchResult)
               if (responseMessage.length > 500)
                 return client.say(channel,`
-                  ${userName}, your search yielded ${searchResult.length.toLocaleString()} total possible cards.
+                  ${userName}, your search yielded 【${searchResult.length.toLocaleString()}】 total possible cards.
                 `)
               else
                 return client.say(channel, botUtils.getCardArray(searchResult))
