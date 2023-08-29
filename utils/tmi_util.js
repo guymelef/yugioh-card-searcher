@@ -1,6 +1,9 @@
 const mongoose = require('mongoose')
 mongoose.set('strictQuery', true)
 const tmi = require('tmi.js')
+tmi.Client.prototype.reply = function(channel, replyMessage, replyParentMessageId) {
+  return this.raw(`@reply-parent-msg-id=${replyParentMessageId} PRIVMSG ${channel} :${replyMessage}`)
+}
 
 const Channel = require('../models/channel')
 const cardUtils = require('./card_util')
@@ -41,7 +44,6 @@ const onMessageHandler = async (channel, tags, message, self) => {
     
     const ORIGINAL_MESSAGE = message
     const userChannel = `#${tags.username}`
-    const userName = `@${tags["display-name"]}`
     message = message.toLowerCase()
 
     if (channel === "#cardsearcher") {
@@ -49,7 +51,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
         const messageArray = message.split(' ')
         
         if (!["close", "open"].includes(messageArray[1]))
-          return client.say(channel, `${userName}, ❓Usage: !join <open|close>`)
+          return client.reply(channel, `❓Usage: !join <open|close>`, tags.id)
         
         const channelToJoin = await Channel.findOne({ name: userChannel })
         if (!channelToJoin) {
@@ -62,10 +64,12 @@ const onMessageHandler = async (channel, tags, message, self) => {
 
           await client.join(userChannel)
           console.log(`➡️ The bot joined ${userChannel}`, new Date().toLocaleString('en-ph'))
-          return client.say(channel, `
-            ${userName}, awesome! CardSearcher has joined your channel. 
-            Don't forget to promote the bot to VIP or moderator.
-          `)
+          return client.reply(
+            channel,
+            `Awesome! CardSearcher has joined your channel. 
+            Don't forget to promote the bot to VIP or moderator.`,
+            tags.id
+          )
         } else {
           const channelToUpdate = await Channel.findOneAndUpdate(
             { name: userChannel },
@@ -78,7 +82,11 @@ const onMessageHandler = async (channel, tags, message, self) => {
           else
             OPEN_CHANNELS = OPEN_CHANNELS.filter(channel => channel !== channelToUpdate.name)
 
-          return client.say(channel, `${userName}, your bot setting is now set to "${messageArray[1].toUpperCase()}".`)
+          return client.reply(
+            channel,
+            `Your bot setting is now set to "${messageArray[1].toUpperCase()}".`,
+            tags.id
+          )
         }
       }
       
@@ -86,24 +94,26 @@ const onMessageHandler = async (channel, tags, message, self) => {
         const channelToLeave = await Channel.findOneAndDelete({ name: userChannel })
         
         if (!channelToLeave)
-          return client.say(channel, `
-            ${userName}, CardSearcher hasn't joined your channel yet. 
-            ❓Usage: !join <open|close>
-          `)
+          return client.reply(
+            channel,
+            `CardSearcher hasn't joined your channel yet. ❓Usage: !join <open|close>`,
+            tags.id
+          )
         
         await client.part(userChannel)
         OPEN_CHANNELS = OPEN_CHANNELS.filter(channel => channel !== userChannel)
         console.log(`⬅️  The bot left ${userChannel}`, new Date().toLocaleString('en-ph'))
-        return client.say(channel, `${userName}, the bot has successfully left your channel.`)
+        return client.reply(channel, `CardSearcher has successfully left your channel.`, tags.id)
       }
       
       if (message.startsWith("!channels")) {
         const userChannels = await Channel.find({}).sort({ name: 1 })
         let channelList = userChannels.filter(channel => channel.name !== '#cardsearcher')
         channelList = channelList.map(channel => `● ${channel.name.slice(1)}`)
-        return client.say(channel, `
-          imGlitch channel(s) using CardSearcher [${userChannels.length - 1}]: ${channelList.join(', ')}
-        `)
+        return client.say(
+          channel,
+          `imGlitch channel(s) using CardSearcher [${userChannels.length - 1}]: ${channelList.join(', ')}`
+        )
       }
     }
     
@@ -115,22 +125,24 @@ const onMessageHandler = async (channel, tags, message, self) => {
 
         switch (searchArg) {
           case undefined:
-            return client.say(channel, "❓Usage: !search <full/partial card name>")
+            return client.reply(channel, "❓Usage: !search <full/partial card name>", tags.id)
           case "--guide":
-            return client.say(channel, `
-              MONSTER: [
+            return client.reply(
+              channel,
+              `MONSTER: [
                 🟡: Normal, 🟠: Effect, 🟤: Tuner, 🔵: Ritual, 🟣: Fusion, 
                 ⚪: Synchro, ⚫: XYZ, 🌗: Pendulum, 🔗: Link, 🃏: Token
               ], 
-              🟢: SPELL, 🔴: TRAP, ✨: SKILL
-            `)
+              🟢: SPELL, 🔴: TRAP, ✨: SKILL`,
+              tags.id
+            )
           case "--random":
             const card = cardUtils.getRandomCard()
             const cardInfo = botUtils.getCardInfo(card)
             return client.say(channel, cardInfo)
           case "--image":
             if (!query)
-              return client.say(channel, `❓Usage: !search --image <full/partial card name>`)
+              return client.reply(channel, `❓Usage: !search --image <full/partial card name>`, tags.id)
             
             if (!cardUtils.normalizeString(query)) return
             
@@ -139,23 +151,25 @@ const onMessageHandler = async (channel, tags, message, self) => {
             
             if (!cardToShow.length) {
               console.log(`❎ Search Failed: "${query}" not found`)
-              return client.say(channel,`${botUtils.returnErrMsg()}`)
+              return client.reply(channel, `${botUtils.returnErrMsg()}`, tags.id)
             }
 
             if (cardToShow.length > 1) {
               const responseMessage = botUtils.getCardArray(cardToShow)
               if (responseMessage.length > 500)
-                return client.say(channel,`
-                  ${userName}, your search yielded 【${cardToShow.length.toLocaleString()}】 total possible cards.
-                `)
+                return client.reply(
+                  channel,`
+                  Your search yielded 【${cardToShow.length.toLocaleString()}】 total possible cards.`,
+                  tags.id
+                )
               else
-                return client.say(channel, botUtils.getCardArray(cardToShow))
+                return client.reply(channel, botUtils.getCardArray(cardToShow), tags.id)
             }
             
             const link = await botUtils.transformToBitlyUrl(cardToShow[0].image)
-            return client.say(channel, `📸 "${cardToShow[0].name}" - [ ${link} ]`)
+            return client.reply(channel, `📸 "${cardToShow[0].name}" - [ ${link} ]`, tags.id)
           case "--list":
-            if (!query) return client.say(channel, `❓Usage (max 100 cards): !search --list <keyword> `)
+            if (!query) return client.reply(channel, `❓Usage (max 100 cards): !search --list <keyword>`, tags.id)
             
             if (!cardUtils.normalizeString(query)) return
 
@@ -164,15 +178,21 @@ const onMessageHandler = async (channel, tags, message, self) => {
             
             if (!cardList.length) {
               console.log(`❎ Search Failed: "${query}" not found`)
-              return client.say(channel,`${botUtils.returnErrMsg()}`)
+              return client.reply(channel, `${botUtils.returnErrMsg()}`, tags.id)
             }
   
             if (cardList.length > 100)
-              return client.say(channel,`
-                ${userName}, your search yielded 【${cardList.length.toLocaleString()}】 total possible cards.
-              `)
+              return client.reply(
+                channel,`
+                Your search yielded 【${cardList.length.toLocaleString()}】 total possible cards.`,
+                tags.id
+              )
+            
+            const cardArray = botUtils.getCardArray(cardList)
+            if (cardArray.length > 500)
+              return client.say(channel, cardArray)
             else
-              return client.say(channel, botUtils.getCardArray(cardList))
+              return client.reply(channel, cardArray, tags.id)
           default:
             const searchQuery = ORIGINAL_MESSAGE.split(' ').slice(1).join(' ')
             
@@ -183,20 +203,26 @@ const onMessageHandler = async (channel, tags, message, self) => {
       
             if (!searchResult.length) {
               console.log(`❎ Search Failed: "${searchQuery}" not found`)
-              return client.say(channel,`${botUtils.returnErrMsg()}`)
+              return client.reply(channel, `${botUtils.returnErrMsg()}`, tags.id)
             }
             
             if (searchResult.length > 1) {
               const responseMessage = botUtils.getCardArray(searchResult)
               if (responseMessage.length > 500)
-                return client.say(channel,`
-                  ${userName}, your search yielded 【${searchResult.length.toLocaleString()}】 total possible cards.
-                `)
+                return client.reply(
+                  channel,
+                  `Your search yielded 【${searchResult.length.toLocaleString()}】 total possible cards.`,
+                  tags.id
+                )
               else
-                return client.say(channel, botUtils.getCardArray(searchResult))
+                return client.reply(channel, botUtils.getCardArray(searchResult), tags.id)
             }
             
-            return client.say(channel, botUtils.getCardInfo(searchResult[0]))
+            const cardText = botUtils.getCardInfo(searchResult[0])
+            if (cardText.length > 500)
+              return client.say(channel, cardText)
+            else
+              return client.reply(channel, cardText, tags.id)
         }
       }
     }
