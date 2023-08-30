@@ -5,8 +5,9 @@ const { OcgCard, RushCard, StrayCard } = require('../models/card')
 const BotVariable = require('../models/variable')
 
 let CARDS
-let LAST_RANDOM_CARD
 let YGOPDCOUNT
+let LAST_RANDOM_CARD
+let YUGIPEDIA_LAST_UPDATE
 
 
 
@@ -21,6 +22,10 @@ const fetchAllData = async () => {
       const ygopdCount = await BotVariable.findOne({ name: 'YGOPRODeck' })
       YGOPDCOUNT = ygopdCount.card_count
       console.log(`🟩 YGOPD card count (${ygopdCount.last_update}): ${YGOPDCOUNT.toLocaleString()}`)
+
+      const yugipediaVar = await BotVariable.findOne({ name: 'Yugipedia' })
+      YUGIPEDIA_LAST_UPDATE = yugipediaVar.lastUpdate
+      console.log(`🟩 YUGIPEDIA LATEST ENTRY: ${new Date(YUGIPEDIA_LAST_UPDATE).toLocaleString('en-ph')}`)
     } catch (err) {
       console.log("🔴 CARDS FETCH ERROR:", err.message)
       console.log("🔷 STACK:", err.stack)
@@ -235,24 +240,30 @@ const findClosestCard = async (keyword, bulk = false) => {
       return partialMatches
     }
 
-    console.log("↪️  sending remote match...")
-    return remoteMatch
+    if (remoteMatch.length) {
+      console.log("↪️  sending remote match...")
+      return remoteMatch
+    } else {
+      return remoteMatch
+    }
   }
 }
 
-const createCard = async (card) => {
+const createCard = async (card, pageId) => {
+  const pageIdUrl = pageId && `${process.env.YUGIPEDIA_PAGE}${pageId}`
   const USER_STRING = card
   card = card.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
   const CARD = []
 
   console.log(`📖 SEARCHING YUGIPEDIA FOR [[ ${card} ]]...`)
   try {
-    let html = await fetch(`${process.env.SCRAPE_URL}/${USER_STRING}`)
+    const url = pageIdUrl || `${process.env.YUGIPEDIA_WIKI}/${USER_STRING}`
+    let html = await fetch(url)
     html = await html.text()
     let $ = cheerio.load(html)
 
     if (!$('.card-table').length) {
-      html = await fetch(`${process.env.SCRAPE_URL}/${card}`)
+      html = await fetch(`${process.env.YUGIPEDIA_WIKI}/${card}`)
       html = await html.text()
       $ = cheerio.load(html)
 
@@ -427,6 +438,52 @@ const addNewCardsToDb = (cards) => {
   })
 }
 
+const checkForNewYugipediaCards = async () => {
+  try {
+    const options = {
+      method: 'GET',
+      headers: {
+        "User-Agent": "Twitch Bot https://www.twitch.tv/cardsearcher"
+      },
+      redirect: 'follow'
+    }
+
+    const recentChanges = await fetch(`${process.env.YUGIPEDIA_RC}`, options)
+    let rc = await recentChanges.json()
+    rc = rc.query.recentchanges
+
+    let newCardPages = rc.filter(change => change.comment.startsWith('Created page with "{{CardTable2')
+      && new Date(change.timestamp) > YUGIPEDIA_LAST_UPDATE
+    )
+
+    if (newCardPages.length) {
+      console.log(`🆕  YUGIPEDIA CARD(S) (${newCardPages.length}) FOUND! `)
+
+      let newCards = []
+      YUGIPEDIA_LAST_UPDATE = new Date(newCardPages[0].timestamp)
+
+      await BotVariable.findOneAndUpdate(
+        { name: "Yugipedia" },
+        { lastUpdate: YUGIPEDIA_LAST_UPDATE,
+          lastCard: { title: newCardPages[0].title, pageid: newCardPages[0].pageid }
+        }
+      )
+
+      for (let card of newCardPages) {
+        const newCard = await createCard(card.title, card.pageid)
+        newCards.push(newCard[0])
+      }
+
+      return addNewCardsToDb(newCards)
+    }
+
+    return console.log("👍  CARD DB IS UP TO DATE!")
+  } catch (err) {
+    console.log("🔴 YUGIPEDIA RC CHECK ERROR:", err.message)
+    console.log("🔷 STACK:", err.stack)
+  }
+}
+
 
 
 
@@ -436,5 +493,6 @@ module.exports = {
   normalizeString,
   getRandomCard,
   findClosestCard,
-  updateCards
+  updateCards,
+  checkForNewYugipediaCards
 }
