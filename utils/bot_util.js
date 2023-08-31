@@ -31,26 +31,29 @@ const getSymbol = (cardType) => {
 }
 
 const getCardInfo = (card) => {
+  const lore = card?.lore ? `: ${card.lore.replace(/-{2,}/, '')}` : ''
+  const types = card?.types ? `[${card.types}]` : ''
+
   if (["Spell", "Trap"].includes(card.type)) {
-    return `🔎 ${card.name} [${card.property} ${card.type}] : ${card.lore}`
+    return `🔎 ${card.name} [${card.property} ${card.type}] ${lore}`
   } else if (card.type === "Skill") {
-    return `🔎 ${card.name} ${card?.types ? `[${card.types}]` : ''} : ${card.lore}`
-  } else if (card.type === "Monster" || card.type === "Token") {
-    if (card.types.includes("Pendulum")) {
+    return `🔎 ${card.name} ${types} ${lore}`
+  } else if (["Monster", "Token"].includes(card.type)) {
+    if (types.includes("Pendulum")) {
       return `
-        🔎 ${card.name} (${card.attribute}) [${card.level}⭐] [◀${card.scale}▶] [${card.types}] [ATK/${card.atk} DEF/${card.def}] : ${card.lore.replace(/-{2,}/, '')}
+        🔎 ${card.name} (${card.attribute}) [${card.level}⭐] [◀${card.scale}▶] ${types} [ATK/${card.atk} DEF/${card.def}] ${lore}
       `
-    } else if (card.types.includes("Link")) {
+    } else if (types.includes("Link")) {
       return `
-        🔎 ${card.name} (${card.attribute}) [${card.types}] [ATK/${card.atk} LINK—${card.linkRating}] [${formatArrows(card.linkArrows)}] : ${card.lore}
+        🔎 ${card.name} (${card.attribute}) ${types} [ATK/${card.atk} LINK—${card.linkRating}] [${formatArrows(card.linkArrows)}] ${lore}
       `
     } else {
       return `
-        🔎 ${card.name} (${card.attribute}) [${card.level}⭐] ${card?.types ? `[${card.types}]` : ''} [ATK/${card.atk} DEF/${card.def}] : ${card.lore}
+        🔎 ${card.name} (${card.attribute}) [${card.level}⭐] ${types} [ATK/${card.atk} DEF/${card.def}] ${lore}
       `
     }
   } else {
-    return `🔎 ${card.name} : ${card.lore}`
+    return `🔎 ${card.name} ${lore}`
   }
 }
 
