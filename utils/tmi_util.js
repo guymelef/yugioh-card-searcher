@@ -229,6 +229,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
   } catch (err) {
     console.log("🔴 MESSAGE HANDLER ERROR:", err.message)
     console.log("🔷 STACK:", err.stack)
+    console.log("⚕️ INFO:", `[${channel}]: ${message}\n`, tags)
   }
 }
 
