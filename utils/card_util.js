@@ -474,10 +474,7 @@ const addNewCardsToDb = (cards) => {
 const checkForNewYugipediaCards = async () => {
   try {
     const options = {
-      method: 'GET',
-      headers: {
-        "User-Agent": "Twitch Bot https://www.twitch.tv/cardsearcher"
-      },
+      headers: { "User-Agent": "CardSearcher [https://www.twitch.tv/cardsearcher]" },
       redirect: 'follow'
     }
 
