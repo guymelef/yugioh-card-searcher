@@ -10,6 +10,7 @@
     "fastest-levenshtein": "^1.0.16",
     "mongoose": "^6.11.4",
     "mongoose-unique-validator": "^3.1.0",
+    "natural": "^6.7.0",
     "tmi.js": "^1.5.0"
   },
   "scripts": {
