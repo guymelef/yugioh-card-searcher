@@ -227,8 +227,6 @@ const findClosestCard = async (keyword, bulk = false) => {
 
     const yugipediaCard = await createCard(USER_KEYWORD)
     if (yugipediaCard.length) {
-      console.log(`👑 YUGIPEDIA ENTRY FOUND: "${yugipediaCard[0].name}"`)
-      console.log(yugipediaCard[0])
       addNewCardsToDb(yugipediaCard)
       return yugipediaCard
     }
@@ -428,7 +426,6 @@ const updateCards = async () => {
       if (!card) {
         return console.log("🔴 YUGIPEDIA 404 PAGE ERROR:", newCards[index].name)
       } else {
-        console.log("👑 YUGIPEDIA ENTRY FOUND:", newCards[index].name)
         card.lore = newCards[index].desc
         if (card.name === "") card.title = newCards[index].name
         CARDS.push(card)
@@ -461,9 +458,11 @@ const addNewCardsToDb = (cards) => {
       else
         savedCard = await new StrayCard(card).save()
   
-      console.log(`💾 [[${savedCard.name}]] saved to MongoDb!`)
       CARDS.push(card)
       CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
+      
+      console.log(`💾 [[ ${savedCard.name} ]] saved to MongoDb!`)
+      console.log(card)
     } catch (err) {
       console.log("🔴 NEW CARD SAVE ERROR:", err.message)
       console.log("🔷 STACK:", err.stack)
@@ -482,12 +481,17 @@ const checkForNewYugipediaCards = async () => {
     let rc = await recentChanges.json()
     rc = rc.query.recentchanges
 
+    console.log('*************************************')
+    console.log('LAST NEW YUGIPEDIA CARD:', YUGIPEDIA_LAST_UPDATE.toLocaleString('en-ph'))
+    console.log('LAST YUGIPEDIA UPDATE:', new Date(rc[0].timestamp).toLocaleString('en-ph'))
+    console.log('*************************************')
+
     let newCardPages = rc.filter(change => change.comment.startsWith('Created page with "{{CardTable2')
       && new Date(change.timestamp) > YUGIPEDIA_LAST_UPDATE
     )
 
     if (newCardPages.length) {
-      console.log(`🆕  YUGIPEDIA CARD(S) (${newCardPages.length}) FOUND! `)
+      console.log(`📢 NEW YUGIPEDIA CARD(S) FOUND! [${newCardPages.length}]`)
 
       let newCards = []
       YUGIPEDIA_LAST_UPDATE = new Date(newCardPages[0].timestamp)
