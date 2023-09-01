@@ -208,14 +208,18 @@ const onMessageHandler = async (channel, tags, message, self) => {
             
             if (searchResult.length > 1) {
               const responseMessage = botUtils.getCardArray(searchResult)
-              if (responseMessage.length > 500)
+              if (responseMessage.length > 500) {
+                const closestNatural = cardUtils.findClosestNatural(searchQuery, searchResult)
+                
                 return client.reply(
                   channel,
-                  `Your search yielded 【${searchResult.length.toLocaleString()}】 total possible cards.`,
+                  `Your search yielded ❮${searchResult.length.toLocaleString()}❯ total possible cards.
+                  Looking for “${closestNatural[0].name}”? 🤔`,
                   tags.id
                 )
-              else
+              } else {
                 return client.reply(channel, botUtils.getCardArray(searchResult), tags.id)
+              }
             }
             
             const cardText = botUtils.getCardInfo(searchResult[0])

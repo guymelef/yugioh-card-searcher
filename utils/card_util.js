@@ -1,3 +1,4 @@
+const { LevenshteinDistanceSearch } = require('natural')
 const { distance } = require("fastest-levenshtein")
 const cheerio = require('cheerio')
 
@@ -249,6 +250,36 @@ const findClosestCard = async (keyword, bulk = false) => {
   }
 }
 
+const findClosestNatural = (source, cards) => {
+  source = source.toLowerCase()
+
+  let lowestDistance = Infinity
+  let closestNaturalCards = []
+  for (let card of cards) {
+    const target = card.name.toLowerCase()
+    const naturalScore = LevenshteinDistanceSearch(source, target)
+    card.score = naturalScore
+
+    if (naturalScore.distance < lowestDistance) {
+      lowestDistance = naturalScore.distance
+      closestNaturalCards = []
+      closestNaturalCards.push(card)
+      continue
+    }
+    
+    if (naturalScore.distance === lowestDistance) closestNaturalCards.push(card)
+  }
+
+  if (closestNaturalCards.length > 1) {
+    closestNaturalCards.sort((a, b) => {
+      if (a.score.distance === b.score.distance) return a.score.offset - b.score.offset
+      return a.score.distance - b.score.distance
+    })
+  }
+
+  return closestNaturalCards
+}
+
 const createCard = async (card, pageId) => {
   const pageIdUrl = pageId && `${process.env.YUGIPEDIA_PAGE}${pageId}`
   const USER_STRING = card
@@ -493,6 +524,7 @@ module.exports = {
   normalizeString,
   getRandomCard,
   findClosestCard,
+  findClosestNatural,
   updateCards,
   checkForNewYugipediaCards
 }
