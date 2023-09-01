@@ -133,39 +133,41 @@ const findClosestCard = async (keyword, bulk = false) => {
           }
 
           if (possibleMatch) continue
-        }
+        } else {
+          if (closeMatches === keywordArr.length) {
+            possibleMatches.push(card)
+            continue
+          }
 
-        if (closeMatches === keywordArr.length) {
-          possibleMatches.push(card)
-          continue
-        }
-        
-        if (keywordArr.length > 1 && distance(cardName, keyword) < 4) {
-          possibleMatches.push(card)
-          continue
-        }
-
-        if (distance(keyword, cardName.slice(0, keyword.length)) < 3) {
-          possibleMatches.push(card)
-          continue
-        }
-
-        if (keywordArr.length === 2) {
-          let possibleMatch = false
-          for (let word of cardNameArr) {
-            if (word.length > 3 && distance(word, keyword) < 3) {
-              possibleMatch = true
+          if (keywordArr.length === 2) {
+            let possibleMatch = false
+            for (let word of cardNameArr) {
+              if (word.length > 3 && distance(word, keyword) < 3) {
+                possibleMatch = true
+                possibleMatches.push(card)
+                break
+              }
+            }
+    
+            if (possibleMatch) continue
+          }
+          
+          if (keywordArr.length > 1 && keyword.length >= 10) {
+            if (distance(cardName, keyword) < 4) {
               possibleMatches.push(card)
-              break
+              continue
+            }
+
+            if (distance(keyword, cardName.slice(0, keyword.length)) < 4) {
+              possibleMatches.push(card)
+              continue
             }
           }
-  
-          if (possibleMatch) continue
-        }
 
-        if (!possibleMatches.length) {
-          if (keywordArr.length === 2 && matches === 1) partialMatches.push(card)
-          else if (keywordArr.length > 2 && matches / keywordArr.length > 0.6) partialMatches.push(card)
+          if (!possibleMatches.length) {
+            if (keywordArr.length === 2 && matches === 1) partialMatches.push(card)
+            else if (keywordArr.length > 2 && matches / keywordArr.length > 0.6) partialMatches.push(card)
+          }
         }
       }
     }
