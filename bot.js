@@ -22,14 +22,14 @@ app.get("/update/:src", (req, res) => {
   const source = req.params.src
 
   if (source === 'ygopd') {
-    console.log(`🌏 CHECKING YGOPD...`)
+    console.log(`\n🌏 CHECKING YGOPD...`)
     cardUtils.updateCards()
     .then(_ => console.log("✔️  DB CHECK COMPLETE!"))
     .catch(err => console.log("ERROR:", err))
   }
 
   if (source === 'yugipedia') {
-    console.log(`🌏 CHECKING YUGIPEDIA...`)
+    console.log(`\n🌏 CHECKING YUGIPEDIA...`)
     cardUtils.checkForNewYugipediaCards()
     .then(_ => console.log("✔️  DB CHECK COMPLETE!"))
     .catch(err => console.log("ERROR:", err))
