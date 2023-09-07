@@ -75,7 +75,7 @@ const findClosestCard = async (keyword, bulk = false) => {
     const cardName = normalizeString(card.name)
     let cardNameArr = card.name.toLowerCase().split(' ')
     cardNameArr = cardNameArr.map(word => normalizeString(word))
-    
+
     const levDistance = LevenshteinDistanceSearch(USER_KEYWORD.toLowerCase(), card.name.toLowerCase())
     delete levDistance.substring
     levDistance.index = index
@@ -102,6 +102,22 @@ const findClosestCard = async (keyword, bulk = false) => {
             matches++
             closeMatches++
             continue
+          }
+
+          if ([2, 3, 4].includes(word.length)) {
+            let convertedStr = word.split('').join('.')
+            if (cardName.includes(convertedStr)) {
+              matches++
+              closeMatches++
+              continue
+            }
+
+            convertedStr = word.split('').join('/')
+            if (cardName.includes(convertedStr)) {
+              matches++
+              closeMatches++
+              continue
+            }
           }
           
           if (word.length > 3) {
