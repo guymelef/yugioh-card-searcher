@@ -195,8 +195,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
                 
                 return client.reply(
                   channel,
-                  `Your search yielded ❮${searchResult.length.toLocaleString()}❯ total possible cards.
-                  Looking for “${closestNatural[0].name}”? 🤔`,
+                  `Your search yielded ❮${searchResult.length.toLocaleString()}❯ total possible cards. Looking for “${closestNatural.name}”? 🤔`,
                   tags.id
                 )
               } else {
