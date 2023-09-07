@@ -221,7 +221,7 @@ const findClosestCard = async (keyword, bulk = false) => {
     }
 
     const yugipediaCard = await fetchFromYugipedia(USER_KEYWORD, null, null)
-    if (yugipediaCard.length && yugipediaCard[0]) {
+    if (yugipediaCard[0]) {
       addNewCardsToDb(yugipediaCard)
       return yugipediaCard
     }
