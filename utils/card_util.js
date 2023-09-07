@@ -70,15 +70,15 @@ const findClosestCard = async (keyword, bulk = false) => {
   let partialMatches = []
   let remoteMatches = []
 
-  for (let i = 0; i < CARDS.length; i++) {
-    let card = CARDS[i]
+  for (let index = 0; index < CARDS.length; index++) {
+    let card = CARDS[index]
     const cardName = normalizeString(card.name)
     let cardNameArr = card.name.toLowerCase().split(' ')
     cardNameArr = cardNameArr.map(word => normalizeString(word))
     
     const levDistance = LevenshteinDistanceSearch(USER_KEYWORD.toLowerCase(), card.name.toLowerCase())
     delete levDistance.substring
-    levDistance.index = i
+    levDistance.index = index
     DISTANCEARRAY.push(levDistance)
 
     if (cardName === keyword && !bulk) {
