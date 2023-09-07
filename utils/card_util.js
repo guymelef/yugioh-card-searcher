@@ -42,7 +42,7 @@ const normalizeString = (string) => {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[★☆\s+]/g, "")
-    .replace(/[^\w/@#.]|_/g, "")
+    .replace(/[^\w/@#.&]|_/g, "")
 }
 
 const getRandomCard = () => {
@@ -102,6 +102,14 @@ const findClosestCard = async (keyword, bulk = false) => {
             matches++
             closeMatches++
             continue
+          }
+
+          if (word === 'and') {
+            if (cardName.includes('&')) {
+              matches++
+              closeMatches++
+              continue
+            }
           }
 
           if ([2, 3, 4].includes(word.length)) {
