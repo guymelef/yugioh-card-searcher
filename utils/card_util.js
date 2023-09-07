@@ -1,8 +1,9 @@
 const { LevenshteinDistanceSearch } = require('natural')
 const { distance } = require("fastest-levenshtein")
-const cheerio = require('cheerio')
 
-const { OcgCard, RushCard, StrayCard } = require('../models/card')
+const { requestOptions } = require('./bot_util')
+const { fetchFromYugipedia } = require('./yugipedia_util')
+const { OcgCard, RushCard, StrayCard, UnofficialCard } = require('../models/card')
 const BotVariable = require('../models/variable')
 
 let CARDS
@@ -13,44 +14,45 @@ let YUGIPEDIA_LAST_UPDATE
 
 
 const fetchAllData = async () => {
-    try {
-      const ocgCards = await OcgCard.find({}).select('-_id -__v').lean().exec()
-      const rushCards = await RushCard.find({}).select('-_id -__v').lean().exec()
-      const strayCards = await StrayCard.find({}).select('-_id -__v').lean().exec()
-      CARDS = [...ocgCards, ...rushCards, ...strayCards].sort((a, b) => a.name.localeCompare(b.name))
-      console.log(`🟩 All [${CARDS.length.toLocaleString()}] cards fetched!`)
+  try {
+    const ocgCards = await OcgCard.find({}).select('-_id -__v').lean().exec()
+    const rushCards = await RushCard.find({}).select('-_id -__v').lean().exec()
+    const strayCards = await StrayCard.find({}).select('-_id -__v').lean().exec()
+    const unofficialCards = await UnofficialCard.find({}).select('-_id -__v').lean().exec()
+    CARDS = [...ocgCards, ...rushCards, ...strayCards, ...unofficialCards].sort((a, b) => a.name.localeCompare(b.name))
+    console.log(`🟩 All [${CARDS.length.toLocaleString()}] cards fetched!`)
 
-      const ygopdCount = await BotVariable.findOne({ name: 'YGOPRODeck' })
-      YGOPDCOUNT = ygopdCount.card_count
-      console.log(`🟩 YGOPD card count (${ygopdCount.last_update}): ${YGOPDCOUNT.toLocaleString()}`)
+    const ygopdCount = await BotVariable.findOne({ name: 'YGOPRODeck' })
+    YGOPDCOUNT = ygopdCount.card_count
+    console.log(`🟩 YGOPD card count (${ygopdCount.last_update}): ${YGOPDCOUNT.toLocaleString()}`)
 
-      const yugipediaVar = await BotVariable.findOne({ name: 'Yugipedia' })
-      YUGIPEDIA_LAST_UPDATE = yugipediaVar.lastUpdate
-      console.log(`🟩 YUGIPEDIA LATEST ENTRY: ${new Date(YUGIPEDIA_LAST_UPDATE).toLocaleString('en-ph')}`)
-    } catch (err) {
-      console.log("🔴 CARDS FETCH ERROR:", err.message)
-      console.log("🔷 STACK:", err.stack)
-    }
+    const yugipediaVar = await BotVariable.findOne({ name: 'Yugipedia' })
+    YUGIPEDIA_LAST_UPDATE = yugipediaVar.lastUpdate
+    console.log(`🟩 YUGIPEDIA LATEST ENTRY: ${new Date(YUGIPEDIA_LAST_UPDATE).toLocaleString('en-ph')}`)
+  } catch (err) {
+    console.log("🔴 CARDS FETCH ERROR:", err.message)
+    console.log("🔷 STACK:", err.stack)
+  }
 }
 
 const normalizeString = (string) => {
-  return string
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[★☆\s+]/g, "")
-    .replace(/[^\w/@#.]|_/g, "")
+return string
+  .trim()
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[★☆\s+]/g, "")
+  .replace(/[^\w/@#.]|_/g, "")
 }
 
 const getRandomCard = () => {
-  const index = Math.floor(Math.random() * CARDS.length)
-  const card = CARDS[index]
-  
-  if (LAST_RANDOM_CARD === card.name) return getRandomCard()
-  else LAST_RANDOM_CARD = card.name
+const index = Math.floor(Math.random() * CARDS.length)
+const card = CARDS[index]
 
-  return card
+if (LAST_RANDOM_CARD === card.name) return getRandomCard()
+else LAST_RANDOM_CARD = card.name
+
+return card
 }
 
 const findClosestCard = async (keyword, bulk = false) => {
@@ -58,6 +60,7 @@ const findClosestCard = async (keyword, bulk = false) => {
   let keywordArr = keyword.toLowerCase().trim().replace(/\s+/g, " ").split(' ')
   keywordArr = keywordArr.map(word => normalizeString(word))
   keyword = normalizeString(keyword)
+  
   const DISTANCEARRAY = []
 
   let exactMatch = []
@@ -65,14 +68,18 @@ const findClosestCard = async (keyword, bulk = false) => {
   let keywordMatches = []
   let possibleMatches = []
   let partialMatches = []
-  let remoteMatch = []
+  let remoteMatches = []
 
-  for (let card of CARDS) {
+  for (let i = 0; i < CARDS.length; i++) {
+    let card = CARDS[i]
     const cardName = normalizeString(card.name)
     let cardNameArr = card.name.toLowerCase().split(' ')
     cardNameArr = cardNameArr.map(word => normalizeString(word))
     
-    DISTANCEARRAY.push(distance(cardName, keyword))
+    const levDistance = LevenshteinDistanceSearch(USER_KEYWORD.toLowerCase(), card.name.toLowerCase())
+    delete levDistance.substring
+    levDistance.index = i
+    DISTANCEARRAY.push(levDistance)
 
     if (cardName === keyword && !bulk) {
       exactMatch.push(card)
@@ -174,348 +181,205 @@ const findClosestCard = async (keyword, bulk = false) => {
   }
 
   if (!queryMatches.length || !keywordMatches.length || !possibleMatches.length || !partialMatches.length) {
-    const min = Math.min(...DISTANCEARRAY)
-    if (min === keyword.length) remoteMatch = []
-  
-    const minArray = []
-    DISTANCEARRAY.forEach((num, index) => { if (num === min) minArray.push(index) })
-    for (let index of minArray) {
-      if (normalizeString(CARDS[index].name)[0] === keyword[0]) {
-        remoteMatch.push(CARDS[index])
-        break
-      }
-    }
+    const min = Math.min(...DISTANCEARRAY.map(item => item.distance))
+    const minArray = DISTANCEARRAY.filter(item => item.distance === min)
+    minArray.forEach(item => remoteMatches.push(CARDS[item.index]))
   }
   
   if (bulk) {
     if (queryMatches.length) {
-      console.log("↪️  sending query matches...")
+      console.log(`↪️  sending [${queryMatches.length}] query matches...`)
       return queryMatches
     } 
     
     if (keywordMatches.length) {
-      console.log("↪️  sending keyword matches...")
+      console.log(`↪️  sending [${keywordMatches.length}] keyword matches...`)
       return keywordMatches
     }
     
     if (possibleMatches.length) {
-      console.log("↪️  sending possible matches...")
+      console.log(`↪️  sending [${possibleMatches.length}] possible matches...`)
       return possibleMatches
     }
     
     if (partialMatches.length) {
-      console.log("↪️  sending partial matches...")
+      console.log(`↪️  sending [${partialMatches.length}] partial matches...`)
       return partialMatches
     }
 
-    if (remoteMatch.length) {
-      console.log("↪️  sending remote match...")
-      return CARDS.filter(card => card.name.includes(remoteMatch[0].name))
-    } else {
-      return remoteMatch
-    }
+    console.log(`↪️  sending [${remoteMatches.length}] remote matches...`)
+    return remoteMatches
   } else {
     if (queryMatches.length) {
-      console.log("↪️  sending query matches...")
+      console.log(`↪️  sending [${queryMatches.length}] query matches...`)
       return queryMatches
     }
 
     if (keywordMatches.length) {
-      console.log("↪️  sending keyword matches...")
+      console.log(`↪️  sending [${keywordMatches.length}] keyword matches...`)
       return keywordMatches
     }
 
-    const yugipediaCard = await createCard(USER_KEYWORD)
+    const yugipediaCard = await fetchFromYugipedia(USER_KEYWORD, null, null)
     if (yugipediaCard.length) {
       addNewCardsToDb(yugipediaCard)
       return yugipediaCard
     }
 
     if (possibleMatches.length) {
-      console.log("↪️  sending possible matches...")
+      console.log(`↪️  sending [${possibleMatches.length}] possible matches...`)
       return possibleMatches
     }
 
     if (partialMatches.length) {
-      console.log("↪️  sending partial matches...")
+      console.log(`↪️  sending [${partialMatches.length}] partial matches...`)
       return partialMatches
     }
 
-    if (remoteMatch.length) {
-      console.log("↪️  sending remote match...")
-      return remoteMatch
-    } else {
-      return remoteMatch
-    }
+    console.log(`↪️  sending [${remoteMatches.length}] remote matches...`)
+    return remoteMatches
   }
 }
 
-const findClosestNatural = (source, cards) => {
-  source = source.toLowerCase()
+const findClosestNaturalCard = (source, cards) => {
+source = source.toLowerCase()
 
-  let lowestDistance = Infinity
-  let closestNaturalCards = []
-  for (let card of cards) {
-    const target = card.name.toLowerCase()
-    const naturalScore = LevenshteinDistanceSearch(source, target)
-    card.score = naturalScore
+let lowestDistance = Infinity
+let closestNaturalCards = []
+for (let card of cards) {
+  const target = card.name.toLowerCase()
+  const naturalScore = LevenshteinDistanceSearch(source, target)
+  card.score = naturalScore
 
-    if (naturalScore.distance < lowestDistance) {
-      lowestDistance = naturalScore.distance
-      closestNaturalCards = []
-      closestNaturalCards.push(card)
-      continue
-    }
-    
-    if (naturalScore.distance === lowestDistance) closestNaturalCards.push(card)
+  if (naturalScore.distance < lowestDistance) {
+    lowestDistance = naturalScore.distance
+    closestNaturalCards = []
+    closestNaturalCards.push(card)
+    continue
   }
-
-  if (closestNaturalCards.length > 1) {
-    closestNaturalCards.sort((a, b) => {
-      if (a.score.distance === b.score.distance) return a.score.offset - b.score.offset
-      return a.score.distance - b.score.distance
-    })
-  }
-
-  return closestNaturalCards
-}
-
-const createCard = async (card, pageId) => {
-  const pageIdUrl = pageId && `${process.env.YUGIPEDIA_PAGE}${pageId}`
-  const USER_STRING = card
-  card = card.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
-  const CARD = []
-
-  console.log(`📖 SEARCHING YUGIPEDIA FOR [[ ${card} ]]...`)
-  try {
-    const url = pageIdUrl || `${process.env.YUGIPEDIA_WIKI}/${USER_STRING}`
-    let html = await fetch(url)
-    html = await html.text()
-    let $ = cheerio.load(html)
-
-    if (!$('.card-table').length) {
-      html = await fetch(`${process.env.YUGIPEDIA_WIKI}/${card}`)
-      html = await html.text()
-      $ = cheerio.load(html)
-
-      if (!$('.card-table').length) return CARD
-    }
-
-    const heading = $('h1').text().trim().replace('Yugipedia', '')
-    let name = $('.heading').text().trim()
-    if (heading.includes('(Rush Duel)')) name += ' (Rush Duel)'
-    const lore = $('.lore').text().trim()
-    const tableClass = $('.card-table').attr('class')
-    
-    let type = $('.innertable tr:contains("Card type") td:nth-child(2)').text().trim()
-    if ($('.token-card').length) type = "Token"
-    
-    let image = $('.cardtable-main_image-wrapper > a > img').attr('srcset')
-    if (!image) image = $('.cardtable-main_image-wrapper > a > img').attr('src')
-    else image = image.trim().split(' ')[0]
-
-    let types = ""
-    if (["Spell", "Trap"].includes(type)) {
-      const property = $('.innertable tr:contains("Property") td:nth-child(2)').text().trim()
-      
-      CARD.push({ name, type, property, lore, image })
-    } else if (type === "Skill" || tableClass.includes('skill')) {
-      type = "Skill"
-      types = $('.innertable tr:contains("Types") td:nth-child(2)')
-      
-      if (types.length) {
-        types.text().trim()
-        types = types.replace(/ \/ /g, '/')
-
-        CARD.push({ name, type, types, lore, image })
-      } else {
-        CARD.push({ name, type, lore, image })
-      }
-    } else {
-      if (tableClass.includes('token')) type = "Token"
-      if (tableClass.includes('effect') || tableClass.includes('normal')) type = "Monster"
-
-      const attribute = $('.innertable tr:contains("Attribute") td:nth-child(2)').text().trim()
-      types = $('.innertable tr:contains("Types") td:nth-child(2)').text().trim()
-      types = types.replace(/ \/ /g, '/')
-      
-      if (types.includes("Link")) {
-        const [atk, linkRating] = $('.innertable tr:contains("ATK / LINK") td:nth-child(2)').text().trim().split(' / ')
-        let linkArrows = $('.innertable tr:contains("Link Arrows") td:nth-child(2)').text().trim().split(',')
-        linkArrows = linkArrows.map(arrow => arrow.trim())
-        
-        CARD.push({ name, type, attribute, types, linkArrows, atk, linkRating, lore, image })
-      } else {
-        const [atk, def] = $('.innertable tr:contains("ATK / DEF") td:nth-child(2)').text().trim().split(' / ')
-        const level = $('.innertable tr:contains("Level") td:nth-child(2)').text().trim()
-        
-        if (types.includes("Pendulum")) {
-          const scale = $('.innertable tr:contains("Pendulum Scale") td:nth-child(2)').text().trim()
-          
-          CARD.push({ name, type, attribute, types, level, scale, atk, def, lore, image })
-        } else {
-          CARD.push({ name, type, attribute, types, level, atk, def, lore, image })
-        }
-      }
-    }
-    
-    const categoryList = $('#mw-normal-catlinks').text()
-    let cardCategory
-    if (categoryList.includes('Rush Duel cards'))
-      cardCategory = 'rush'
-    else if (categoryList.includes('TCG cards') || categoryList.includes('OCG cards'))
-      cardCategory = 'ocg'
-    else
-      cardCategory = 'stray'
-
-    CARD[0].category = cardCategory
-    return CARD
-  } catch (err) {
-    console.log(`🔴 [[ ${card} ]] CARD CREATION ERROR:`, err.message)
-    console.log("🔷 STACK:", err.stack)
-    return CARD
-  }
-}
-
-const updateCards = async () => {
-  try {
-    let ygoProDeckCards = await fetch(process.env.YGOPD_API)
-    ygoProDeckCards = await ygoProDeckCards.json()
-    ygoProDeckCards = ygoProDeckCards.data
-      
-    console.log("=====================================")
-    console.log("DB CARD COUNT:", CARDS.length)
-    console.log("YGOPRODECK CARD COUNT:", ygoProDeckCards.length)
-    console.log("=====================================")
-
-    if (YGOPDCOUNT === ygoProDeckCards.length)
-      return console.log("👍  CARD DB IS UP TO DATE!")
-    else YGOPDCOUNT = ygoProDeckCards.length
-
-    await BotVariable.findOneAndUpdate(
-      { name: 'YGOPRODeck' },
-      { card_count: YGOPDCOUNT, last_update: new Date().toLocaleString('en-ph') }
-    )
-    
-    let newCards = []
-    if (ygoProDeckCards.length - CARDS.length) {
-      console.log("❓ DATABASE MAY NEED UPDATE...")
-
-      const cardstoIgnore = require('../data/cards-to-ignore.json')
-      CARDS.forEach(card => cardstoIgnore.push(card.name))
-      
-      ygoProDeckCards.forEach(card => {
-        if (!cardstoIgnore.includes(card.name)) {
-          console.log("⭐ NEW CARD:", card.name)
-          newCards.push(card)
-        }
-      })
-    }
-
-    if (!newCards.length) return console.log("❎ NO NEW CARDS FOUND.")
-
-    const newCardsArray = newCards.map(card => createCard(card.name))
-    let newYugipediaCards = await Promise.all(newCardsArray)
-    newYugipediaCards = newYugipediaCards.reduce((acc, curr) => {
-      if (curr.length) acc.push(curr[0])
-      else acc.push(undefined)
-      return acc
-    }, [])
-    
-    newYugipediaCards.forEach((card, index) => {
-      if (!card) {
-        return console.log("🔴 YUGIPEDIA 404 PAGE ERROR:", newCards[index].name)
-      } else {
-        card.lore = newCards[index].desc
-        if (card.name === "") card.title = newCards[index].name
-        CARDS.push(card)
-        newCards[index] = card
-      }
-    })
-    
-    CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
-    console.log(`✅ NEW CARD(S) (${newCards.length}) ADDED!`)
-    
-    return addNewCardsToDb(newCards)
-  } catch (err) {
-    console.log("🔴 CARD DATABASE UPDATE ERROR:", err.message)
-    console.log("🔷 STACK:", err.stack)
-    return { error: err.message }
-  }
-}
-
-const addNewCardsToDb = (cards) => {
-  cards.forEach(async (card) => {
-    try {
-      const category = card.category
-      delete card.category
-
-      let savedCard
-      if (category === 'ocg')
-        savedCard = await new OcgCard(card).save()
-      else if (category === 'rush')
-        savedCard = await new RushCard(card).save()
-      else
-        savedCard = await new StrayCard(card).save()
   
-      CARDS.push(card)
-      CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
-      
-      console.log(`💾 [[ ${savedCard.name} ]] saved to MongoDb!`)
-      console.log(card)
-    } catch (err) {
-      console.log("🔴 NEW CARD SAVE ERROR:", err.message)
-      console.log("🔷 STACK:", err.stack)
-    }
+  if (naturalScore.distance === lowestDistance) closestNaturalCards.push(card)
+}
+
+if (closestNaturalCards.length > 1) {
+  closestNaturalCards.sort((a, b) => {
+    if (a.score.distance === b.score.distance) return a.score.offset - b.score.offset
+    return a.score.distance - b.score.distance
   })
 }
 
-const checkForNewYugipediaCards = async () => {
-  try {
-    const options = {
-      headers: { "User-Agent": "CardSearcher [https://www.twitch.tv/cardsearcher]" },
-      redirect: 'follow'
-    }
+return closestNaturalCards
+}
 
-    const recentChanges = await fetch(`${process.env.YUGIPEDIA_RC}`, options)
-    let rc = await recentChanges.json()
-    rc = rc.query.recentchanges
+const checkForNewYgopdCards = async () => {
+try {
+  let ygoProDeckCards = await fetch(process.env.YGOPD_API)
+  ygoProDeckCards = await ygoProDeckCards.json()
+  ygoProDeckCards = ygoProDeckCards.data
+    
+  console.log("=====================================")
+  console.log("DB CARD COUNT:", CARDS.length)
+  console.log("YGOPRODECK CARD COUNT:", ygoProDeckCards.length)
+  console.log("=====================================")
 
-    console.log('*************************************')
-    console.log('LAST NEW YUGIPEDIA CARD:', YUGIPEDIA_LAST_UPDATE.toLocaleString('en-ph'))
-    console.log('LAST YUGIPEDIA UPDATE:', new Date(rc[0].timestamp).toLocaleString('en-ph'))
-    console.log('*************************************')
-
-    let newCardPages = rc.filter(change => change.comment.startsWith('Created page with "{{CardTable2')
-      && new Date(change.timestamp) > YUGIPEDIA_LAST_UPDATE
-    )
-
-    if (newCardPages.length) {
-      console.log(`📢 NEW YUGIPEDIA CARD(S) FOUND! [${newCardPages.length}]`)
-
-      let newCards = []
-      YUGIPEDIA_LAST_UPDATE = new Date(newCardPages[0].timestamp)
-
-      await BotVariable.findOneAndUpdate(
-        { name: "Yugipedia" },
-        { lastUpdate: YUGIPEDIA_LAST_UPDATE,
-          lastCard: { title: newCardPages[0].title, pageid: newCardPages[0].pageid }
-        }
-      )
-
-      for (let card of newCardPages) {
-        const newCard = await createCard(card.title, card.pageid)
-        newCards.push(newCard[0])
-      }
-
-      return addNewCardsToDb(newCards)
-    }
-
+  if (YGOPDCOUNT === ygoProDeckCards.length)
     return console.log("👍  CARD DB IS UP TO DATE!")
-  } catch (err) {
-    console.log("🔴 YUGIPEDIA RC CHECK ERROR:", err.message)
-    console.log("🔷 STACK:", err.stack)
+  else YGOPDCOUNT = ygoProDeckCards.length
+
+  await BotVariable.findOneAndUpdate(
+    { name: 'YGOPRODeck' },
+    { card_count: YGOPDCOUNT, last_update: new Date().toLocaleString('en-ph') }
+  )
+  
+  console.log("❓ DATABASE MAY NEED UPDATE...")
+  let newCards = []
+  const cardstoIgnore = require('../data/cards-to-ignore.json')
+  CARDS.forEach(card => cardstoIgnore.push(card.name))
+  
+  ygoProDeckCards.forEach(card => {
+    if (!cardstoIgnore.includes(card.name)) {
+      newCards.push(card.name)
+    }
+  })
+
+  if (!newCards.length) return console.log("❎ NO NEW CARDS FOUND.")
+
+  newCards = await fetchFromYugipedia(null, null, newCards)
+  return addNewCardsToDb(newCards)
+} catch (err) {
+  console.log("🔴 CARD DATABASE UPDATE ERROR:", err.message)
+  console.log("🔷 STACK:", err.stack)
+  return { error: err.message }
+}
+}
+
+const checkForNewYugipediaCards = async () => {
+try {
+  const recentChanges = await fetch(`${process.env.YUGIPEDIA_RC}`, requestOptions)
+  let rc = await recentChanges.json()
+  rc = rc.query.recentchanges
+
+  console.log('*************************************************')
+  console.log('LAST NEW YUGIPEDIA CARD:', YUGIPEDIA_LAST_UPDATE.toLocaleString('en-ph'))
+  console.log('LAST YUGIPEDIA UPDATE:', new Date(rc[0].timestamp).toLocaleString('en-ph'))
+  console.log('*************************************************')
+
+  let newCardPages = rc.filter(change => change.comment.includes('{{CardTable2')
+    && new Date(change.timestamp) > YUGIPEDIA_LAST_UPDATE
+  )
+
+  if (newCardPages.length) {
+    console.log(`📢 NEW YUGIPEDIA CARD(S) FOUND! [${newCardPages.length}]`)
+    
+    YUGIPEDIA_LAST_UPDATE = new Date(newCardPages[0].timestamp)
+
+    await BotVariable.findOneAndUpdate(
+      { name: "Yugipedia" },
+      { lastUpdate: YUGIPEDIA_LAST_UPDATE,
+        lastCard: { title: newCardPages[0].title, pageid: newCardPages[0].pageid }
+      }
+    )
+    
+    newCardPages = newCardPages.map(page => page.pageid)
+    const newCards = await fetchFromYugipedia(null, newCardPages)
+
+    return addNewCardsToDb(newCards)
   }
+
+  return console.log("👍  CARD DB IS UP TO DATE!")
+} catch (err) {
+  console.log("🔴 YUGIPEDIA RC CHECK ERROR:", err.message)
+  console.log("🔷 STACK:", err.stack)
+}
+}
+
+const addNewCardsToDb = async (cards) => {
+try {
+  for (let card of cards) {
+    const category = card.category
+    const official = card.official
+    delete card.category
+    delete card.official
+
+    let savedCard
+    if (official) {
+      if (category === 'ocg') savedCard = await new OcgCard(card).save()
+      else if (category === 'rush') savedCard = await new RushCard(card).save()
+    } else {
+      if (category === 'stray') savedCard = await new StrayCard(card).save()
+      else savedCard = await new UnofficialCard(card).save()
+    }
+
+    CARDS.push(card)
+    console.log(`💾 [[ ${savedCard.name} ]] (${category.toUpperCase()} [OFFICIAL: ${official}]) saved to MongoDb!`)
+    console.log(card)
+  }
+} catch (err) {
+  console.log("🔴 NEW CARD SAVE ERROR:", err.message)
+  console.log("🔷 STACK:", err.stack)
+} finally {
+  CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
+}
 }
 
 
@@ -523,11 +387,11 @@ const checkForNewYugipediaCards = async () => {
 
 
 module.exports = {
-  fetchAllData,
-  normalizeString,
-  getRandomCard,
-  findClosestCard,
-  findClosestNatural,
-  updateCards,
-  checkForNewYugipediaCards
+fetchAllData,
+normalizeString,
+getRandomCard,
+findClosestCard,
+findClosestNaturalCard,
+checkForNewYgopdCards,
+checkForNewYugipediaCards
 }

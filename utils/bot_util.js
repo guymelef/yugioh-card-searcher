@@ -10,6 +10,11 @@ const tmiOptions = {
   }
 }
 
+const requestOptions = {
+  headers: { "User-Agent": `${process.env.BOT_USER_AGENT}` },
+  redirect: 'follow'
+}
+
 const getSymbol = (cardType) => {
   const cardSymbols = {
     Normal: '🟡',
@@ -20,7 +25,7 @@ const getSymbol = (cardType) => {
     Tuner: '🟤',
     Spell: '🟢',
     Trap: '🔴',
-    XYZ: '⚫',
+    Xyz: '⚫',
     Token: '🃏',
     Link: '🔗',
     Pendulum: '🌗',
@@ -59,15 +64,19 @@ const getCardInfo = (card) => {
 
 const getCardArray = (cards) => {
   const cardsArray = cards.map(card => {                
-    let symbol = ""
+    let symbol
+
     if (card.type === "Monster") {
-      symbol = card.types.split('/')
-      if (symbol.includes("Pendulum")) symbol = getSymbol("Pendulum")
-      else if (symbol.length > 1) symbol = getSymbol(symbol[1])
-      else symbol = getSymbol(symbol[0])
+      const types = card.types.split('/')
+
+      if (types.includes("Pendulum")) symbol = getSymbol("Pendulum")
+      else if (types.includes("Link")) symbol = getSymbol("Link")
+      else if (types.length > 1) symbol = getSymbol(types[1])
+      else symbol = getSymbol(types[0])
     } else {
       symbol = getSymbol(card.type)
     }
+    
     return `${symbol}${card.name}`
   })
   return `📜 [${cards.length} ${cards.length > 1 ? 'Cards' : 'Card'}] : ${cardsArray.join(', ')}`
@@ -124,6 +133,7 @@ const returnErrMsg = () => {
 
 module.exports = {
   tmiOptions,
+  requestOptions,
   getSymbol,
   getCardInfo,
   getCardArray,

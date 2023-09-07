@@ -112,7 +112,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
         channelList = channelList.map(channel => `● ${channel.name.slice(1)}`)
         return client.say(
           channel,
-          `imGlitch channel(s) using CardSearcher [${userChannels.length - 1}]: ${channelList.join(', ')}`
+          `imGlitch channel(s) using CardSearcher [${channelList.length}]: ${channelList.join(', ')}`
         )
       }
     }
@@ -146,14 +146,8 @@ const onMessageHandler = async (channel, tags, message, self) => {
             
             if (!cardUtils.normalizeString(query)) return
             
-            console.log(`🚀 [${channel}] SEARCHING FOR: "${query}"...`)
+            console.log(`🚀 [${channel}] SEARCHING IMAGE FOR: "${query}"...`)
             const cardToShow = await cardUtils.findClosestCard(query)
-            
-            if (!cardToShow.length) {
-              console.log(`❎ Search Failed: "${query}" not found`)
-              return client.reply(channel, `${botUtils.returnErrMsg()}`, tags.id)
-            }
-
             if (cardToShow.length > 1) {
               const responseMessage = botUtils.getCardArray(cardToShow)
               if (responseMessage.length > 500)
@@ -169,18 +163,12 @@ const onMessageHandler = async (channel, tags, message, self) => {
             const link = await botUtils.transformToBitlyUrl(cardToShow[0].image)
             return client.reply(channel, `📸 "${cardToShow[0].name}" - [ ${link} ]`, tags.id)
           case "--list":
-            if (!query) return client.reply(channel, `❓Usage (max 100 cards): !search --list <keyword>`, tags.id)
+            if (!query) return client.reply(channel, `❓Usage: !search --list <keyword>`, tags.id)
             
             if (!cardUtils.normalizeString(query)) return
 
             console.log(`🚀 [${channel}] GENERATING LIST FOR: "${query}"...`)
             const cardList = await cardUtils.findClosestCard(query, true)
-            
-            if (!cardList.length) {
-              console.log(`❎ Search Failed: "${query}" not found`)
-              return client.reply(channel, `${botUtils.returnErrMsg()}`, tags.id)
-            }
-  
             if (cardList.length > 100)
               return client.reply(
                 channel,`
@@ -200,16 +188,10 @@ const onMessageHandler = async (channel, tags, message, self) => {
 
             console.log(`🚀 [${channel}] SEARCHING FOR: "${searchQuery}"...`)
             const searchResult = await cardUtils.findClosestCard(searchQuery)
-      
-            if (!searchResult.length) {
-              console.log(`❎ Search Failed: "${searchQuery}" not found`)
-              return client.reply(channel, `${botUtils.returnErrMsg()}`, tags.id)
-            }
-            
             if (searchResult.length > 1) {
               const responseMessage = botUtils.getCardArray(searchResult)
               if (responseMessage.length > 500) {
-                const closestNatural = cardUtils.findClosestNatural(searchQuery, searchResult)
+                const closestNatural = cardUtils.findClosestNaturalCard(searchQuery, searchResult)
                 
                 return client.reply(
                   channel,

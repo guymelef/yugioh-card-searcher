@@ -23,15 +23,15 @@ app.get("/update/:src", (req, res) => {
 
   if (source === 'ygopd') {
     console.log(`\n🌏 CHECKING YGOPD...`)
-    cardUtils.updateCards()
-    .then(_ => console.log("✔️  DB CHECK COMPLETE!"))
+    cardUtils.checkForNewYgopdCards()
+    .then(_ => console.log("✔️  DB CHECK COMPLETE!\n"))
     .catch(err => console.log("ERROR:", err))
   }
 
   if (source === 'yugipedia') {
     console.log(`\n🌏 CHECKING YUGIPEDIA...`)
     cardUtils.checkForNewYugipediaCards()
-    .then(_ => console.log("✔️  DB CHECK COMPLETE!"))
+    .then(_ => console.log("✔️  DB CHECK COMPLETE!\n"))
     .catch(err => console.log("ERROR:", err))
   }
 
@@ -43,8 +43,9 @@ app.get("/update/:src", (req, res) => {
 })
 
 app.get("/refresh_data", (_, res) => {
+  console.log(`\n💧 RE-FETCHING BOT DATA...`)
   cardUtils.fetchAllData()
-  .then(_ => console.log("🔃  BOT DATA REFRESHED!"))
+  .then(_ => console.log("🔃  BOT DATA REFRESH SUCCESS!\n"))
   .catch(err => console.log("ERROR:", err))
 
   res.json({
