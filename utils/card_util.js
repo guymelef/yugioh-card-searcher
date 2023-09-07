@@ -309,7 +309,6 @@ const checkForNewYgopdCards = async () => {
   } catch (err) {
     console.log("🔴 CARD DATABASE UPDATE ERROR:", err.message)
     console.log("🔷 STACK:", err.stack)
-    return { error: err.message }
   }
 }
 
