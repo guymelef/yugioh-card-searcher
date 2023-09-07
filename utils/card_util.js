@@ -260,31 +260,24 @@ const findClosestCard = async (keyword, bulk = false) => {
 const findClosestNaturalCard = (source, cards) => {
   source = source.toLowerCase()
 
-  let lowestDistance = Infinity
-  let closestNaturalCards = []
-  for (let card of cards) {
-    const target = card.name.toLowerCase()
-    const naturalScore = LevenshteinDistanceSearch(source, target)
-    card.score = naturalScore
+  const distanceArr = cards.map((card, index) => {
+    let distance = LevenshteinDistanceSearch(source, card.name.toLowerCase())
+    distance.index = index
+    distance.name = card.name
+    return distance
+  })
 
-    if (naturalScore.distance < lowestDistance) {
-      lowestDistance = naturalScore.distance
-      closestNaturalCards = []
-      closestNaturalCards.push(card)
-      continue
-    }
-    
-    if (naturalScore.distance === lowestDistance) closestNaturalCards.push(card)
-  }
+  const min = Math.min(...distanceArr.map(item => item.distance))
+  const closest = distanceArr.filter(item => item.distance === min)
 
-  if (closestNaturalCards.length > 1) {
-    closestNaturalCards.sort((a, b) => {
-      if (a.score.distance === b.score.distance) return a.score.offset - b.score.offset
-      return a.score.distance - b.score.distance
+  if (closest.length > 1) {
+    closest.sort((a, b) => {
+      if (a.distance === b.distance) return a.offset - b.offset
+      return a.distance - b.distance
     })
   }
 
-  return closestNaturalCards
+  return closest[0]
 }
 
 const checkForNewYgopdCards = async () => {
