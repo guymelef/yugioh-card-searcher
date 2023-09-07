@@ -8,7 +8,7 @@ const fetchFromYugipedia = async (cardName, cardPageId, cardPageTitle) => {
   const CARDS = []
   
   try {
-    console.log(`📖 SEARCHING YUGIPEDIA... 【${cardName || cardPageId || cardPageTitle}】`)
+    console.log(`📖 SEARCHING YUGIPEDIA... 【 ${cardName || cardPageId || cardPageTitle} 】`)
     let wikiContent
     
     if (cardPageId) {
