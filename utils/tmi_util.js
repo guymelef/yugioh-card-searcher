@@ -60,7 +60,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
             moderated: messageArray[1] === "close"
           }).save()
 
-          if (!newChannel.moderated) OPEN_CHANNELS.push(response.name)
+          if (!newChannel.moderated) OPEN_CHANNELS.push(newChannel.name)
 
           await client.join(userChannel)
           console.log(`➡️ The bot joined ${userChannel}`, new Date().toLocaleString('en-ph'))
