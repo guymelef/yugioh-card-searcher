@@ -33,9 +33,15 @@ const fetchFromYugipedia = async (cardName, cardPageId, cardPageTitle) => {
     const pages = wikiContent.query.pages
     if (pages.length) {
       for (let page of pages) {
-        wikitext = page.revisions[0].content
         const name = page.title
-        CARDS.push(createYugipediaCard(name)[0])
+        wikitext = page.revisions[0].content
+
+        let card = createYugipediaCard(name)
+        if (card.length) {
+          card = card[0]
+          card.pageId = page.pageid
+          CARDS.push(card)
+        }
       }
     }
     
@@ -52,7 +58,7 @@ const createYugipediaCard = (cardName) => {
 
   let category
   let official
-  if (wikitext.startsWith('{{Anime card')) {
+  if (wikitext.startsWith('{{Anime') || wikitext.startsWith('{{Duel Links')) {
     category  = 'stray'
     official = false
   } else if (wikitext.startsWith('{{Unofficial')) {
@@ -94,7 +100,7 @@ const createYugipediaCard = (cardName) => {
 
   if (!types && !lore) return CARD
 
-  if (types.includes('Skill')) {
+  if (types.includes('Skill') || wikitext.startsWith('{{Duel Links Skill')) {
     type = 'Skill'
     category = category || 'ocg'
 
@@ -104,7 +110,7 @@ const createYugipediaCard = (cardName) => {
   
   type = 'Monster'
   const isRush = getProperty('rush_duel')
-  category = (requirement || isRush) ? 'rush' : 'ocg'
+  if (!category) category = (requirement || isRush) ? 'rush' : 'ocg'
 
   let attribute = getProperty('attribute')
   let atk = getProperty('atk')
@@ -158,7 +164,7 @@ const getProperty = (prop) => {
     propValue = propValue[0].split(' = ')
     propValue = propValue[1].trim()
   } else {
-    if (prop === 'image') return `https://ms.yugipedia.com//1/10/Back-TF-EN-VG.png`
+    if (prop === 'image') return `https://yugipedia.com/wiki/File:Back-TF-EN-VG.png`
     return null
   }
 
