@@ -213,6 +213,11 @@ const onMessageHandler = async (channel, tags, message, self) => {
       }
     }
   } catch (err) {
+    if (channel === "#cardsearcher")
+      client.reply(channel, `Oops, an error occured! Please try again or report the problem.`, tags.id)
+    else
+      client.reply(channel, botUtils.returnErrMsg(), tags.id)
+    
     console.log("🔴 MESSAGE HANDLER ERROR:", err.message)
     console.log("🔷 STACK:", err.stack)
     console.log("⚕️ INFO:", `[${channel}]: ${message}\n`, tags)
