@@ -1,7 +1,7 @@
 const { LevenshteinDistanceSearch } = require('natural')
 const { distance } = require("fastest-levenshtein")
 
-const { requestOptions } = require('./bot_util')
+const { requestOptions, getSymbol } = require('./bot_util')
 const { fetchFromYugipedia } = require('./yugipedia_util')
 const { OcgCard, RushCard, StrayCard, UnofficialCard } = require('../models/card')
 const BotVariable = require('../models/variable')
@@ -268,24 +268,31 @@ const findClosestCard = async (keyword, bulk = false) => {
 const findClosestNaturalCard = (source, cards) => {
   source = source.toLowerCase()
 
-  const distanceArr = cards.map((card, index) => {
+  const distanceArr = cards.map(card => {
     let distance = LevenshteinDistanceSearch(source, card.name.toLowerCase())
-    distance.index = index
     distance.name = card.name
+    
+    let symbol
+    if (card.type === "Monster") symbol = getSymbol(null, card.types)
+    else symbol = getSymbol(card.type)
+  
+    distance.symbol = symbol
     return distance
   })
 
   const min = Math.min(...distanceArr.map(item => item.distance))
-  const closest = distanceArr.filter(item => item.distance === min)
-
+  let closest = distanceArr.filter(item => item.distance === min)
+  
   if (closest.length > 1) {
     closest.sort((a, b) => {
       if (a.distance === b.distance) return a.offset - b.offset
       return a.distance - b.distance
     })
   }
+  
+  closest = closest[0]
 
-  return closest[0]
+  return `${closest.symbol}${closest.name}`
 }
 
 const checkForNewYgopdCards = async () => {
@@ -335,12 +342,15 @@ const checkForNewYugipediaCards = async () => {
     let rc = await recentChanges.json()
     rc = rc.query.recentchanges
   
-    console.log('*************************************************')
+    console.log('******************************************************')
     console.log('LAST YUGIPEDIA CARD CREATED:', new Date(YUGIPEDIA_LAST_UPDATE).toLocaleString('en-ph'))
-    console.log('LATEST YUGIPEDIA UPDATE:', new Date(rc[0].timestamp).toLocaleString('en-ph'))
-    console.log('*************************************************')
+    console.log('MOST RECENT CHANGE (NEW):', new Date(rc[0].timestamp).toLocaleString('en-ph'))
+    console.log('******************************************************')
   
-    let newCardPages = rc.filter(change => change.comment.includes('{{CardTable2') && change.timestamp !== YUGIPEDIA_LAST_UPDATE)
+    let newCardPages = rc.filter(item => {
+      const comment = item.comment.toLowerCase()
+      if (comment.includes('{{cardtable2') && item.timestamp !== YUGIPEDIA_LAST_UPDATE) return item
+    })
   
     if (newCardPages.length) {
       console.log(`📢 [${newCardPages.length}] NEW YUGIPEDIA CARD(S) FOUND!`)
@@ -358,7 +368,7 @@ const checkForNewYugipediaCards = async () => {
       )
       
       newCardPages = newCardPages.map(page => page.pageid)
-      const newCards = await fetchFromYugipedia(null, newCardPages)
+      const newCards = await fetchFromYugipedia(null, newCardPages, null)
   
       return addNewCardsToDb(newCards)
     }
