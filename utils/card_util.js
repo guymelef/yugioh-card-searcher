@@ -395,8 +395,12 @@ const addNewCardsToDb = async (cards) => {
 
     CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
   } catch (err) {
-    console.log("🔴 NEW CARD SAVE ERROR:", err.message)
-    console.log("🔷 STACK:", err.stack)
+    if (err.name === "ValidationError") {
+      console.log("♊ DUPLICATE FOUND. CARD NOT SAVED.")
+    } else {
+      console.log("🔴 NEW CARD SAVE ERROR:", err.message)
+      console.log("🔷 STACK:", err.stack)
+    }
   }
 }
 
