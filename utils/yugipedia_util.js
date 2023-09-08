@@ -8,7 +8,7 @@ const fetchFromYugipedia = async (cardName, cardPageId, cardPageTitle) => {
   const CARDS = []
   
   try {
-    console.log(`📖 SEARCHING YUGIPEDIA... 【 ${cardName || cardPageId || cardPageTitle} 】`)
+    console.log(`📖 SEARCHING YUGIPEDIA... 【${cardName || cardPageId || cardPageTitle}】`)
     let wikiContent
     
     if (cardPageId) {
@@ -75,8 +75,10 @@ const createYugipediaCard = (cardName) => {
   let lore = getProperty('lore')
   let image = getProperty('image')
   let requirement = getProperty('requirement')
+  let isRush = getProperty('rush_duel')
+  if (!category) category = (requirement || isRush) ? 'rush' : 'ocg'
 
-  if (!lore) return CARD
+  if (!lore || (!types && !lore)) return CARD
   
   if (['Spell', 'Trap'].includes(type)) {
     let property = getProperty('property')
@@ -92,13 +94,16 @@ const createYugipediaCard = (cardName) => {
     return CARD
   }
 
-  if (!types && lore) {
-    category = 'stray'
-    CARD.push({ name, lore, category, official })
-    return CARD
+  if (type === 'Skill' && category === 'rush') {
+    if (requirement) {
+      lore = `[REQUIREMENT] ${requirement} [EFFECT] ${lore}`
+      CARD.push({ name, type, requirement, lore, image, category, official })
+      return CARD
+    } else {
+      CARD.push({ name, type, lore, image, category, official })
+      return CARD
+    }
   }
-
-  if (!types && !lore) return CARD
 
   if (types.includes('Skill') || wikitext.startsWith('{{Duel Links Skill')) {
     type = 'Skill'
@@ -107,11 +112,14 @@ const createYugipediaCard = (cardName) => {
     CARD.push({ name, type, types, lore, image, category, official })
     return CARD
   }
-  
-  type = 'Monster'
-  const isRush = getProperty('rush_duel')
-  if (!category) category = (requirement || isRush) ? 'rush' : 'ocg'
 
+  if (!types && lore) {
+    category = 'stray'
+    CARD.push({ name, lore, category, official })
+    return CARD
+  }
+
+  type = 'Monster'
   let attribute = getProperty('attribute')
   let atk = getProperty('atk')
   let def = getProperty('def')
@@ -164,21 +172,15 @@ const getProperty = (prop) => {
     propValue = propValue[0].split(' = ')
     propValue = propValue[1].trim()
   } else {
-    if (prop === 'image') return `https://yugipedia.com/wiki/File:Back-TF-EN-VG.png`
+    if (prop === 'image') {
+      let image = getProperty('ja_image')
+      return image ? `${process.env.YUGIPEDIA_IMG}${image}` : `$${process.env.YUGIPEDIA_IMG}Back-TF-EN-VG.png`
+    }
+
     return null
   }
 
   switch (prop) {
-    case 'card_type':
-    case 'property':
-    case 'level':
-    case 'attribute':
-    case 'atk':
-    case 'def':
-    case 'pendulum_scale':
-    case 'rush_duel':
-    case 'effect_types':
-      return propValue
     case 'lore':
     case 'pendulum_effect':
     case 'requirement':
@@ -198,6 +200,8 @@ const getProperty = (prop) => {
       return propValue
     case 'link_arrows':
       propValue = propValue.split(', ')
+      return propValue
+    default:
       return propValue
   }
 }
