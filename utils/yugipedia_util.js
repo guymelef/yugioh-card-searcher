@@ -55,15 +55,16 @@ const fetchFromYugipedia = async (cardName, cardPageId, cardPageTitle) => {
 
 const createYugipediaCard = (cardName) => {
   const CARD = []
+  const wikitextSubstring = wikitext.substring(0, 100).toLowerCase()
 
   let category
   let official
-  if (wikitext.startsWith('{{Anime') || wikitext.startsWith('{{Duel Links')) {
+  if (wikitextSubstring.startsWith('{{anime') || wikitextSubstring.startsWith('{{duel links')) {
     category  = 'stray'
     official = false
-  } else if (wikitext.startsWith('{{Unofficial')) {
+  } else if (wikitextSubstring.startsWith('{{unofficial')) {
     official = false
-  } else if (wikitext.startsWith('{{CardTable2') || wikitext.includes('{{CardTable2')) {
+  } else if (wikitextSubstring.startsWith('{{cardtable2') || wikitextSubstring.includes('{{cardtable2')) {
     official = true
   } else {
     official = false
@@ -105,7 +106,7 @@ const createYugipediaCard = (cardName) => {
     }
   }
 
-  if (types.includes('Skill') || wikitext.startsWith('{{Duel Links Skill')) {
+  if (types.includes('Skill') || wikitextSubstring.startsWith('{{duel links skill')) {
     type = 'Skill'
     category = category || 'ocg'
 
