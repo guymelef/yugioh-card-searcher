@@ -381,14 +381,15 @@ const checkForNewYugipediaCards = async () => {
 }
 
 const addNewCardsToDb = async (cards) => {
-  try {
-    for (let card of cards) {
+  for (let card of cards) {
+    try {
       const category = card.category
       const official = card.official
       delete card.category
       delete card.official
 
       let savedCard
+      console.log(`📁 SAVING "${card.name}"...`)
       if (category === 'stray') {
         savedCard = await new StrayCard(card).save()
       } else if (official) {
@@ -397,21 +398,22 @@ const addNewCardsToDb = async (cards) => {
       } else {
         savedCard = await new UnofficialCard(card).save()
       }
-  
+
       CARDS.push(card)
       console.log(`💾 《 "${savedCard.name}" 》 / ${category.toUpperCase()} (${official ? 'official' : 'unofficial'}) / saved to MongoDb!`)
       console.log(card)
-    }
-
-    CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
-  } catch (err) {
-    if (err.name === "ValidationError") {
-      console.log("❗ DUPLICATE FOUND. CARD NOT SAVED.")
-    } else {
-      console.log("🔴 NEW CARD SAVE ERROR:", err.message)
-      console.log("🔷 STACK:", err.stack)
+    } catch (err) {
+      if (err.name === "ValidationError") {
+        console.log("❗ DUPLICATE FOUND, CARD NOT SAVED.")
+        continue
+      } else {
+        console.log("🔴 NEW CARD SAVE ERROR:", err.message)
+        console.log("🔷 STACK:", err.stack)
+      }
     }
   }
+
+  CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
 }
 
 
