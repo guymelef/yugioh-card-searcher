@@ -22,7 +22,7 @@ app.get("/update/:src", (req, res) => {
   const source = req.params.src
 
   if (source === 'ygopd') {
-    console.log(`\n🌏 CHECKING YGOPD...`)
+    console.log(`\n🌐 CHECKING YGOPD...`)
     cardUtils.checkForNewYgopdCards()
     .then(_ => console.log("✔️  DB CHECK COMPLETE!\n"))
     .catch(err => console.log("ERROR:", err))
