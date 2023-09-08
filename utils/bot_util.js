@@ -15,7 +15,7 @@ const requestOptions = {
   redirect: 'follow'
 }
 
-const getSymbol = (cardType) => {
+const getSymbol = (type, types) => {
   const cardSymbols = {
     Normal: '🟡',
     Effect: '🟠',
@@ -32,7 +32,19 @@ const getSymbol = (cardType) => {
     Skill: '✨'
   }
 
-  return cardSymbols[cardType] || '🟡'
+  if (types) {
+    let symbol
+    types = types.split('/')
+
+    if (types.includes("Pendulum")) symbol = cardSymbols["Pendulum"]
+    else if (types.includes("Link")) symbol = cardSymbols["Link"]
+    else if (types.length > 1) symbol = cardSymbols[types[1]]
+    else symbol = cardSymbols[types[0]]
+
+    return symbol || '🟡'
+  } else {
+    return cardSymbols[type]
+  }
 }
 
 const getCardInfo = (card) => {
@@ -65,17 +77,8 @@ const getCardInfo = (card) => {
 const getCardArray = (cards) => {
   const cardsArray = cards.map(card => {                
     let symbol
-
-    if (card.type === "Monster") {
-      const types = card.types.split('/')
-
-      if (types.includes("Pendulum")) symbol = getSymbol("Pendulum")
-      else if (types.includes("Link")) symbol = getSymbol("Link")
-      else if (types.length > 1) symbol = getSymbol(types[1])
-      else symbol = getSymbol(types[0])
-    } else {
-      symbol = getSymbol(card.type)
-    }
+    if (card.type === "Monster") symbol = getSymbol(null, card.types)
+    else symbol = getSymbol(card.type)
     
     return `${symbol}${card.name}`
   })
