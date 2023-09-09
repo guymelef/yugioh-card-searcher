@@ -12,14 +12,14 @@ const {
   getRandomCard,
   findClosestCard,
   findClosestNaturalCard
-} = require('./card_util_test')
+} = require('./card_util')
 const {
   tmiOptions,
   getCardInfo,
   getCardArray,
   transformToBitlyUrl,
   returnErrMsg,
-} = require('./bot_util_test')
+} = require('./bot_util')
 
 let OPEN_CHANNELS
 let client

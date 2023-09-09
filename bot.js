@@ -6,8 +6,8 @@ const {
   checkForNewYgopdCards,
   checkForNewYugipediaCards,
   fetchAllData
-} = require('./card_util')
-const { fetchDataAndSetupTmi } = require('./tmi_util')
+} = require('./utils/card_util')
+const { fetchDataAndSetupTmi } = require('./utils/tmi_util')
 
 
 
