@@ -40,6 +40,9 @@ const fetchFromYugipedia = async (cardName, cardPageId, cardPageTitle) => {
         if (card.length) {
           card = card[0]
           card.pageId = page.pageid
+          const alias = getProperty('alt_name')
+          const transName = getProperty('trans_name')
+          if (alias || transName) card.alias = alias || transName
           CARDS.push(card)
         }
       }
