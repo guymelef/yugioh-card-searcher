@@ -81,10 +81,17 @@ const findClosestCard = async (keyword, bulk = false) => {
     levDistance.index = index
     DISTANCEARRAY.push(levDistance)
 
-    if (cardName === keyword && !bulk) {
-      exactMatch.push(card)
-      console.log("↪️  sending exact match...")
-      return exactMatch
+    if (!bulk) {
+      if (cardName === keyword || card?.alias && card?.alias.includes(keyword)) {
+        exactMatch.push(card)
+        console.log("↪️  sending exact match...")
+        return exactMatch
+      }
+    }
+    
+    if (card?.alias && card.alias.includes(keyword)) {
+      queryMatches.push(card)
+      continue
     }
     
     if (cardName.includes(keyword)) {
