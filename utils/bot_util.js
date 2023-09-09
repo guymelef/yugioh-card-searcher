@@ -43,7 +43,7 @@ const getSymbol = (type, types) => {
 
     return symbol || '🟡'
   } else {
-    return cardSymbols[type]
+    return cardSymbols[type] || ''
   }
 }
 
