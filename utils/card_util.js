@@ -388,9 +388,12 @@ const checkForNewYugipediaCards = async () => {
 }
 
 const addNewCardsToDb = async (cards) => {
+  const models = { "stray": StrayCard, "ocg": OcgCard, "rush": RushCard, "unofficial": UnofficialCard }
+  let category
+
   for (let card of cards) {
     try {
-      const category = card.category
+      category = card.category
       const official = card.official
       delete card.category
       delete card.official
@@ -400,18 +403,36 @@ const addNewCardsToDb = async (cards) => {
       if (category === 'stray') {
         savedCard = await new StrayCard(card).save()
       } else if (official) {
-        if (category === 'ocg') savedCard = await new OcgCard(card).save()
-        else if (category === 'rush') savedCard = await new RushCard(card).save()
+        savedCard = await new models[category](card).save()
       } else {
+        category = 'unofficial'
         savedCard = await new UnofficialCard(card).save()
       }
 
       CARDS.push(card)
-      console.log(`💾 《 "${savedCard.name}" 》 / ${category.toUpperCase()} (${official ? 'official' : 'unofficial'}) / saved to MongoDb!`)
+      console.log(`💾 《 "${savedCard.name}" 》/${category.toUpperCase()} (${official ? 'official' : 'unofficial'})/ saved to MongoDb!`)
       console.log(card)
     } catch (err) {
       if (err.name === "ValidationError") {
-        console.log("❗ DUPLICATE FOUND, CARD NOT SAVED.")
+        console.log("❗ CARD ALREADY EXISTS.")
+        
+        if (card.alias) {
+          await models[category].findOneAndUpdate(
+            { name: card.name },
+            { alias: card.alias }
+          )
+          console.log(`⭐ "${card.name}" (${card.alias}) updated!`)
+
+          CARDS = CARDS.map(item => {
+            if (item.name === card.name) {
+              item = card
+              return item
+            } else {
+              return item
+            }
+          })
+        }
+
         continue
       } else {
         console.log("🔴 NEW CARD SAVE ERROR:", err.message)
