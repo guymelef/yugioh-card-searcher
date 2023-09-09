@@ -175,7 +175,7 @@ const getProperty = (prop) => {
   } else {
     if (prop === 'image') {
       let image = getProperty('ja_image')
-      return image ? `${process.env.YUGIPEDIA_IMG}${image}` : `$${process.env.YUGIPEDIA_IMG}Back-TF-EN-VG.png`
+      return image ? `${process.env.YUGIPEDIA_IMG}${image}` : `${process.env.YUGIPEDIA_IMG}Back-TF-EN-VG.png`
     }
 
     return null
