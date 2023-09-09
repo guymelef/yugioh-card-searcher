@@ -63,7 +63,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
           if (!newChannel.moderated) OPEN_CHANNELS.push(newChannel.name)
 
           await client.join(userChannel)
-          console.log(`➡️ The bot joined ${userChannel}`, new Date().toLocaleString('en-ph'))
+          console.log(`➕ The bot joined ${userChannel}`, new Date().toLocaleString('en-ph'))
           return client.reply(
             channel,
             `Awesome! CardSearcher has joined your channel. 
@@ -102,7 +102,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
         
         await client.part(userChannel)
         OPEN_CHANNELS = OPEN_CHANNELS.filter(channel => channel !== userChannel)
-        console.log(`⬅️  The bot left ${userChannel}`, new Date().toLocaleString('en-ph'))
+        console.log(`➖ The bot left ${userChannel}`, new Date().toLocaleString('en-ph'))
         return client.reply(channel, `CardSearcher has successfully left your channel.`, tags.id)
       }
       
@@ -195,7 +195,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
                 
                 return client.reply(
                   channel,
-                  `Your search yielded ❮${searchResult.length.toLocaleString()}❯ total possible cards. Looking for “${closestNatural.name}”? 🤔`,
+                  `Your search yielded ❮${searchResult.length.toLocaleString()}❯ total possible cards. Looking for “${closestNatural}”? 🤔`,
                   tags.id
                 )
               } else {
