@@ -121,7 +121,8 @@ const onMessageHandler = async (channel, tags, message, self) => {
       if (message.startsWith("!search")) {
         const messageArray = message.split(' ')
         const searchArg = messageArray[1]
-        const query = messageArray.slice(2).join(' ')
+        let query = messageArray.slice(2).join(' ')
+        let searchResult = []
 
         switch (searchArg) {
           case undefined:
@@ -137,61 +138,60 @@ const onMessageHandler = async (channel, tags, message, self) => {
               tags.id
             )
           case "--random":
-            const card = cardUtils.getRandomCard()
-            const cardInfo = botUtils.getCardInfo(card)
+            searchResult = cardUtils.getRandomCard()
+            const cardInfo = botUtils.getCardInfo(searchResult)
             return client.say(channel, cardInfo)
           case "--image":
-            if (!query)
-              return client.reply(channel, `❓Usage: !search --image <full/partial card name>`, tags.id)
+            if (!query) return client.reply(channel, `❓Usage: !search --image <full/partial card name>`, tags.id)
             
-            if (!cardUtils.normalizeString(query)) return
+            if (!cardUtils.normalizeString(query)) return client.reply(channel, botUtils.returnErrMsg(), tags.id)
             
             console.log(`🚀 [${channel}] SEARCHING IMAGE FOR: "${query}"...`)
-            const cardToShow = await cardUtils.findClosestCard(query)
-            if (cardToShow.length > 1) {
-              const responseMessage = botUtils.getCardArray(cardToShow)
+            searchResult = await cardUtils.findClosestCard(query)
+            if (searchResult.length > 1) {
+              const responseMessage = botUtils.getCardArray(searchResult)
               if (responseMessage.length > 500)
                 return client.reply(
                   channel,`
-                  Your search yielded 【${cardToShow.length.toLocaleString()}】 total possible cards.`,
+                  Your search yielded 【${searchResult.length.toLocaleString()}】 total possible cards.`,
                   tags.id
                 )
               else
-                return client.reply(channel, botUtils.getCardArray(cardToShow), tags.id)
+                return client.reply(channel, botUtils.getCardArray(searchResult), tags.id)
             }
             
-            const link = await botUtils.transformToBitlyUrl(cardToShow[0].image)
-            return client.reply(channel, `📸 "${cardToShow[0].name}" - [ ${link} ]`, tags.id)
+            const link = await botUtils.transformToBitlyUrl(searchResult[0].image)
+            return client.reply(channel, `📸 "${searchResult[0].name}" - [ ${link} ]`, tags.id)
           case "--list":
             if (!query) return client.reply(channel, `❓Usage: !search --list <keyword>`, tags.id)
             
-            if (!cardUtils.normalizeString(query)) return
+            if (!cardUtils.normalizeString(query)) return client.reply(channel, botUtils.returnErrMsg(), tags.id)
 
             console.log(`🚀 [${channel}] GENERATING LIST FOR: "${query}"...`)
-            const cardList = await cardUtils.findClosestCard(query, true)
-            if (cardList.length > 100)
+            searchResult = await cardUtils.findClosestCard(query, true)
+            if (searchResult.length > 100)
               return client.reply(
                 channel,`
-                Your search yielded 【${cardList.length.toLocaleString()}】 total possible cards.`,
+                Your search yielded 【${searchResult.length.toLocaleString()}】 total possible cards.`,
                 tags.id
               )
             
-            const cardArray = botUtils.getCardArray(cardList)
+            const cardArray = botUtils.getCardArray(searchResult)
             if (cardArray.length > 500)
               return client.say(channel, cardArray)
             else
               return client.reply(channel, cardArray, tags.id)
           default:
-            const searchQuery = ORIGINAL_MESSAGE.split(' ').slice(1).join(' ')
+            query = ORIGINAL_MESSAGE.split(' ').slice(1).join(' ')
             
-            if (!cardUtils.normalizeString(searchQuery)) return
+            if (!cardUtils.normalizeString(query)) return client.reply(channel, botUtils.returnErrMsg(), tags.id)
 
-            console.log(`🚀 [${channel}] SEARCHING FOR: "${searchQuery}"...`)
-            const searchResult = await cardUtils.findClosestCard(searchQuery)
+            console.log(`🚀 [${channel}] SEARCHING FOR: "${query}"...`)
+            searchResult = await cardUtils.findClosestCard(query)
             if (searchResult.length > 1) {
               const responseMessage = botUtils.getCardArray(searchResult)
               if (responseMessage.length > 500) {
-                const closestNatural = cardUtils.findClosestNaturalCard(searchQuery, searchResult)
+                const closestNatural = cardUtils.findClosestNaturalCard(query, searchResult)
                 
                 return client.reply(
                   channel,
