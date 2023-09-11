@@ -56,28 +56,34 @@ const normalizeString = (string) => {
 }
 
 const findClosestCard = async (keyword, bulk = false) => {
-  const USER_KEYWORD = keyword
-  let keywordArr = keyword.toLowerCase().trim().replace(/\s+/g, " ").split(' ')
-  keywordArr = keywordArr.map(word => normalizeString(word))
   keyword = normalizeString(keyword)
+  const keywordArr = keyword.split(' ')
   
   const DISTANCEARRAY = []
 
   let exactMatch = []
   let queryMatches = []
-  let keywordMatches = []
+  let wordMatches = []
   let possibleMatches = []
   let partialMatches = []
   let remoteMatches = []
 
+  const convertedStringChecker = (word, cardName) => {
+    let convertedStr = word.split('').join('.')
+    if (cardName.includes(convertedStr)) return true
+
+    convertedStr = word.split('').join('/')
+    if (cardName.includes(convertedStr)) return true
+
+    return false
+  }
+
   for (let index = 0; index < CARDS.length; index++) {
     let card = CARDS[index]
     const cardName = normalizeString(card.name)
-    let cardNameArr = card.name.toLowerCase().split(' ')
-    cardNameArr = cardNameArr.map(word => normalizeString(word))
+    const cardNameArr = cardName.split(' ')
 
-    const levDistance = LevenshteinDistanceSearch(USER_KEYWORD.toLowerCase(), card.name.toLowerCase())
-    delete levDistance.substring
+    const levDistance = LevenshteinDistanceSearch(keyword, cardName)
     levDistance.index = index
     DISTANCEARRAY.push(levDistance)
 
@@ -96,125 +102,139 @@ const findClosestCard = async (keyword, bulk = false) => {
       queryMatches.push(card)
       continue
     }
-    
+
     if (cardName.includes(keyword)) {
       queryMatches.push(card)
       continue
     }
 
-    if (!queryMatches.length) {
-      let matches = 0
-      let closeMatches = 0
+    if ([2, 3, 4].includes(keyword.length)) {
+      if (convertedStringChecker(keyword, cardName)) {
+        queryMatches.push(card)
+        continue
+      }
+    }
 
-      if (keywordArr.length > 1 && cardNameArr.length > 1) {
+    if (!queryMatches.length) {
+      if (cardNameArr.join('').includes(keywordArr.join(''))) {
+        wordMatches.push(card)
+        continue
+      }
+
+      if (keywordArr.length > 1 && cardNameArr.length > 1) {        
+        let isAMatch = false
+        let matches = 0
         for (let word of keywordArr) {
           if (cardName.includes(word)) {
+            isAMatch = true
             matches++
-            closeMatches++
             continue
           }
 
-          if (word === 'and') {
-            if (cardName.includes('&')) {
-              matches++
-              closeMatches++
-              continue
-            }
+          if (word === 'and' && cardName.includes('&')) {
+            isAMatch = true
+            matches++
+            continue
           }
 
           if ([2, 3, 4].includes(word.length)) {
-            let convertedStr = word.split('').join('.')
-            if (cardName.includes(convertedStr)) {
+            if (convertedStringChecker(word, cardName)) {
+              isAMatch = true
               matches++
-              closeMatches++
               continue
             }
+          }
 
-            convertedStr = word.split('').join('/')
-            if (cardName.includes(convertedStr)) {
-              matches++
-              closeMatches++
-              continue
-            }
-          }
-          
-          if (word.length > 3) {
-            for (let string of cardNameArr) {
-              if (string.length > 3 && distance(word, string) < 3) {
-                closeMatches++
-                break
-              }
-            }
-          }
+          if (!isAMatch) break
         }
   
-        if (matches === keywordArr.length) {
-          keywordMatches.push(card)
+        if (isAMatch && matches === keywordArr.length) {
+          wordMatches.push(card)
           continue
         }
       }
-      
-      if (!keywordMatches.length) {
-        if (keywordArr.length === 1) {
-          let possibleMatch = false
+    }
 
-          if (keyword.length > 3) {
-            for (let word of cardNameArr) {
-              const levDistance = distance(word, keyword)
-              if (word.length >= 10 && levDistance < 4) {
-                possibleMatch = true
-                possibleMatches.push(card)
-                break
-              } else if (word.length > 3 && levDistance < 3) {
-                possibleMatch = true
-                possibleMatches.push(card)
-                break
+    if (!wordMatches.length) {
+      if (keywordArr.length === 1) {
+        let possibleMatch = false
+        if (keyword.length > 3) {
+          for (let word of cardNameArr) {
+            const levDistance = distance(word, keyword)
+            if (word.length >= 10 && levDistance < 4) {
+              possibleMatch = true
+              possibleMatches.push(card)
+              break
+            } else if (word.length > 3 && levDistance < 3) {
+              possibleMatch = true
+              possibleMatches.push(card)
+              break
+            }
+          }
+        }
+
+        if (possibleMatch) continue
+      } else {
+        let closeMatches = 0
+        if (keywordArr.length > 1 && cardNameArr.length > 1) {
+          for (let word of keywordArr) {
+            if (cardName.includes(word)) {
+              closeMatches++
+              continue
+            }
+
+            if (word.length > 3) {
+              for (let string of cardNameArr) {
+                if (string.length > 3 && distance(string, word) < 3) {
+                  closeMatches++
+                  break
+                }
               }
             }
           }
 
-          if (possibleMatch) continue
-        } else {
           if (closeMatches === keywordArr.length) {
             possibleMatches.push(card)
             continue
           }
+        }
 
-          if (keywordArr.length === 2) {
-            let possibleMatch = false
-            for (let word of cardNameArr) {
-              if (word.length > 3 && distance(word, keyword) < 3) {
-                possibleMatch = true
-                possibleMatches.push(card)
-                break
-              }
+        if (keywordArr.length === 2) {
+          let possibleMatch = false
+          for (let word of cardNameArr) {
+            if (word.length > 3 && distance(word, keywordArr.join('')) < 3) {
+              possibleMatch = true
+              possibleMatches.push(card)
+              break
             }
-    
-            if (possibleMatch) continue
           }
+          if (possibleMatch) continue
+        }
+        
+        if (keywordArr.length > 1 && keyword.length >= 10) {
+          const cardNameJoined = cardNameArr.join('')
+          const keywordJoined = keywordArr.join('')
           
-          if (keywordArr.length > 1 && keyword.length >= 10) {
-            if (distance(cardName, keyword) < 4) {
-              possibleMatches.push(card)
-              continue
-            }
-
-            if (distance(keyword, cardName.slice(0, keyword.length)) < 4) {
-              possibleMatches.push(card)
-              continue
-            }
+          if (distance(cardNameJoined, keywordJoined) < 4) {
+            possibleMatches.push(card)
+            continue
           }
 
-          if (!possibleMatches.length) {
-            if (keywordArr.length === 2 && matches === 1) partialMatches.push(card)
-            else if (keywordArr.length > 2 && matches / keywordArr.length > 0.6) partialMatches.push(card)
+          if (distance(cardNameJoined.slice(0, keywordJoined.length), keywordJoined) < 4) {
+            possibleMatches.push(card)
+            continue
           }
+        }
+
+        if (!possibleMatches.length) {
+          if (keywordArr.length === 2 && closeMatches === 1) partialMatches.push(card)
+          else if (keywordArr.length > 2 && closeMatches / keywordArr.length >= 0.6) partialMatches.push(card)
         }
       }
     }
   }
 
-  if (!queryMatches.length || !keywordMatches.length || !possibleMatches.length || !partialMatches.length) {
+  if (!queryMatches.length || !wordMatches.length || !possibleMatches.length || !partialMatches.length) {
     const min = Math.min(...DISTANCEARRAY.map(item => item.distance))
     const minArray = DISTANCEARRAY.filter(item => item.distance === min)
     minArray.forEach(item => remoteMatches.push(CARDS[item.index]))
@@ -226,9 +246,9 @@ const findClosestCard = async (keyword, bulk = false) => {
       return queryMatches
     } 
     
-    if (keywordMatches.length) {
-      console.log(`↪️  sending [${keywordMatches.length}] keyword matches...`)
-      return keywordMatches
+    if (wordMatches.length) {
+      console.log(`↪️  sending [${wordMatches.length}] word matches...`)
+      return wordMatches
     }
     
     if (possibleMatches.length) {
@@ -249,15 +269,9 @@ const findClosestCard = async (keyword, bulk = false) => {
       return queryMatches
     }
 
-    if (keywordMatches.length) {
-      console.log(`↪️  sending [${keywordMatches.length}] keyword matches...`)
-      return keywordMatches
-    }
-
-    const yugipediaCard = await fetchFromYugipedia(USER_KEYWORD, null, null)
-    if (yugipediaCard.length) {
-      addNewCardsToDb(yugipediaCard)
-      return yugipediaCard
+    if (wordMatches.length) {
+      console.log(`↪️  sending [${wordMatches.length}] word matches...`)
+      return wordMatches
     }
 
     if (possibleMatches.length) {
