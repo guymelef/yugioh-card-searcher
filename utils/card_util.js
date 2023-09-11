@@ -47,12 +47,12 @@ const getRandomCard = () => {
 
 const normalizeString = (string) => {
   return string
-    .trim()
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[★☆\s+]/g, "")
-    .replace(/[^\w/@#.&]|_/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\s\w:!/@&?#=%]|[_☆★]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
 }
 
 const findClosestCard = async (keyword, bulk = false) => {
