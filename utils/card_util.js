@@ -10,6 +10,7 @@ let CARDS
 let YGOPDCOUNT
 let LAST_RANDOM_CARD
 let YUGIPEDIA_LAST_UPDATE
+let YUGIPEDIA_LAST_SEARCH
 
 
 
@@ -28,7 +29,9 @@ const fetchAllData = async () => {
 
     const yugipediaVar = await BotVariable.findOne({ name: 'Yugipedia' })
     YUGIPEDIA_LAST_UPDATE = yugipediaVar.lastUpdate
+    YUGIPEDIA_LAST_SEARCH = yugipediaVar.lastSearch
     console.log(`🟩 YUGIPEDIA LATEST ENTRY: ${new Date(YUGIPEDIA_LAST_UPDATE).toLocaleString('en-ph')}`)
+    console.log(`🟩 YUGIPEDIA LAST SEARCH: ${new Date(YUGIPEDIA_LAST_SEARCH).toLocaleString('en-ph')}`)
   } catch (err) {
     console.log("🔴 CARDS FETCH ERROR:", err.message)
     console.log("🔷 STACK:", err.stack)
@@ -405,12 +408,22 @@ const checkForNewYugipediaCards = async () => {
 }
 
 const searchYugipedia = async (keyword) => {
-  const yugipediaCard = await fetchFromYugipedia(keyword, null, null)
-  
-  if (yugipediaCard.length) addNewCardsToDb(yugipediaCard)
+  const newDate = new Date()
+  const timeDiff = (newDate - new Date(YUGIPEDIA_LAST_SEARCH)) / 1000
 
-  console.log(`↪️  sending [${yugipediaCard.length}] Yugipedia result...`)
-  return yugipediaCard
+  let yugipediaCard = []
+  if (timeDiff >= 1) {
+    YUGIPEDIA_LAST_SEARCH = newDate.toISOString()
+    await BotVariable.findOneAndUpdate({ name: 'Yugipedia' }, { lastSearch: YUGIPEDIA_LAST_SEARCH })
+    yugipediaCard = await fetchFromYugipedia(keyword, null, null)
+
+    if (yugipediaCard.length) addNewCardsToDb(yugipediaCard)
+  
+    console.log(`↪️  sending [${yugipediaCard.length}] result...`)
+    return yugipediaCard
+  }
+  
+  return false
 }
 
 const addNewCardsToDb = async (cards) => {

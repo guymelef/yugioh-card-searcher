@@ -193,8 +193,9 @@ const onMessageHandler = async (channel, tags, message, self) => {
 
             console.log(`🚀 [${channel}] SEARCHING [YUGIPEDIA] FOR: "${query}"...`)
             searchResult = await searchYugipedia(query)
+            if (!searchResult) return ''
             if (searchResult.length) return client.say(channel, getCardInfo(searchResult[0]))
-            return client.reply(channel, returnErrMsg(), tags.id)
+            else return client.reply(channel, returnErrMsg(), tags.id)
           default:
             query = ORIGINAL_MESSAGE.split(' ').slice(1).join(' ')
             if (!normalizeString(query)) return client.reply(channel, returnErrMsg(), tags.id)
