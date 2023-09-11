@@ -11,7 +11,8 @@ const {
   normalizeString,
   getRandomCard,
   findClosestCard,
-  findClosestNaturalCard
+  findClosestNaturalCard,
+  searchYugipedia
 } = require('./card_util')
 const {
   tmiOptions,
