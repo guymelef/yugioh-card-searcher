@@ -147,7 +147,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
 
         switch (searchArg) {
           case undefined:
-            return client.reply(channel, "❓Usage: !search <full/partial card name>", tags.id)
+            return client.reply(channel, "❓Usage: !search <keyword>", tags.id)
           case "--guide":
             return client.reply(
               channel,
@@ -162,8 +162,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
             searchResult = getRandomCard()
             return client.say(channel, getCardInfo(searchResult))
           case "--image":
-            if (!query) return client.reply(channel, `❓Usage: !search --image <full/partial card name>`, tags.id)
-            
+            if (!query) return client.reply(channel, `❓Usage: !search --image <card name>`, tags.id)
             if (!normalizeString(query)) return client.reply(channel, returnErrMsg(), tags.id)
             
             console.log(`🚀 [${channel}] SEARCHING IMAGE FOR: "${query}"...`)
@@ -178,7 +177,6 @@ const onMessageHandler = async (channel, tags, message, self) => {
             return client.reply(channel, `📸 "${searchResult[0].name}" - [ ${link} ]`, tags.id)
           case "--list":
             if (!query) return client.reply(channel, `❓Usage: !search --list <keyword>`, tags.id)
-            
             if (!normalizeString(query)) return client.reply(channel, returnErrMsg(), tags.id)
 
             console.log(`🚀 [${channel}] GENERATING LIST FOR: "${query}"...`)
@@ -188,9 +186,16 @@ const onMessageHandler = async (channel, tags, message, self) => {
             const cardArrayString = getCardArray(searchResult)
             if (cardArrayString.length > 500) return client.say(channel, cardArrayString)
             else return client.reply(channel, cardArrayString, tags.id)
+          case "--wiki":
+            if (!query) return client.reply(channel, `❓Usage: !search --wiki <keyword>`, tags.id)
+            if (!normalizeString(query)) return client.reply(channel, returnErrMsg(), tags.id)
+
+            console.log(`🚀 [${channel}] SEARCHING [YUGIPEDIA] FOR: "${query}"...`)
+            searchResult = await searchYugipedia(query)
+            if (searchResult.length) return client.say(channel, getCardInfo(searchResult[0]))
+            return client.reply(channel, returnErrMsg(), tags.id)
           default:
             query = ORIGINAL_MESSAGE.split(' ').slice(1).join(' ')
-            
             if (!normalizeString(query)) return client.reply(channel, returnErrMsg(), tags.id)
 
             console.log(`🚀 [${channel}] SEARCHING FOR: "${query}"...`)
@@ -208,10 +213,8 @@ const onMessageHandler = async (channel, tags, message, self) => {
       }
     }
   } catch (err) {
-    if (channel === "#cardsearcher")
-      client.reply(channel, `Oops, an error occured! Please try again or report the problem.`, tags.id)
-    else
-      client.reply(channel, returnErrMsg(), tags.id)
+    if (channel === "#cardsearcher") client.reply(channel, `Oops, an error occured! Please try again or report the problem.`, tags.id)
+    else client.reply(channel, returnErrMsg(), tags.id)
     
     console.log("🔴 MESSAGE HANDLER ERROR:", err.message)
     console.log("🔷 STACK:", err.stack)

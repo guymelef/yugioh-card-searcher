@@ -404,6 +404,15 @@ const checkForNewYugipediaCards = async () => {
   }
 }
 
+const searchYugipedia = async (keyword) => {
+  const yugipediaCard = await fetchFromYugipedia(keyword, null, null)
+  
+  if (yugipediaCard.length) addNewCardsToDb(yugipediaCard)
+
+  console.log(`↪️  sending [${yugipediaCard.length}] Yugipedia result...`)
+  return yugipediaCard
+}
+
 const addNewCardsToDb = async (cards) => {
   const models = { "stray": StrayCard, "ocg": OcgCard, "rush": RushCard, "unofficial": UnofficialCard }
   let category
@@ -468,5 +477,6 @@ module.exports = {
   findClosestCard,
   findClosestNaturalCard,
   checkForNewYgopdCards,
-  checkForNewYugipediaCards
+  checkForNewYugipediaCards,
+  searchYugipedia
 }
