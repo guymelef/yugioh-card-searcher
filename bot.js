@@ -7,7 +7,7 @@ const {
   checkForNewYugipediaCards,
   fetchAllData
 } = require('./utils/card_util')
-const { fetchDataAndSetupBot } = require('./tmi_util_test')
+const { fetchDataAndSetupBot } = require('./utils/tmi_util')
 
 
 

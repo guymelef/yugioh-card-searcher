@@ -28,7 +28,7 @@ let redis
 
 
 
-const fetchDataAndSetupTmi = async () => { 
+const fetchDataAndSetupBot = async () => { 
   try {
     await mongoose.connect(process.env.MONGODB_URI)
     console.log('Ⓜ️  Connected to MongoDB!')
@@ -291,5 +291,5 @@ const onMessageHandler = async (channel, tags, message, self) => {
 
 
 module.exports = {
-  fetchDataAndSetupTmi
+  fetchDataAndSetupBot
 }
