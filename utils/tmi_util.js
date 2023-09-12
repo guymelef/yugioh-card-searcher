@@ -4,6 +4,7 @@ const tmi = require('tmi.js')
 tmi.Client.prototype.reply = function(channel, replyMessage, replyParentMessageId) {
   return this.raw(`@reply-parent-msg-id=${replyParentMessageId} PRIVMSG ${channel} :${replyMessage}`)
 }
+const { createClient } = require('redis')
 
 const Channel = require('../models/channel')
 const {
