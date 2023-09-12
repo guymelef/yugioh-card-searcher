@@ -10,6 +10,7 @@
     "mongoose": "^6.11.4",
     "mongoose-unique-validator": "^3.1.0",
     "natural": "^6.7.0",
+    "redis": "^4.6.8",
     "tmi.js": "^1.5.0"
   },
   "scripts": {

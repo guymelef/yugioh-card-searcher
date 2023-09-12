@@ -24,6 +24,7 @@ const {
 
 let OPEN_CHANNELS
 let client
+let redis
 
 
 
@@ -40,11 +41,17 @@ const fetchDataAndSetupTmi = async () => {
     
     await fetchAllData()
 
+    // TMI
     client = new tmi.client(tmiOptions)
     client.setMaxListeners(100)
     client.connect()
     client.on('message', onMessageHandler)
-    client.on('connected', (server, port) => console.log(`🆗 Connected to ${server}:${port}`))
+    client.on('connected', (server, port) => console.log(`🆗 TMI is connected to ${server}:${port}`))
+
+    // REDIS
+    redis = createClient({ url: process.env.REDIS_URI })
+    redis.connect()
+    redis.on('ready', () => console.log("🔥 REDIS is ready!"))
   } catch (err) {
     console.log("🔴 DATA SET UP ERROR:", err.message)
     console.log("🔷 STACK:", err.stack)
@@ -132,85 +139,140 @@ const onMessageHandler = async (channel, tags, message, self) => {
     if (OPEN_CHANNELS.includes(channel) || tags.badges.broadcaster || tags.mod) {
       if (message.startsWith("!search")) {
         const messageArray = message.split(' ')
-        const searchArg = messageArray[1]
+        let searchType = messageArray[1]
         let query = messageArray.slice(2).join(' ')
         let searchResult = []
         let responseMessage = ''
+        let redisKey = ''
+        let redisValue = ''
+        const REDIS_TTL = process.env.REDIS_TTL
 
         const returnResponseForLongSearchResult = () => {
           const closestNatural = findClosestNaturalCard(query, searchResult)
-          return client.reply(
-            channel,
-            `Your search yielded ❮${searchResult.length.toLocaleString()}❯ total possible cards. Looking for “${closestNatural}”? 🤔`,
-            tags.id
-          )
+          return `Your search yielded ❮${searchResult.length.toLocaleString()}❯ total possible cards. Looking for “${closestNatural}”? 🤔`
         }
 
-        switch (searchArg) {
+        const checkRedisAndReply = async () => {
+          query = query.toLowerCase()
+          redisKey = `search${searchType}:${query}`
+          redisValue = await redis.get(redisKey)
+
+          if (redisValue) {
+            console.log('💯 REDIS CACHE FOUND!')
+            redisValue = JSON.parse(redisValue)
+
+            if (!redisValue.result.length) return client.reply(channel, returnErrMsg(), tags.id)
+
+            if (redisValue.short) return client.reply(channel, redisValue.result, tags.id)
+            else return client.say(channel, redisValue.result)
+          } else {
+            if (searchType === 'wiki') {
+              searchResult = await searchYugipedia(query)
+              
+              if (!searchResult) return ''
+
+              if (!searchResult.length) {
+                redisValue = JSON.stringify({ short: true, result: [] })
+                redis.set(redisKey, redisValue, 'EX', REDIS_TTL)
+                return client.reply(channel, returnErrMsg(), tags.id)
+              }
+            } else {
+              searchResult = await findClosestCard(query, searchType === 'list')
+            }
+            
+            if (searchResult.length === 1) {
+              if (searchType === 'image') {
+                const link = await transformToBitlyUrl(searchResult[0].image)
+                responseMessage = `📸 "${searchResult[0].name}" - [ ${link} ]`
+              } else if (searchType === 'list') {
+                responseMessage = getCardArray(searchResult)
+              } else {
+                responseMessage = getCardInfo(searchResult[0])
+              }
+
+              const isShort = responseMessage.length <= 500
+              redisValue = JSON.stringify({ short: isShort, result: responseMessage })
+              redis.set(redisKey, redisValue, 'EX', REDIS_TTL)
+
+              if (isShort) return client.reply(channel, responseMessage, tags.id)
+              else return client.say(channel, responseMessage)
+            }
+
+            if (searchType === 'list') {
+              if (searchResult.length <= 100) {
+                responseMessage = getCardArray(searchResult)
+                redisValue = JSON.stringify({ short: false, result: responseMessage })
+                redis.set(redisKey, redisValue, 'EX', REDIS_TTL)
+                return client.say(channel, responseMessage)
+              } else {
+                responseMessage = returnResponseForLongSearchResult()
+                redisValue = JSON.stringify({ short: true, result: responseMessage })
+                redis.set(redisKey, redisValue, 'EX', REDIS_TTL)
+                return client.reply(channel, responseMessage, tags.id)
+              }
+            }
+
+            if (searchResult.length > 30) {
+              responseMessage = returnResponseForLongSearchResult()
+              redisValue = JSON.stringify({ short: true, result: responseMessage })
+              redis.set(redisKey, redisValue, 'EX', REDIS_TTL)
+              return client.reply(channel, responseMessage, tags.id)
+            } else {
+              responseMessage = getCardArray(searchResult)
+              if (responseMessage.length > 500) {
+                responseMessage = returnResponseForLongSearchResult()
+                redisValue = JSON.stringify({ short: true, result: responseMessage })
+                redis.set(redisKey, redisValue, 'EX', REDIS_TTL)
+                return client.reply(channel, responseMessage, tags.id)
+              } else {
+                redisValue = JSON.stringify({ short: true, result: responseMessage })
+                redis.set(redisKey, redisValue, 'EX', REDIS_TTL)
+                return client.reply(channel, responseMessage, tags.id)
+              }
+            }
+          }
+        }
+
+        switch (searchType) {
           case undefined:
             return client.reply(channel, "❓Usage: !search <keyword>", tags.id)
           case "--guide":
             return client.reply(
               channel,
-              `MONSTER: [
-                🟡: Normal, 🟠: Effect, 🟤: Tuner, 🔵: Ritual, 🟣: Fusion, 
-                ⚪: Synchro, ⚫: XYZ, 🌗: Pendulum, 🔗: Link, 🃏: Token
-              ], 
-              🟢: SPELL, 🔴: TRAP, ✨: SKILL`,
+              `MONSTER: [ 🟡: Normal, 🟠: Effect, 🟤: Tuner, 🔵: Ritual, 🟣: Fusion, ⚪: Synchro, ⚫: XYZ, 🌗: Pendulum, 🔗: Link, 🃏: Token ], 🟢: SPELL, 🔴: TRAP, ✨: SKILL`,
               tags.id
             )
-          case "--random":
-            searchResult = getRandomCard()
-            return client.say(channel, getCardInfo(searchResult))
+            case "--random":
+              searchResult = getRandomCard()
+              return client.say(channel, getCardInfo(searchResult))
           case "--image":
             if (!query) return client.reply(channel, `❓Usage: !search --image <card name>`, tags.id)
             if (!normalizeString(query)) return client.reply(channel, returnErrMsg(), tags.id)
             
-            console.log(`🚀 [${channel}] SEARCHING IMAGE FOR: "${query}"...`)
-            searchResult = await findClosestCard(query)
-            if (searchResult.length > 1) {
-              responseMessage = getCardArray(searchResult)
-              if (responseMessage.length > 500) return returnResponseForLongSearchResult()
-              else return client.reply(channel, getCardArray(searchResult), tags.id)
-            }
-            
-            const link = await transformToBitlyUrl(searchResult[0].image)
-            return client.reply(channel, `📸 "${searchResult[0].name}" - [ ${link} ]`, tags.id)
+            console.log(`🚀 [${channel}] SEARCHING CARD IMAGE FOR: "${query}"...`)
+            searchType = 'image'
+            return checkRedisAndReply()
           case "--list":
             if (!query) return client.reply(channel, `❓Usage: !search --list <keyword>`, tags.id)
             if (!normalizeString(query)) return client.reply(channel, returnErrMsg(), tags.id)
 
             console.log(`🚀 [${channel}] GENERATING LIST FOR: "${query}"...`)
-            searchResult = await findClosestCard(query, true)
-            if (searchResult.length > 100) return returnResponseForLongSearchResult()
-            
-            const cardArrayString = getCardArray(searchResult)
-            if (cardArrayString.length > 500) return client.say(channel, cardArrayString)
-            else return client.reply(channel, cardArrayString, tags.id)
+            searchType = 'list'
+            return checkRedisAndReply()
           case "--wiki":
             if (!query) return client.reply(channel, `❓Usage: !search --wiki <keyword>`, tags.id)
             if (!normalizeString(query)) return client.reply(channel, returnErrMsg(), tags.id)
 
             console.log(`🚀 [${channel}] SEARCHING [YUGIPEDIA] FOR: "${query}"...`)
-            searchResult = await searchYugipedia(query)
-            if (!searchResult) return ''
-            if (searchResult.length) return client.say(channel, getCardInfo(searchResult[0]))
-            else return client.reply(channel, returnErrMsg(), tags.id)
+            searchType = 'wiki'
+            return checkRedisAndReply()
           default:
             query = ORIGINAL_MESSAGE.split(' ').slice(1).join(' ')
             if (!normalizeString(query)) return client.reply(channel, returnErrMsg(), tags.id)
 
             console.log(`🚀 [${channel}] SEARCHING FOR: "${query}"...`)
-            searchResult = await findClosestCard(query)
-            if (searchResult.length > 1) {
-              responseMessage = getCardArray(searchResult)
-              if (responseMessage.length > 500) return returnResponseForLongSearchResult()
-              else return client.reply(channel, getCardArray(searchResult), tags.id)
-            }
-            
-            const cardText = getCardInfo(searchResult[0])
-            if (cardText.length > 500) return client.say(channel, cardText)
-            else return client.reply(channel, cardText, tags.id)
+            searchType = ''
+            return checkRedisAndReply()
         }
       }
     }

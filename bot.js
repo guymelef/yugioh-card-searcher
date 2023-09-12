@@ -7,12 +7,12 @@ const {
   checkForNewYugipediaCards,
   fetchAllData
 } = require('./utils/card_util')
-const { fetchDataAndSetupTmi } = require('./utils/tmi_util')
+const { fetchDataAndSetupBot } = require('./tmi_util_test')
 
 
 
-// FETCH DATA & SETUP TMI
-fetchDataAndSetupTmi()
+// FETCH DATA & SETUP BOT
+fetchDataAndSetupBot()
 
 
 // EXPRESS SERVER
