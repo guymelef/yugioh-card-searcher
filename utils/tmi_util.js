@@ -140,17 +140,19 @@ const onMessageHandler = async (channel, tags, message, self) => {
     if (OPEN_CHANNELS.includes(channel) || tags.badges.broadcaster || tags.mod) {
       if (message.startsWith("!search")) {
         const messageArray = message.split(' ')
-        let searchType = messageArray[1]
+        let searchType = messageArray[1].slice(2)
         let query = messageArray.slice(2).join(' ')
         let searchResult = []
         let responseMessage = ''
         let redisKey = ''
         let redisValue = ''
         const REDIS_TTL = process.env.REDIS_TTL
+        const noCache = message.startsWith("!search*")
 
         const returnResponseForLongSearchResult = () => {
+          const emoji = ['🤔', '🧐', '🫤'][Math.floor(Math.random() * 3)]
           const closestNatural = findClosestNaturalCard(query, searchResult)
-          return `Your search yielded ❮${searchResult.length.toLocaleString()}❯ total possible cards. Looking for “${closestNatural}”? 🤔`
+          return `Your search yielded ❮${searchResult.length.toLocaleString()}❯ total possible cards. Looking for “${closestNatural}”? ${emoji}`
         }
 
         const checkRedisAndReply = async () => {
@@ -158,7 +160,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
           redisKey = `search${searchType}:${query}`
           redisValue = await redis.get(redisKey)
 
-          if (redisValue) {
+          if (redisValue && !noCache) {
             console.log('💯 REDIS CACHE FOUND!')
             redisValue = JSON.parse(redisValue)
 
@@ -237,30 +239,30 @@ const onMessageHandler = async (channel, tags, message, self) => {
         switch (searchType) {
           case undefined:
             return client.reply(channel, "❓Usage: !search <keyword>", tags.id)
-          case "--guide":
+          case "guide":
             return client.reply(
               channel,
               `MONSTER: [ 🟡: Normal, 🟠: Effect, 🟤: Tuner, 🔵: Ritual, 🟣: Fusion, ⚪: Synchro, ⚫: XYZ, 🌗: Pendulum, 🔗: Link, 🃏: Token ], 🟢: SPELL, 🔴: TRAP, ✨: SKILL`,
               tags.id
             )
-            case "--random":
-              searchResult = getRandomCard()
-              return client.say(channel, getCardInfo(searchResult))
-          case "--image":
+          case "random":
+            searchResult = getRandomCard()
+            return client.say(channel, getCardInfo(searchResult))
+          case "image":
             if (!query) return client.reply(channel, `❓Usage: !search --image <card name>`, tags.id)
             if (!normalizeString(query)) return client.reply(channel, returnErrMsg(), tags.id)
             
             console.log(`🚀 [${channel}] SEARCHING CARD IMAGE FOR: "${query}"...`)
             searchType = 'image'
             return checkRedisAndReply()
-          case "--list":
+          case "list":
             if (!query) return client.reply(channel, `❓Usage: !search --list <keyword>`, tags.id)
             if (!normalizeString(query)) return client.reply(channel, returnErrMsg(), tags.id)
 
             console.log(`🚀 [${channel}] GENERATING LIST FOR: "${query}"...`)
             searchType = 'list'
             return checkRedisAndReply()
-          case "--wiki":
+          case "wiki":
             if (!query) return client.reply(channel, `❓Usage: !search --wiki <keyword>`, tags.id)
             if (!normalizeString(query)) return client.reply(channel, returnErrMsg(), tags.id)
 
