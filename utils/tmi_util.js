@@ -144,7 +144,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
     if (OPEN_CHANNELS.includes(channel) || tags.badges.broadcaster || tags.mod) {
       if (message.startsWith("!search")) {
         const messageArray = message.split(' ')
-        let searchType = messageArray[1] ?  messageArray[1].slice(2) : undefined
+        let searchType = messageArray[1]
         let query = ORIGINAL_MESSAGE.split(' ').slice(2).join(' ')
         let userQuery = ''
         let searchResult = []
@@ -155,7 +155,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
         const noCache = message.startsWith("!search*")
 
         const returnResponseForLongSearchResult = () => {
-          const emoji = ['🤔', '🧐', '🫤'][Math.floor(Math.random() * 3)]
+          const emoji = ['🤔', '🧐', '🤨'][Math.floor(Math.random() * 3)]
           const closestNatural = findClosestNaturalCard(userQuery, searchResult)
           return `Your search yielded ❮${searchResult.length.toLocaleString()}❯ total possible cards. Looking for “${closestNatural}”? ${emoji}`
         }
@@ -248,16 +248,16 @@ const onMessageHandler = async (channel, tags, message, self) => {
           case undefined:
             if (noCache) return client.reply(channel, "❓Usage (non-cached): !search* <keyword>", tags.id)
             else return client.reply(channel, "❓Usage: !search <keyword>", tags.id)
-          case "guide":
+          case "--guide":
             return client.reply(
               channel,
               `MONSTER: [ 🟡: Normal, 🟠: Effect, 🟤: Tuner, 🔵: Ritual, 🟣: Fusion, ⚪: Synchro, ⚫: XYZ, 🌗: Pendulum, 🔗: Link, 🃏: Token ], 🟢: SPELL, 🔴: TRAP, ✨: SKILL`,
               tags.id
             )
-          case "random":
+          case "--random":
             searchResult = getRandomCard()
             return client.say(channel, getCardInfo(searchResult))
-          case "image":
+          case "--image":
             if (!query) {
               if (noCache) return client.reply(channel, "❓Usage (non-cached): !search* --image <card name>", tags.id)
               else return client.reply(channel, `❓Usage: !search --image <card name>`, tags.id)
@@ -266,7 +266,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
             console.log(`🚀 [${channel}] SEARCHING CARD IMAGE FOR: "${query}"...`)
             searchType = 'image'
             return checkRedisAndReply()
-          case "list":
+          case "--list":
             if (!query) {
               if (noCache) return client.reply(channel, "❓Usage (non-cached): !search* --list <keyword>", tags.id)
               else return client.reply(channel, `❓Usage: !search --list <keyword>`, tags.id)
@@ -275,12 +275,11 @@ const onMessageHandler = async (channel, tags, message, self) => {
             console.log(`🚀 [${channel}] GENERATING LIST FOR: "${query}"...`)
             searchType = 'list'
             return checkRedisAndReply()
-          case "wiki":
+          case "--wiki":
             if (!query) {
               if (noCache) return client.reply(channel, `❓Usage (non-cached): !search* --wiki <keyword>`, tags.id)
               else return client.reply(channel, `❓Usage: !search --wiki <keyword>`, tags.id)
             }
-            query = ORIGINAL_MESSAGE.split(' ').slice(2).join(' ')
 
             console.log(`🚀 [${channel}] SEARCHING [YUGIPEDIA] FOR: "${query}"...`)
             searchType = 'wiki'
