@@ -59,7 +59,6 @@ const normalizeString = (string) => {
 }
 
 const findClosestCard = async (keyword, bulk = false) => {
-  keyword = normalizeString(keyword)
   const keywordArr = keyword.split(' ')
   
   const DISTANCEARRAY = []

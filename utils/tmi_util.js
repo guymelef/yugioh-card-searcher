@@ -61,11 +61,14 @@ const fetchDataAndSetupBot = async () => {
 }
 
 const onMessageHandler = async (channel, tags, message, self) => {
+  let ORIGINAL_MESSAGE = ''
+  let userChannel = ''
+
   try {
     if (self) return
     
-    const ORIGINAL_MESSAGE = message
-    const userChannel = `#${tags.username}`
+    ORIGINAL_MESSAGE = message
+    userChannel = `#${tags.username}`
     message = message.toLowerCase()
 
     if (channel === "#cardsearcher") {
@@ -141,8 +144,9 @@ const onMessageHandler = async (channel, tags, message, self) => {
     if (OPEN_CHANNELS.includes(channel) || tags.badges.broadcaster || tags.mod) {
       if (message.startsWith("!search")) {
         const messageArray = message.split(' ')
-        let searchType = messageArray[1].slice(2)
-        let query = messageArray.slice(2).join(' ')
+        let searchType = messageArray[1] ?  messageArray[1].slice(2) : undefined
+        let query = ORIGINAL_MESSAGE.split(' ').slice(2).join(' ')
+        let userQuery = ''
         let searchResult = []
         let responseMessage = ''
         let redisKey = ''
@@ -152,12 +156,15 @@ const onMessageHandler = async (channel, tags, message, self) => {
 
         const returnResponseForLongSearchResult = () => {
           const emoji = ['🤔', '🧐', '🫤'][Math.floor(Math.random() * 3)]
-          const closestNatural = findClosestNaturalCard(query, searchResult)
+          const closestNatural = findClosestNaturalCard(userQuery, searchResult)
           return `Your search yielded ❮${searchResult.length.toLocaleString()}❯ total possible cards. Looking for “${closestNatural}”? ${emoji}`
         }
 
         const checkRedisAndReply = async () => {
-          query = query.toLowerCase()
+          userQuery = query
+          query = normalizeString(query)
+          if (!query) return client.reply(channel, returnErrMsg(), tags.id)
+
           redisKey = `search${searchType}:${query}`
           redisValue = await redis.get(redisKey)
 
@@ -171,7 +178,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
             else return client.say(channel, redisValue.result)
           } else {
             if (searchType === 'wiki') {
-              searchResult = await searchYugipedia(query)
+              searchResult = await searchYugipedia(userQuery)
               
               if (!searchResult) return ''
 
@@ -239,7 +246,8 @@ const onMessageHandler = async (channel, tags, message, self) => {
 
         switch (searchType) {
           case undefined:
-            return client.reply(channel, "❓Usage: !search <keyword>", tags.id)
+            if (noCache) return client.reply(channel, "❓Usage (non-cached): !search* <keyword>", tags.id)
+            else return client.reply(channel, "❓Usage: !search <keyword>", tags.id)
           case "guide":
             return client.reply(
               channel,
@@ -250,29 +258,35 @@ const onMessageHandler = async (channel, tags, message, self) => {
             searchResult = getRandomCard()
             return client.say(channel, getCardInfo(searchResult))
           case "image":
-            if (!query) return client.reply(channel, `❓Usage: !search --image <card name>`, tags.id)
-            if (!normalizeString(query)) return client.reply(channel, returnErrMsg(), tags.id)
-            
+            if (!query) {
+              if (noCache) return client.reply(channel, "❓Usage (non-cached): !search* --image <card name>", tags.id)
+              else return client.reply(channel, `❓Usage: !search --image <card name>`, tags.id)
+            }
+
             console.log(`🚀 [${channel}] SEARCHING CARD IMAGE FOR: "${query}"...`)
             searchType = 'image'
             return checkRedisAndReply()
           case "list":
-            if (!query) return client.reply(channel, `❓Usage: !search --list <keyword>`, tags.id)
-            if (!normalizeString(query)) return client.reply(channel, returnErrMsg(), tags.id)
+            if (!query) {
+              if (noCache) return client.reply(channel, "❓Usage (non-cached): !search* --list <keyword>", tags.id)
+              else return client.reply(channel, `❓Usage: !search --list <keyword>`, tags.id)
+            }
 
             console.log(`🚀 [${channel}] GENERATING LIST FOR: "${query}"...`)
             searchType = 'list'
             return checkRedisAndReply()
           case "wiki":
-            if (!query) return client.reply(channel, `❓Usage: !search --wiki <keyword>`, tags.id)
-            if (!normalizeString(query)) return client.reply(channel, returnErrMsg(), tags.id)
+            if (!query) {
+              if (noCache) return client.reply(channel, `❓Usage (non-cached): !search* --wiki <keyword>`, tags.id)
+              else return client.reply(channel, `❓Usage: !search --wiki <keyword>`, tags.id)
+            }
+            query = ORIGINAL_MESSAGE.split(' ').slice(2).join(' ')
 
             console.log(`🚀 [${channel}] SEARCHING [YUGIPEDIA] FOR: "${query}"...`)
             searchType = 'wiki'
             return checkRedisAndReply()
           default:
             query = ORIGINAL_MESSAGE.split(' ').slice(1).join(' ')
-            if (!normalizeString(query)) return client.reply(channel, returnErrMsg(), tags.id)
 
             console.log(`🚀 [${channel}] SEARCHING FOR: "${query}"...`)
             searchType = ''
@@ -286,7 +300,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
     
     console.log("🔴 MESSAGE HANDLER ERROR:", err.message)
     console.log("🔷 STACK:", err.stack)
-    console.log("⚕️ INFO:", `[${channel}]: ${message}\n`, tags)
+    console.log("⚕️ INFO:", `[${userChannel} @ ${channel}]: ${ORIGINAL_MESSAGE}\n`, tags)
   }
 }
 
