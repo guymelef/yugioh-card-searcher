@@ -78,6 +78,9 @@ const findClosestCard = async (keyword, bulk = false) => {
     convertedStr = word.split('').join('/')
     if (cardName.includes(convertedStr)) return true
 
+    convertedStr = word.split('').join(':')
+    if (cardName.includes(convertedStr)) return true
+
     return false
   }
 
