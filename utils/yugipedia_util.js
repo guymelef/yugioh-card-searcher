@@ -58,7 +58,7 @@ const fetchFromYugipedia = async (cardName, cardPageId, cardPageTitle) => {
 
 const createYugipediaCard = (cardName) => {
   const CARD = []
-  const wikitextSubstring = wikitext.substring(0, 100).toLowerCase()
+  const wikitextSubstring = wikitext.substring(0, 300).toLowerCase()
 
   let category
   let official
