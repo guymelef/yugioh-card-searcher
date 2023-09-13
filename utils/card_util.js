@@ -438,7 +438,7 @@ const addNewCardsToDb = async (cards) => {
     try {
       category = card.category
       official = card.official
-      delete card.official
+      card.official
 
       console.log(`📁 SAVING "${card.name}"...`)
       let savedCard
