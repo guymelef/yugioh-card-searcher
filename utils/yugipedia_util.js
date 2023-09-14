@@ -133,6 +133,8 @@ const createYugipediaCard = (cardName) => {
   let scale
   let pendulum_effect
   
+  if (types.includes('Xyz')) level = getProperty('rank') || level
+
   if (types.includes('Link')) {
     linkArrows = getProperty('link_arrows')
     linkRating = linkArrows.length.toString()
