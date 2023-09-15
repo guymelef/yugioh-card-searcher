@@ -324,91 +324,6 @@ const findClosestNaturalCard = (source, cards) => {
   return `${closest.symbol}${closest.name}`
 }
 
-const checkForNewYgopdCards = async () => {
-  try {
-    let ygoProDeckCards = await fetch(process.env.YGOPD_API)
-    ygoProDeckCards = await ygoProDeckCards.json()
-    ygoProDeckCards = ygoProDeckCards.data
-      
-    console.log("=====================================")
-    console.log("DB CARD COUNT:", CARDS.length)
-    console.log("YGOPRODECK CARD COUNT:", ygoProDeckCards.length)
-    console.log("=====================================")
-
-    if (YGOPDCOUNT === ygoProDeckCards.length)
-      return console.log("👍  CARD DB IS UP TO DATE!")
-    else YGOPDCOUNT = ygoProDeckCards.length
-
-    await BotVariable.findOneAndUpdate(
-      { name: 'YGOPRODeck' },
-      { card_count: YGOPDCOUNT, last_update: new Date().toLocaleString('en-ph') }
-    )
-    
-    console.log("❓ DATABASE MAY NEED UPDATE...")
-    let newCards = []
-    const cardstoIgnore = require('../data/cards-to-ignore.json')
-    CARDS.forEach(card => cardstoIgnore.push(card.name))
-    
-    ygoProDeckCards.forEach(card => {
-      if (!cardstoIgnore.includes(card.name)) {
-        newCards.push(card.name)
-      }
-    })
-
-    if (!newCards.length) return console.log("❎ NO NEW CARDS FOUND.")
-
-    newCards = await fetchFromYugipedia(null, null, newCards)
-    return addNewCardsToDb(newCards)
-  } catch (err) {
-    console.log("🔴 CARD DATABASE UPDATE ERROR:", err.message)
-    console.log("🔷 STACK:", err.stack)
-  }
-}
-
-const checkForNewYugipediaCards = async () => {
-  try {
-    const recentChanges = await fetch(`${process.env.YUGIPEDIA_RC}${YUGIPEDIA_LAST_UPDATE}`, requestOptions)
-    let rc = await recentChanges.json()
-    rc = rc.query.recentchanges
-  
-    console.log('******************************************************')
-    console.log('LAST YUGIPEDIA CARD CREATED:', new Date(YUGIPEDIA_LAST_UPDATE).toLocaleString('en-ph'))
-    console.log('MOST RECENT CHANGE (NEW):', new Date(rc[0].timestamp).toLocaleString('en-ph'))
-    console.log('******************************************************')
-  
-    let newCardPages = rc.filter(item => {
-      const comment = item.comment.toLowerCase()
-      if (comment.includes('{{cardtable2') && item.timestamp !== YUGIPEDIA_LAST_UPDATE) return item
-    })
-  
-    if (newCardPages.length) {
-      console.log(`📢 [${newCardPages.length}] NEW YUGIPEDIA CARD(S) FOUND!`)
-      
-      YUGIPEDIA_LAST_UPDATE = newCardPages[0].timestamp
-  
-      await BotVariable.findOneAndUpdate(
-        { name: "Yugipedia" },
-        { lastUpdate: YUGIPEDIA_LAST_UPDATE,
-          lastCard: { 
-            title: newCardPages[0].title, 
-            pageid: newCardPages[0].pageid 
-          }
-        }
-      )
-      
-      newCardPages = newCardPages.map(page => page.pageid)
-      const newCards = await fetchFromYugipedia(null, newCardPages, null)
-  
-      return addNewCardsToDb(newCards)
-    }
-  
-    return console.log("👍  CARD DB IS UP TO DATE!")
-  } catch (err) {
-    console.log("🔴 YUGIPEDIA RC CHECK ERROR:", err.message)
-    console.log("🔷 STACK:", err.stack)
-  }
-}
-
 const searchYugipedia = async (keyword) => {
   const newDate = new Date()
   const timeDiff = (newDate - new Date(YUGIPEDIA_LAST_SEARCH)) / 1000
@@ -490,7 +405,5 @@ module.exports = {
   getRandomCard,
   findClosestCard,
   findClosestNaturalCard,
-  checkForNewYgopdCards,
-  checkForNewYugipediaCards,
   searchYugipedia
 }
