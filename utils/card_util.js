@@ -323,15 +323,14 @@ const searchYugipedia = async (keyword) => {
   const newDate = new Date()
   const timeDiff = (newDate - new Date(YUGIPEDIA_LAST_SEARCH)) / 1000
 
-  let yugipediaCard = []
   if (timeDiff >= 1) {
     YUGIPEDIA_LAST_SEARCH = newDate.toISOString()
     await BotVariable.findOneAndUpdate({ name: 'Yugipedia' }, { lastSearch: YUGIPEDIA_LAST_SEARCH })
-    yugipediaCard = await fetchFromYugipedia(keyword)
+    const yugipediaCard = await fetchFromYugipedia(keyword)
 
     if (yugipediaCard.length) saveToDatabase(yugipediaCard)
   
-    console.log(`↪️  sending [${yugipediaCard.length}] result...`)
+    console.log(`↪️  sending [${yugipediaCard.length}] search result...`)
     return yugipediaCard
   }
   
