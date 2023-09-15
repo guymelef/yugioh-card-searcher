@@ -339,16 +339,15 @@ const searchYugipedia = async (keyword) => {
 
 const saveToDatabase = async (card) => {
   const models = { "stray": StrayCard, "ocg": OcgCard, "rush": RushCard }
-  let category = ""
-  let official = ""
+  const CardModel = models[card.category]
 
   try {
-    category = card.category
-    official = card.official
+    const category = card.category
+    const official = card.official
     delete card.category
 
     console.log(`📁 SAVING "${card.name}"...`)
-    const savedCard = await new models[category](card).save()
+    const savedCard = await new CardModel(card).save()
 
     CARDS.push(card)
     CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
@@ -359,7 +358,7 @@ const saveToDatabase = async (card) => {
       console.log("❗ CARD ALREADY EXISTS...")
       
       if (card.alias) {
-        await models[category].findOneAndUpdate(
+        await CardModel.findOneAndUpdate(
           { name: card.name },
           { alias: card.alias }
         )
