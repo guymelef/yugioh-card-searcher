@@ -1,12 +1,10 @@
 require('dotenv').config()
 const express = require('express')
+const cors = require('cors')
 const app = express()
+app.use(cors())
 
-const {
-  checkForNewYgopdCards,
-  checkForNewYugipediaCards,
-  fetchAllData
-} = require('./utils/card_util')
+const { fetchAllData } = require('./utils/card_util')
 const { fetchDataAndSetupBot } = require('./utils/tmi_util')
 
 
@@ -26,22 +24,6 @@ app.get("/", (_, res) => {
   `
   res.setHeader('Content-Type', 'text/html')
   res.send(twitch)
-})
-
-app.get("/update/:src", (req, res) => {
-  const source = req.params.src
-  const sources = { "ygopd":  checkForNewYgopdCards, "yugipedia": checkForNewYugipediaCards}
-
-  console.log(`\n🌐 CHECKING [${source.toUpperCase()}]...`)
-  sources[source]()
-  .then(_ => console.log("✔️  DB CHECK COMPLETE!\n"))
-  .catch(err => console.log("ERROR:", err))
-
-  res.json({
-    message: "database update initiated",
-    source,
-    date: new Date().toLocaleString('en-ph')
-  })
 })
 
 app.get("/refresh_data", (_, res) => {
