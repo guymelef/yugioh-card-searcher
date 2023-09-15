@@ -1,15 +1,13 @@
 const { LevenshteinDistanceSearch } = require('natural')
 const { distance } = require("fastest-levenshtein")
 
-const { requestOptions, getSymbol } = require('./bot_util')
+const { getSymbol } = require('./bot_util')
 const { fetchFromYugipedia } = require('./yugipedia_util')
-const { OcgCard, RushCard, StrayCard, UnofficialCard } = require('../models/card')
+const { OcgCard, RushCard, StrayCard } = require('../models/card')
 const BotVariable = require('../models/variable')
 
 let CARDS
-let YGOPDCOUNT
 let LAST_RANDOM_CARD
-let YUGIPEDIA_LAST_UPDATE
 let YUGIPEDIA_LAST_SEARCH
 
 
@@ -19,18 +17,15 @@ const fetchAllData = async () => {
     const ocgCards = await OcgCard.find({}).select('-_id -__v').lean().exec()
     const rushCards = await RushCard.find({}).select('-_id -__v').lean().exec()
     const strayCards = await StrayCard.find({}).select('-_id -__v').lean().exec()
-    const unofficialCards = await UnofficialCard.find({}).select('-_id -__v').lean().exec()
-    CARDS = [...ocgCards, ...rushCards, ...strayCards, ...unofficialCards].sort((a, b) => a.name.localeCompare(b.name))
-    console.log(`🟩 All [${CARDS.length.toLocaleString()}] cards fetched!`)
+    CARDS = [...ocgCards, ...rushCards, ...strayCards].sort((a, b) => a.name.localeCompare(b.name))
+    console.log(`🟩 All [${CARDS.length.toLocaleString('en-ph')}] cards fetched!`)
 
     const ygopdCount = await BotVariable.findOne({ name: 'YGOPRODeck' })
-    YGOPDCOUNT = ygopdCount.card_count
-    console.log(`🟩 YGOPD card count (${ygopdCount.last_update}): ${YGOPDCOUNT.toLocaleString()}`)
+    console.log(`🟩 YGOPD card count (${ygopdCount.last_update}): ${ygopdCount.card_count.toLocaleString('en-ph')}`)
 
     const yugipediaVar = await BotVariable.findOne({ name: 'Yugipedia' })
-    YUGIPEDIA_LAST_UPDATE = yugipediaVar.lastUpdate
     YUGIPEDIA_LAST_SEARCH = yugipediaVar.lastSearch
-    console.log(`🟩 YUGIPEDIA LATEST ENTRY: ${new Date(YUGIPEDIA_LAST_UPDATE).toLocaleString('en-ph')}`)
+    console.log(`🟩 YUGIPEDIA LATEST ENTRY: ${new Date(yugipediaVar.lastUpdate).toLocaleString('en-ph')}`)
     console.log(`🟩 YUGIPEDIA LAST SEARCH: ${new Date(YUGIPEDIA_LAST_SEARCH).toLocaleString('en-ph')}`)
   } catch (err) {
     console.log("🔴 CARDS FETCH ERROR:", err.message)
@@ -332,9 +327,9 @@ const searchYugipedia = async (keyword) => {
   if (timeDiff >= 1) {
     YUGIPEDIA_LAST_SEARCH = newDate.toISOString()
     await BotVariable.findOneAndUpdate({ name: 'Yugipedia' }, { lastSearch: YUGIPEDIA_LAST_SEARCH })
-    yugipediaCard = await fetchFromYugipedia(keyword, null, null)
+    yugipediaCard = await fetchFromYugipedia(keyword)
 
-    if (yugipediaCard.length) addNewCardsToDb(yugipediaCard)
+    if (yugipediaCard.length) saveToDatabase(yugipediaCard)
   
     console.log(`↪️  sending [${yugipediaCard.length}] result...`)
     return yugipediaCard
@@ -343,56 +338,44 @@ const searchYugipedia = async (keyword) => {
   return false
 }
 
-const addNewCardsToDb = async (cards) => {
-  const models = { "stray": StrayCard, "ocg": OcgCard, "rush": RushCard, "unofficial": UnofficialCard }
-  let category
-  let official
+const saveToDatabase = async (card) => {
+  const models = { "stray": StrayCard, "ocg": OcgCard, "rush": RushCard }
+  let category = ""
+  let official = ""
 
-  for (let card of cards) {
-    try {
-      category = card.category
-      official = card.official
+  try {
+    category = card.category
+    official = card.official
+    delete card.category
 
-      console.log(`📁 SAVING "${card.name}"...`)
-      let savedCard
-      if (category === 'stray') savedCard = await new StrayCard(card).save()
-      else if (official) savedCard = await new models[category](card).save()
-      else savedCard = await new UnofficialCard(card).save()
+    console.log(`📁 SAVING "${card.name}"...`)
+    const savedCard = await new models[category](card).save()
 
-      CARDS.push(card)
-      console.log(`💾 《 "${savedCard.name}" 》/${category.toUpperCase()} (${official ? 'official' : 'unofficial'})/ saved to MongoDb!`)
-      console.log(card)
-    } catch (err) {
-      if (err.name === "ValidationError") {
-        console.log("❗ CARD ALREADY EXISTS...")
+    CARDS.push(card)
+    CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
+    console.log(`💾 《 "${savedCard.name}" 》/${category.toUpperCase()} (${official ? 'official' : 'unofficial'})/ saved to MongoDb!`)
+    console.log(card)
+  } catch (err) {
+    if (err.name === "ValidationError") {
+      console.log("❗ CARD ALREADY EXISTS...")
+      
+      if (card.alias) {
+        await models[category].findOneAndUpdate(
+          { name: card.name },
+          { alias: card.alias }
+        )
         
-        if (!official) category = 'unofficial'
-        if (card.alias) {
-          await models[category].findOneAndUpdate(
-            { name: card.name },
-            { alias: card.alias }
-          )
-          console.log(`⭐ "${card.name}" (${card.alias}) updated!`)
-
-          CARDS = CARDS.map(item => {
-            if (item.name === card.name) {
-              item = card
-              return item
-            } else {
-              return item
-            }
-          })
-        }
-
-        continue
-      } else {
-        console.log("🔴 NEW CARD SAVE ERROR:", err.message)
-        console.log("🔷 STACK:", err.stack)
+        const index = CARDS.findIndex(item => item.name === card.name)
+        delete card.official
+        delete card.pageId
+        CARDS[index] = card
+        console.log(`⭐ "${card.name}" (${card.alias}) updated!`)
       }
+    } else {
+      console.log("🔴 NEW CARD SAVE ERROR:", err.message)
+      console.log("🔷 STACK:", err.stack)
     }
   }
-
-  CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
 }
 
 

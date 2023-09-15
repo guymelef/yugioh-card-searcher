@@ -4,55 +4,41 @@ let wikitext
 
 
 
-const fetchFromYugipedia = async (cardName, cardPageId, cardPageTitle) => {
-  const CARDS = []
+const fetchFromYugipedia = async (cardName) => {
+  const CARD = []
   
   try {
-    console.log(`📖 SEARCHING YUGIPEDIA... 【${cardName || cardPageId || cardPageTitle}】`)
-    let wikiContent
+    console.log(`📖 SEARCHING YUGIPEDIA... 【${cardName}】`)
+    let wikiContent = ""
     
-    if (cardPageId) {
-      cardPageId = cardPageId.join('|')
-      wikiContent = await fetch(`${process.env.YUGIPEDIA_PAGEID}${cardPageId}`, requestOptions)
-      wikiContent = await wikiContent.json()
-    } else if (cardPageTitle) {
-      cardPageTitle = cardPageTitle.join('|')
-      wikiContent = await fetch(`${process.env.YUGIPEDIA_PAGETITLE}${cardPageTitle}`, requestOptions)
-      wikiContent = await wikiContent.json()
-    } else if (cardName) {
-      let response = await fetch(`${process.env.YUGIPEDIA_SEARCH}${encodeURIComponent(cardName)}`, requestOptions)
-      response = await response.json()
-    
-      const pageId = response.query.search[0]?.pageid
-      if (!pageId) return CARDS
-    
-      wikiContent = await fetch(`${process.env.YUGIPEDIA_PAGEID}${pageId}`, requestOptions)
-      wikiContent = await wikiContent.json()
-    }
-    
-    const pages = wikiContent.query.pages
-    if (pages.length) {
-      for (let page of pages) {
-        const name = page.title
-        wikitext = page.revisions[0].content
+    let response = await fetch(`${process.env.YUGIPEDIA_SEARCH}${encodeURIComponent(cardName)}`, requestOptions)
+    response = await response.json()
+  
+    const pageId = response.query.search[0]?.pageid
+    if (!pageId) return CARD
+  
+    wikiContent = await fetch(`${process.env.YUGIPEDIA_PAGEID}${pageId}`, requestOptions)
+    wikiContent = await wikiContent.json()
 
-        let card = createYugipediaCard(name)
-        if (card.length) {
-          card = card[0]
-          card.pageId = page.pageid
-          const alias = getProperty('alt_name')
-          const transName = getProperty('trans_name')
-          if (alias || transName) card.alias = alias || transName
-          CARDS.push(card)
-        }
-      }
+    const page = wikiContent.query.pages[0]
+    const name = page.title
+    wikitext = page.revisions[0].content
+
+    let card = createYugipediaCard(name)
+    if (card.length) {
+      card = card[0]
+      card.pageId = page.pageid
+      const alias = getProperty('alt_name')
+      const transName = getProperty('trans_name')
+      if (alias || transName) card.alias = alias || transName
+      CARD.push(card)
     }
     
-    return CARDS
+    return CARD
   } catch (err) {
     console.log(`🔴 [[ ${cardName} ]] YUGIPEDIA LOOKUP ERROR:`, err.message)
     console.log("🔷 STACK:", err.stack)
-    return CARDS
+    return CARD
   }
 }
 
