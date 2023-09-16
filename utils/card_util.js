@@ -121,7 +121,7 @@ const findClosestCard = async (keyword, bulk = false) => {
         continue
       }
 
-      if (keywordArr.length > 1 && cardNameArr.length > 1) {        
+      if (keywordArr.length > 1 && cardNameArr.length > 1) {
         let isAMatch = false
         let matches = 0
         for (let word of keywordArr) {

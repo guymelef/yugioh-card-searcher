@@ -33,7 +33,6 @@ const fetchDataAndSetupBot = async () => {
   try {
     await mongoose.connect(MONGODB_URI)
     console.log('Ⓜ️  Connected to MongoDB!')
-    
     const channels = await Channel.find({}).select('name moderated -_id').lean().exec()
     tmiOptions.channels = channels.map(channel => channel.name)
     console.log(`📃 ALL CHANNELS [${channels.length}]:`, channels.map(channel => channel.name).sort())
