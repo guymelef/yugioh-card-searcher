@@ -140,7 +140,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
       }
     }
     
-    if (OPEN_CHANNELS.includes(channel) || tags.badges.broadcaster || tags.mod) {
+    if (OPEN_CHANNELS.includes(channel) || tags.badges?.broadcaster || tags.mod) {
       if (message.startsWith("!search")) {
         const messageArray = message.split(' ')
         let searchType = messageArray[1]
