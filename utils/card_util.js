@@ -358,6 +358,7 @@ const saveToDatabase = async (card) => {
       console.log("❗ CARD ALREADY EXISTS...")
       
       if (card.alias) {
+        if (card.official) delete card.official
         await CardModel.findOneAndReplace({ name: card.name }, card)
         
         const index = CARDS.findIndex(item => item.name === card.name)
