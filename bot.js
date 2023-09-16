@@ -6,6 +6,7 @@ app.use(cors())
 
 const { fetchAllData } = require('./utils/card_util')
 const { fetchDataAndSetupBot } = require('./utils/tmi_util')
+const { checkRequestKeyHeader } = require('./utils/middleware')
 
 
 
@@ -14,7 +15,7 @@ fetchDataAndSetupBot()
 
 
 // EXPRESS SERVER
-app.get("/", (_, res) => {
+app.get("/", checkRequestKeyHeader, (_, res) => {
   const twitch = `
     <h1>
       <a href="https://twitch.tv/cardsearcher">
@@ -26,7 +27,7 @@ app.get("/", (_, res) => {
   res.send(twitch)
 })
 
-app.get("/refresh_data", (_, res) => {
+app.get("/refresh_data", checkRequestKeyHeader, (_, res) => {
   console.log(`\n💧 RE-FETCHING BOT DATA...`)
   fetchAllData()
   .then(_ => console.log("🔃  BOT DATA REFRESHED!\n"))
