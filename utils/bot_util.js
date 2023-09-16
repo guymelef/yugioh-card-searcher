@@ -1,31 +1,10 @@
 const {
-  DEBUG,
-  BOT_USERNAME,
-  OAUTH_TOKEN,
-  BOT_USER_AGENT,
   BITLY_GUID,
   BITLY_API,
   BITLY_TOKEN
 } = require('./config')
 
 
-
-const tmiOptions = {
-  options: { debug: DEBUG === "true" },
-  connection: {
-    secure: true,
-    reconnect: true
-  },
-  identity: {
-    username: BOT_USERNAME,
-    password: OAUTH_TOKEN
-  }
-}
-
-const requestOptions = {
-  headers: { "User-Agent": `${BOT_USER_AGENT}` },
-  redirect: 'follow'
-}
 
 const getSymbol = (type, types) => {
   const cardSymbols = {
@@ -98,7 +77,7 @@ const transformToBitlyUrl = async (url) => {
     long_url: url
   })
 
-  const requestOptions = {
+  const options = {
     method: "POST",
     body: raw,
     headers: {
@@ -108,7 +87,7 @@ const transformToBitlyUrl = async (url) => {
     redirect: "follow"
   }
 
-  let link = await fetch(BITLY_API, requestOptions)
+  let link = await fetch(BITLY_API, options)
   link = await link.json()
   link = link.link
 
@@ -141,8 +120,6 @@ const returnErrMsg = () => {
 
 
 module.exports = {
-  tmiOptions,
-  requestOptions,
   getSymbol,
   getCardInfo,
   getCardArray,

@@ -16,13 +16,12 @@ const {
   searchYugipedia
 } = require('./card_util')
 const {
-  tmiOptions,
   getCardInfo,
   getCardArray,
   transformToBitlyUrl,
   returnErrMsg,
 } = require('./bot_util')
-const { MONGODB_URI, REDIS_URI, REDIS_TTL } = require('./config')
+const { MONGODB_URI, REDIS_URI, REDIS_TTL, tmiOptions } = require('./config')
 
 let OPEN_CHANNELS
 let client

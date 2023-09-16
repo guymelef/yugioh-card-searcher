@@ -14,6 +14,23 @@ const YUGIPEDIA_SEARCH = process.env.YUGIPEDIA_SEARCH
 const YUGIPEDIA_PAGEID = process.env.YUGIPEDIA_PAGEID
 const YUGIPEDIA_IMG = process.env.YUGIPEDIA_IMG
 
+const tmiOptions = {
+  options: { debug: DEBUG === "true" },
+  connection: {
+    secure: true,
+    reconnect: true
+  },
+  identity: {
+    username: BOT_USERNAME,
+    password: OAUTH_TOKEN
+  }
+}
+
+const requestOptions = {
+  headers: { "User-Agent": `${BOT_USER_AGENT}` },
+  redirect: 'follow'
+}
+
 
 
 
@@ -33,5 +50,7 @@ module.exports = {
   REDIS_TTL,
   YUGIPEDIA_SEARCH,
   YUGIPEDIA_PAGEID,
-  YUGIPEDIA_IMG
+  YUGIPEDIA_IMG,
+  tmiOptions,
+  requestOptions
 }
