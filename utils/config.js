@@ -1,3 +1,7 @@
+require('dotenv').config()
+
+
+
 const PORT = process.env.PORT
 const DEBUG = process.env.DEBUG
 const BOT_USERNAME = process.env.BOT_USERNAME
