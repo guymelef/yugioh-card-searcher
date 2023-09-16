@@ -22,6 +22,7 @@ const {
   transformToBitlyUrl,
   returnErrMsg,
 } = require('./bot_util')
+const { MONGODB_URI, REDIS_URI, REDIS_TTL } = require('./config')
 
 let OPEN_CHANNELS
 let client
@@ -31,7 +32,7 @@ let redis
 
 const fetchDataAndSetupBot = async () => { 
   try {
-    await mongoose.connect(process.env.MONGODB_URI)
+    await mongoose.connect(MONGODB_URI)
     console.log('Ⓜ️  Connected to MongoDB!')
     
     const channels = await Channel.find({}).select('name moderated -_id').lean().exec()
@@ -50,7 +51,7 @@ const fetchDataAndSetupBot = async () => {
     client.on('connected', (server, port) => console.log(`🆗 TMI is connected to ${server}:${port}`))
 
     // REDIS
-    redis = createClient({ url: process.env.REDIS_URI })
+    redis = createClient({ url: REDIS_URI })
     redis.connect()
     redis.on('ready', () => console.log("🔥 REDIS is ready!"))
     redis.on('error', (err) => console.log("⚠️ REDIS ERROR:", err))
@@ -151,7 +152,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
         let responseMessage = ''
         let redisKey = ''
         let redisValue = ''
-        const REDIS_TTL = process.env.REDIS_TTL
+        const REDIS_TTL = REDIS_TTL
         const noCache = message.startsWith("!search*")
 
         const returnResponseForLongSearchResult = () => {

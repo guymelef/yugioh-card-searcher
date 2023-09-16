@@ -1,8 +1,11 @@
+const { SECRET_KEY } = require('./config')
+
+
+
 const checkRequestKeyHeader = (req, res, next) => {
   const requestKey = req.header('X-Request-Key')
-  const expectedKey = process.env.SECRET_KEY
 
-  if (requestKey === expectedKey) next()
+  if (requestKey === SECRET_KEY) next()
   else res.status(403).end()
 }
 

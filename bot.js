@@ -7,6 +7,7 @@ app.use(cors())
 const { fetchAllData } = require('./utils/card_util')
 const { fetchDataAndSetupBot } = require('./utils/tmi_util')
 const { checkRequestKeyHeader } = require('./utils/middleware')
+const { PORT } = require('./utils/config')
 
 
 
@@ -39,4 +40,4 @@ app.get("/refresh_data", checkRequestKeyHeader, (_, res) => {
   })
 })
 
-app.listen(process.env.PORT, () => console.log(`🐶 THE SERVER IS UP!`))
+app.listen(PORT, () => console.log(`🐶 THE SERVER IS UP!`))

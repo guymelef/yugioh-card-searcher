@@ -1,4 +1,5 @@
 const { requestOptions } = require('./bot_util')
+const { YUGIPEDIA_SEARCH, YUGIPEDIA_PAGEID, YUGIPEDIA_IMG } = require('./config')
 
 let wikitext
 
@@ -11,13 +12,13 @@ const fetchFromYugipedia = async (cardName) => {
     console.log(`📖 SEARCHING YUGIPEDIA... 【${cardName}】`)
     let wikiContent = ""
     
-    let response = await fetch(`${process.env.YUGIPEDIA_SEARCH}${encodeURIComponent(cardName)}`, requestOptions)
+    let response = await fetch(`${YUGIPEDIA_SEARCH}${encodeURIComponent(cardName)}`, requestOptions)
     response = await response.json()
   
     const pageId = response.query.search[0]?.pageid
     if (!pageId) return CARD
   
-    wikiContent = await fetch(`${process.env.YUGIPEDIA_PAGEID}${pageId}`, requestOptions)
+    wikiContent = await fetch(`${YUGIPEDIA_PAGEID}${pageId}`, requestOptions)
     wikiContent = await wikiContent.json()
 
     const page = wikiContent.query.pages[0]
@@ -166,7 +167,7 @@ const getProperty = (prop) => {
   } else {
     if (prop === 'image') {
       let image = getProperty('ja_image')
-      return image ? `${process.env.YUGIPEDIA_IMG}${image}` : `${process.env.YUGIPEDIA_IMG}Back-TF-EN-VG.png`
+      return image ? `${YUGIPEDIA_IMG}${image}` : `${YUGIPEDIA_IMG}Back-TF-EN-VG.png`
     }
 
     return null
@@ -186,8 +187,8 @@ const getProperty = (prop) => {
       return propValue
     case 'image':
       propValue = propValue.split('; ')
-      if (propValue.length > 1) propValue = `${process.env.YUGIPEDIA_IMG}${propValue[1]}`
-      else propValue = `${process.env.YUGIPEDIA_IMG}${propValue[0]}`
+      if (propValue.length > 1) propValue = `${YUGIPEDIA_IMG}${propValue[1]}`
+      else propValue = `${YUGIPEDIA_IMG}${propValue[0]}`
       
       return propValue
     case 'link_arrows':

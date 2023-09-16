@@ -1,17 +1,29 @@
+const {
+  DEBUG,
+  BOT_USERNAME,
+  OAUTH_TOKEN,
+  BOT_USER_AGENT,
+  BITLY_GUID,
+  BITLY_API,
+  BITLY_TOKEN
+} = require('./config')
+
+
+
 const tmiOptions = {
-  options: { debug: process.env.DEBUG === "true" },
+  options: { debug: DEBUG === "true" },
   connection: {
     secure: true,
     reconnect: true
   },
   identity: {
-    username: process.env.BOT_USERNAME,
-    password: process.env.OAUTH_TOKEN
+    username: BOT_USERNAME,
+    password: OAUTH_TOKEN
   }
 }
 
 const requestOptions = {
-  headers: { "User-Agent": `${process.env.BOT_USER_AGENT}` },
+  headers: { "User-Agent": `${BOT_USER_AGENT}` },
   redirect: 'follow'
 }
 
@@ -81,7 +93,7 @@ const getCardArray = (cards) => {
 
 const transformToBitlyUrl = async (url) => {
   const raw = JSON.stringify({
-    group_guid: `${process.env.BITLY_GUID}`,
+    group_guid: `${BITLY_GUID}`,
     domain: "bit.ly",
     long_url: url
   })
@@ -91,12 +103,12 @@ const transformToBitlyUrl = async (url) => {
     body: raw,
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${process.env.BITLY_TOKEN}`
+      "Authorization": `Bearer ${BITLY_TOKEN}`
     },
     redirect: "follow"
   }
 
-  let link = await fetch(process.env.BITLY_API, requestOptions)
+  let link = await fetch(BITLY_API, requestOptions)
   link = await link.json()
   link = link.link
 
