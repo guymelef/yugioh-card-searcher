@@ -67,31 +67,8 @@ const getCardArray = (cards) => {
     
     return `${symbol}${card.name}`
   })
+
   return `📜 [${cards.length} ${cards.length > 1 ? 'Cards' : 'Card'}] : ${cardsArray.join(', ')}`
-}
-
-const transformToBitlyUrl = async (url) => {
-  const raw = JSON.stringify({
-    group_guid: `${BITLY_GUID}`,
-    domain: "bit.ly",
-    long_url: url
-  })
-
-  const options = {
-    method: "POST",
-    body: raw,
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${BITLY_TOKEN}`
-    },
-    redirect: "follow"
-  }
-
-  let link = await fetch(BITLY_API, options)
-  link = await link.json()
-  link = link.link
-
-  return link
 }
 
 const formatArrows = (array) => {
@@ -105,7 +82,32 @@ const formatArrows = (array) => {
     "Bottom-Right": '↘️',
     "Middle-Right": '➡️',
   }
+
   return array.map(arrow => markers[arrow.trim()]).join('')
+}
+
+const transformToBitlyUrl = async (url) => {
+  const body = JSON.stringify({
+    group_guid: `${BITLY_GUID}`,
+    domain: "bit.ly",
+    long_url: url
+  })
+
+  const options = {
+    method: "POST",
+    body,
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${BITLY_TOKEN}`
+    },
+    redirect: "follow"
+  }
+
+  let link = await fetch(BITLY_API, options)
+  link = await link.json()
+  link = link.link
+
+  return link
 }
 
 const returnErrMsg = () => {
