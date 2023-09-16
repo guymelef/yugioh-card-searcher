@@ -152,7 +152,6 @@ const onMessageHandler = async (channel, tags, message, self) => {
         let responseMessage = ''
         let redisKey = ''
         let redisValue = ''
-        const REDIS_TTL = REDIS_TTL
         const noCache = message.startsWith("!search*")
 
         const returnResponseForLongSearchResult = () => {

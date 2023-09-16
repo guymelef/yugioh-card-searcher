@@ -328,7 +328,7 @@ const searchYugipedia = async (keyword) => {
     await BotVariable.findOneAndUpdate({ name: 'Yugipedia' }, { lastSearch: YUGIPEDIA_LAST_SEARCH })
     const yugipediaCard = await fetchFromYugipedia(keyword)
 
-    if (yugipediaCard.length) saveToDatabase(yugipediaCard)
+    if (yugipediaCard.length) saveToDatabase(yugipediaCard[0])
   
     console.log(`↪️  sending [${yugipediaCard.length}] search result...`)
     return yugipediaCard
