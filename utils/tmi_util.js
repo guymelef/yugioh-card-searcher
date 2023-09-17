@@ -261,7 +261,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
               else return client.reply(channel, `❓Usage: !search --image <card name>`, tags.id)
             }
 
-            console.log(`🚀 [${channel}] SEARCHING CARD IMAGE FOR: "${query}"...`)
+            console.log(`🚀 [${userChannel} @ ${channel}] SEARCHING CARD IMAGE FOR: "${query}"...`)
             searchType = 'image'
             return checkRedisAndReply()
           case "--list":
@@ -270,7 +270,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
               else return client.reply(channel, `❓Usage: !search --list <keyword>`, tags.id)
             }
 
-            console.log(`🚀 [${channel}] GENERATING LIST FOR: "${query}"...`)
+            console.log(`🚀 [${userChannel} @ ${channel}] GENERATING LIST FOR: "${query}"...`)
             searchType = 'list'
             return checkRedisAndReply()
           case "--wiki":
@@ -279,13 +279,13 @@ const onMessageHandler = async (channel, tags, message, self) => {
               else return client.reply(channel, `❓Usage: !search --wiki <keyword>`, tags.id)
             }
 
-            console.log(`🚀 [${channel}] SEARCHING [YUGIPEDIA] FOR: "${query}"...`)
+            console.log(`🚀 [${userChannel} @ ${channel}] SEARCHING [YUGIPEDIA] FOR: "${query}"...`)
             searchType = 'wiki'
             return checkRedisAndReply()
           default:
             query = ORIGINAL_MESSAGE.split(' ').slice(1).join(' ')
 
-            console.log(`🚀 [${channel}] SEARCHING FOR: "${query}"...`)
+            console.log(`🚀 [${userChannel} @ ${channel}] SEARCHING FOR: "${query}"...`)
             searchType = ''
             return checkRedisAndReply()
         }
