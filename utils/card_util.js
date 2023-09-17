@@ -14,9 +14,9 @@ let YUGIPEDIA_LAST_SEARCH
 
 const fetchAllData = async () => {
   try {
-    const ocgCards = await OcgCard.find({}).select('-_id -__v').lean().exec()
-    const rushCards = await RushCard.find({}).select('-_id -__v').lean().exec()
-    const strayCards = await StrayCard.find({}).select('-_id -__v').lean().exec()
+    const ocgCards = await OcgCard.find({}).select('-pageId -official -_id -__v').lean().exec()
+    const rushCards = await RushCard.find({}).select('-pageId -official -_id -__v').lean().exec()
+    const strayCards = await StrayCard.find({}).select('-pageId -official -_id -__v').lean().exec()
     CARDS = [...ocgCards, ...rushCards, ...strayCards].sort((a, b) => a.name.localeCompare(b.name))
     console.log(`🟩 All [${CARDS.length.toLocaleString('en-ph')}] cards fetched!`)
 
