@@ -130,8 +130,8 @@ const onMessageHandler = async (channel, tags, message, self) => {
       }
       
       if (message.startsWith("!channels")) {
-        const userChannels = await Channel.find({}).sort({ name: 1 })
-        let channelList = userChannels.filter(channel => channel.name !== '#cardsearcher')
+        const twitchChannels = await Channel.find({}).sort({ name: 1 })
+        let channelList = twitchChannels.filter(channel => channel.name !== '#cardsearcher')
         channelList = channelList.map(channel => `● ${channel.name.slice(1)}`)
         return client.say(
           channel,
