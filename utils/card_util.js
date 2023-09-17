@@ -361,8 +361,8 @@ const saveToDatabase = async (card) => {
       
       delete card.official
       delete card.pageId
-      const index = CARDS.findIndex(item => item.name === card.name)
-      CARDS[index] = card
+      const indexToReplace = CARDS.findIndex(item => item.name === card.name)
+      if (indexToReplace !== -1) CARDS[indexToReplace] = card
     } else {
       console.log("🔴 NEW CARD SAVE ERROR:", err.message)
       console.log("🔷 STACK:", err.stack)
