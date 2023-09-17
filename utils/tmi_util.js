@@ -130,12 +130,12 @@ const onMessageHandler = async (channel, tags, message, self) => {
       }
       
       if (message.startsWith("!channels")) {
-        const twitchChannels = await Channel.find({}).sort({ name: 1 })
-        let channelList = twitchChannels.filter(channel => channel.name !== '#cardsearcher')
-        channelList = channelList.map(channel => `● ${channel.name.slice(1)}`)
+        let twitchChannels = await Channel.find({}).sort({ name: 1 })
+        twitchChannels = twitchChannels.filter(channel => channel.name !== '#cardsearcher')
+        twitchChannels = twitchChannels.map(channel => `● ${channel.name.slice(1)}`)
         return client.say(
           channel,
-          `imGlitch channel(s) using CardSearcher [${channelList.length}]: ${channelList.join(', ')}`
+          `imGlitch channel(s) using CardSearcher [${twitchChannels.length}]: ${twitchChannels.join(', ')}`
         )
       }
     }
