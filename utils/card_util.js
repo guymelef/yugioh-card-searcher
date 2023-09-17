@@ -354,19 +354,15 @@ const saveToDatabase = async (card) => {
     console.log(`💾 《 "${savedCard.name}" 》/${category.toUpperCase()} (${official ? 'official' : 'unofficial'})/ saved to MongoDb!`)
     console.log(card)
   } catch (err) {
-    if (err.name === "ValidationError") {
-      console.log("❗ CARD ALREADY EXISTS...")
+    if (err.name === "ValidationError") {      
+      if (card.official) delete card.official
+      await CardModel.findOneAndReplace({ name: card.name }, card)
+      console.log("♻️ CARD REPLACED IN DATABASE!")
       
-      if (card.alias) {
-        if (card.official) delete card.official
-        await CardModel.findOneAndReplace({ name: card.name }, card)
-        
-        const index = CARDS.findIndex(item => item.name === card.name)
-        delete card.official
-        delete card.pageId
-        CARDS[index] = card
-        console.log(`⭐ "${card.name}" (${card.alias}) updated!`)
-      }
+      delete card.official
+      delete card.pageId
+      const index = CARDS.findIndex(item => item.name === card.name)
+      CARDS[index] = card
     } else {
       console.log("🔴 NEW CARD SAVE ERROR:", err.message)
       console.log("🔷 STACK:", err.stack)
