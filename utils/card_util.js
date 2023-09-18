@@ -155,7 +155,7 @@ const findClosestCard = async (keyword, bulk = false) => {
       }
     }
 
-    if (!wordMatches.length) {
+    if (!queryMatches.length && !wordMatches.length) {
       if (keywordArr.length === 1) {
         let possibleMatch = false
         if (keyword.length > 3) {
@@ -211,19 +211,9 @@ const findClosestCard = async (keyword, bulk = false) => {
           if (possibleMatch) continue
         }
         
-        if (keywordArr.length > 1 && keyword.length >= 10) {
-          const cardNameJoined = cardNameArr.join('')
-          const keywordJoined = keywordArr.join('')
-          
-          if (distance(cardNameJoined, keywordJoined) < 4) {
-            possibleMatches.push(card)
-            continue
-          }
-
-          if (distance(cardNameJoined.slice(0, keywordJoined.length), keywordJoined) < 4) {
-            possibleMatches.push(card)
-            continue
-          }
+        if (keyword.length > 10 && distance(keywordArr.join(''), cardNameArr.join('')) < 4) {
+          possibleMatches.push(card)
+          continue
         }
 
         if (!possibleMatches.length) {
