@@ -1,12 +1,19 @@
 const mongoose = require('mongoose')
-mongoose.set('strictQuery', true)
 const tmi = require('tmi.js')
-tmi.Client.prototype.reply = function(channel, replyMessage, replyParentMessageId) {
-  return this.raw(`@reply-parent-msg-id=${replyParentMessageId} PRIVMSG ${channel} :${replyMessage}`)
-}
 const { createClient } = require('redis')
 
-const Channel = require('../models/channel')
+const {
+  MONGODB_URI,
+  REDIS_URI,
+  REDIS_TTL,
+  tmiOptions 
+} = require('./config')
+const {
+  getCardInfo,
+  getCardArray,
+  transformToBitlyUrl,
+  returnErrMsg,
+} = require('./bot_util')
 const {
   fetchAllData,
   normalizeString,
@@ -15,13 +22,7 @@ const {
   findClosestNaturalCard,
   searchYugipedia
 } = require('./card_util')
-const {
-  getCardInfo,
-  getCardArray,
-  transformToBitlyUrl,
-  returnErrMsg,
-} = require('./bot_util')
-const { MONGODB_URI, REDIS_URI, REDIS_TTL, tmiOptions } = require('./config')
+const Channel = require('../models/channel')
 
 let OPEN_CHANNELS
 let client
@@ -31,6 +32,7 @@ let redis
 
 const fetchDataAndSetupBot = async () => { 
   try {
+    mongoose.set('strictQuery', true)
     await mongoose.connect(MONGODB_URI)
     console.log('Ⓜ️  Connected to MongoDB!')
     const channels = await Channel.find({}).select('name moderated -_id').lean().exec()
@@ -42,6 +44,9 @@ const fetchDataAndSetupBot = async () => {
     await fetchAllData()
 
     // TMI
+    tmi.Client.prototype.reply = function(channel, replyMessage, replyParentMessageId) {
+      return this.raw(`@reply-parent-msg-id=${replyParentMessageId} PRIVMSG ${channel} :${replyMessage}`)
+    }
     client = new tmi.client(tmiOptions)
     client.setMaxListeners(100)
     client.connect()
