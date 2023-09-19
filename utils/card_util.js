@@ -6,7 +6,8 @@ const { fetchFromYugipedia } = require('./yugipedia_util')
 const { OcgCard, RushCard, StrayCard } = require('../models/card')
 const BotVariable = require('../models/variable')
 
-let CARDS
+let MAIN_CARDS
+let RUSH_CARDS
 let LAST_RANDOM_CARD
 let YUGIPEDIA_LAST_SEARCH
 
@@ -17,12 +18,14 @@ const fetchAllData = async () => {
     const ocgCards = await OcgCard.find({}).select('-pageId -official -_id -__v').lean().exec()
     const rushCards = await RushCard.find({}).select('-pageId -official -_id -__v').lean().exec()
     const strayCards = await StrayCard.find({}).select('-pageId -official -_id -__v').lean().exec()
-    CARDS = [...ocgCards, ...rushCards, ...strayCards].sort((a, b) => a.name.localeCompare(b.name))
-    console.log(`🟩 All [${CARDS.length.toLocaleString('en-ph')}] cards fetched!`)
+    MAIN_CARDS = [...ocgCards, ...strayCards].sort((a, b) => a.name.localeCompare(b.name))
+    RUSH_CARDS = [...rushCards].sort((a, b) => a.name.localeCompare(b.name))
+    console.log(`🔸 MAIN CARDS: ${ocgCards.length.toLocaleString('en-ph')}`)
+    console.log(`🔸 RUSH CARDS: ${rushCards.length.toLocaleString('en-ph')}`)
+    console.log(`🔸 STRAY CARDS: ${strayCards.length.toLocaleString('en-ph')}`)
 
-    const ygopdCount = await BotVariable.findOne({ name: 'YGOPRODeck' })
-    console.log(`🟩 YGOPD card count (${ygopdCount.last_update}): ${ygopdCount.card_count.toLocaleString('en-ph')}`)
-
+    const ygopdVar = await BotVariable.findOne({ name: 'YGOPRODeck' })
+    console.log(`🟩 YGOPD CARD COUNT (${ygopdVar.last_update}): ${ygopdVar.card_count.toLocaleString('en-ph')}`)
     const yugipediaVar = await BotVariable.findOne({ name: 'Yugipedia' })
     YUGIPEDIA_LAST_SEARCH = yugipediaVar.lastSearch
     console.log(`🟩 YUGIPEDIA LATEST ENTRY: ${new Date(yugipediaVar.lastUpdate).toLocaleString('en-ph')}`)
@@ -33,7 +36,8 @@ const fetchAllData = async () => {
   }
 }
 
-const getRandomCard = () => {
+const getRandomCard = (pool) => {
+  const CARDS = (pool === 'main') ? MAIN_CARDS : RUSH_CARDS
   const index = Math.floor(Math.random() * CARDS.length)
   const card = CARDS[index]
   
@@ -53,39 +57,41 @@ const normalizeString = (string) => {
     .trim()
 }
 
-const findClosestCard = async (keyword, bulk = false) => {
+const findClosestCard = async (keyword, bulk, pool) => {
   const keywordArr = keyword.split(' ')
+  const CARDS = (pool === 'main') ? MAIN_CARDS : RUSH_CARDS
   
-  const DISTANCEARRAY = []
-
   let exactMatch = []
   let queryMatches = []
   let wordMatches = []
   let possibleMatches = []
   let partialMatches = []
   let remoteMatches = []
-
+  
   const convertedStringChecker = (word, cardName) => {
     let convertedStr = word.split('').join('.')
     if (cardName.includes(convertedStr)) return true
-
+    
     convertedStr = word.split('').join('/')
     if (cardName.includes(convertedStr)) return true
-
+    
     convertedStr = word.split('').join(':')
     if (cardName.includes(convertedStr)) return true
-
+    
     return false
   }
-
+  
+  const DISTANCEARRAY = []
   for (let index = 0; index < CARDS.length; index++) {
     let card = CARDS[index]
     const cardName = normalizeString(card.name)
     const cardNameArr = cardName.split(' ')
 
-    const levDistance = LevenshteinDistanceSearch(keyword, cardName)
-    levDistance.index = index
-    DISTANCEARRAY.push(levDistance)
+    if (!queryMatches.length && !wordMatches.length && !possibleMatches.length && !partialMatches.length) {
+      const levDistance = LevenshteinDistanceSearch(keyword, cardName)
+      levDistance.index = index
+      DISTANCEARRAY.push(levDistance)
+    }
 
     if (!bulk) {
       if (cardName === keyword ||
@@ -224,7 +230,7 @@ const findClosestCard = async (keyword, bulk = false) => {
     }
   }
 
-  if (!queryMatches.length || !wordMatches.length || !possibleMatches.length || !partialMatches.length) {
+  if (!queryMatches.length && !wordMatches.length && !possibleMatches.length && !partialMatches.length) {
     const min = Math.min(...DISTANCEARRAY.map(item => item.distance))
     const minArray = DISTANCEARRAY.filter(item => item.distance === min)
     minArray.forEach(item => remoteMatches.push(CARDS[item.index]))
@@ -330,6 +336,7 @@ const searchYugipedia = async (keyword) => {
 const saveToDatabase = async (card) => {
   const models = { "stray": StrayCard, "ocg": OcgCard, "rush": RushCard }
   const CardModel = models[card.category]
+  const CARD_POOL = card.category === 'rush' ? RUSH_CARDS : MAIN_CARDS
 
   try {
     const category = card.category
@@ -339,8 +346,8 @@ const saveToDatabase = async (card) => {
     console.log(`📁 SAVING "${card.name}"...`)
     const savedCard = await new CardModel(card).save()
 
-    CARDS.push(card)
-    CARDS = CARDS.sort((a, b) => a.name.localeCompare(b.name))
+    CARD_POOL.push(card)
+    CARD_POOL = CARD_POOL.sort((a, b) => a.name.localeCompare(b.name))
     console.log(`💾 《 "${savedCard.name}" 》/${category.toUpperCase()} (${official ? 'official' : 'unofficial'})/ saved to MongoDb!`)
     console.log(card)
   } catch (err) {
@@ -351,8 +358,8 @@ const saveToDatabase = async (card) => {
       
       delete card.official
       delete card.pageId
-      const indexToReplace = CARDS.findIndex(item => item.name === card.name)
-      if (indexToReplace !== -1) CARDS[indexToReplace] = card
+      const indexToReplace = CARD_POOL.findIndex(item => item.name === card.name)
+      if (indexToReplace !== -1) CARD_POOL[indexToReplace] = card
     } else {
       console.log("🔴 NEW CARD SAVE ERROR:", err.message)
       console.log("🔷 STACK:", err.stack)
