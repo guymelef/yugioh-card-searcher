@@ -28,9 +28,9 @@ app.get("/", checkRequestKeyHeader, (_, res) => {
 })
 
 app.get("/refresh_data", checkRequestKeyHeader, (_, res) => {
-  console.log(`\n💧 RE-FETCHING BOT DATA...`)
+  console.log(`\n🕊️ RE-FETCHING BOT DATA...`)
   fetchAllData()
-  .then(_ => console.log("🔃  BOT DATA REFRESHED!\n"))
+  .then(_ => console.log("🐳  BOT DATA REFRESHED!\n"))
   .catch(err => console.log("ERROR:", err))
 
   res.json({
