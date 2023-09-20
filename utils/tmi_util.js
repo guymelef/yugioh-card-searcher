@@ -150,8 +150,8 @@ const onMessageHandler = async (channel, tags, message, self) => {
         const messageArray = message.split(' ')
         let searchType = messageArray[1]
         let query = ORIGINAL_MESSAGE.split(' ').slice(2).join(' ')
-        let userQuery = ''
         let searchResult = []
+        let userQuery = ''
         let responseMessage = ''
         let redisKey = ''
         let redisValue = ''
@@ -309,6 +309,8 @@ const onMessageHandler = async (channel, tags, message, self) => {
 
     if (channel === "#cardsearcher")
       client.reply(channel, `Oops, an error occured! Please try again or report the problem.`, tags.id)
+    else
+      return
   }
 }
 
