@@ -167,13 +167,13 @@ const onMessageHandler = async (channel, tags, message, self) => {
           
           if (searchType === 'wiki') searchPrefix = 'search'
           redisKey = `${searchPrefix}${searchType}:${query}`
-          redisValue = await redis.get(redisKey)
+          redisValue = redis.isOpen && await redis.get(redisKey)
 
           const saveToRedis = async () => {
             try {
-              await redis.set(redisKey, redisValue, 'EX', REDIS_TTL)
+              if (redis.isOpen) await redis.set(redisKey, redisValue, 'EX', REDIS_TTL)
             } catch (err) {
-              console.log("⚠️ REDIS ERROR:", err)
+              console.log("⚠️ REDIS SAVE ERROR:", err)
             }
           }
 
