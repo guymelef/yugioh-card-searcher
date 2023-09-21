@@ -59,7 +59,7 @@ const fetchDataAndSetupBot = async () => {
     redis.on('ready', () => console.log("🔥 REDIS is ready!"))
     redis.on('error', (err) => console.log("⚠️ REDIS CLIENT ERROR:", err.message))
   } catch (err) {
-    console.log("🔴 DATA SET UP ERROR:", err.message)
+    console.log("🔴 BOT SET UP ERROR:", err.message)
     console.log("🔷 STACK:", err.stack)
   }
 }
