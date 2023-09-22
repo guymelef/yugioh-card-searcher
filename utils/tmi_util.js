@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const tmi = require('tmi.js')
-const { createClient } = require('redis')
+const Redis = require('ioredis')
 
 const {
   MONGODB_URI,
@@ -51,13 +51,11 @@ const fetchDataAndSetupBot = async () => {
     client.setMaxListeners(100)
     client.connect()
     client.on('message', onMessageHandler)
-    client.on('connected', (server, port) => console.log(`🆗 TMI is connected to ${server}:${port}`))
+    client.on('connected', (server, port) => console.log(`🤖 TMI connected to ${server}:${port}`))
 
     // REDIS
-    redis = createClient({ url: REDIS_URI })
-    redis.connect()
-    redis.on('ready', () => console.log("🧲 REDIS is ready!"))
-    redis.on('error', (err) => console.log("⚠️ REDIS CLIENT ERROR:", err.message))
+    redis = new Redis(REDIS_URI)
+    redis.on('connect', () => console.log("🧲 REDIS connection established"))
   } catch (err) {
     console.log("🔴 BOT SET UP ERROR:", err.message)
     console.log("🔷 STACK:", err.stack)
@@ -164,16 +162,21 @@ const onMessageHandler = async (channel, tags, message, self) => {
           userQuery = query
           query = normalizeString(query)
           if (!query) return client.reply(channel, returnErrMsg(), tags.id)
-          
-          if (searchType === 'wiki') searchPrefix = 'search'
-          redisKey = `${searchPrefix}${searchType}:${query}`
-          redisValue = redis.isOpen && await redis.get(redisKey)
 
-          const saveToRedis = async () => {
+          const getRedisValue = async () => {
             try {
-              if (redis.isOpen) await redis.set(redisKey, redisValue, 'EX', REDIS_TTL)
+              return await redis.get(redisKey)
             } catch (err) {
-              console.log("⚠️ REDIS SAVE ERROR:", err)
+              console.log("⚠️ REDIS GET ERROR:", err)
+              return null
+            }
+          }
+
+          const setRedisValue = async () => {
+            try {
+              await redis.set(redisKey, redisValue, 'EX', REDIS_TTL)
+            } catch (err) {
+              console.log("⚠️ REDIS SET ERROR:", err)
             }
           }
 
@@ -183,10 +186,13 @@ const onMessageHandler = async (channel, tags, message, self) => {
             const message = `Your search yielded ❮${searchResult.length.toLocaleString()}❯ total possible cards. Looking for “${closestNatural}”? ${emoji}`
 
             redisValue = JSON.stringify({ short: true, result: message })
-            saveToRedis()
+            setRedisValue()
             return client.reply(channel, message, tags.id)
           }
 
+          if (searchType === 'wiki') searchPrefix = 'search'
+          redisKey = `${searchPrefix}${searchType}:${query}`
+          redisValue = await getRedisValue()
           if (redisValue && !noCache) {
             console.log('🌵 REDIS CACHE FOUND!')
             redisValue = JSON.parse(redisValue)
@@ -203,7 +209,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
 
               if (!searchResult.length) {
                 redisValue = JSON.stringify({ short: true, result: [] })
-                saveToRedis()
+                setRedisValue()
                 return client.reply(channel, returnErrMsg(), tags.id)
               }
             } else {
@@ -222,7 +228,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
 
               const isShort = responseMessage.length <= 500
               redisValue = JSON.stringify({ short: isShort, result: responseMessage })
-              saveToRedis()
+              setRedisValue()
 
               if (isShort) return client.reply(channel, responseMessage, tags.id)
               else return client.say(channel, responseMessage)
@@ -232,7 +238,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
               if (searchResult.length <= 100) {
                 responseMessage = getCardArray(searchResult)
                 redisValue = JSON.stringify({ short: false, result: responseMessage })
-                saveToRedis()
+                setRedisValue()
                 return client.say(channel, responseMessage)
               } else {
                 return returnResponseForLongSearchResult()
@@ -247,7 +253,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
                 return returnResponseForLongSearchResult()
               } else {
                 redisValue = JSON.stringify({ short: true, result: responseMessage })
-                saveToRedis()
+                setRedisValue()
                 return client.reply(channel, responseMessage, tags.id)
               }
             }
