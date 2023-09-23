@@ -67,8 +67,11 @@ const createYugipediaCard = (cardName) => {
   let image = getProperty('image')
   let requirement = getProperty('requirement')
   let isRush = getProperty('rush_duel')
-  if (!category) category = (requirement || isRush) ? 'rush' : 'ocg'
+  let misc = getProperty('misc')
+  let legend = false
 
+  if (misc && misc.toLowerCase() === 'legend card') legend = true
+  if (!category) category = (requirement || isRush) ? 'rush' : 'ocg'
   if (!lore || (!types && !lore)) return CARD
   
   if (['Spell', 'Trap'].includes(type)) {
@@ -81,14 +84,14 @@ const createYugipediaCard = (cardName) => {
       category = category || 'ocg'
     }
 
-    CARD.push({ name, type, property, lore, image, category, official })
+    CARD.push({ name, type, legend, property, lore, image, category, official })
     return CARD
   }
 
   if (type === 'Skill' && category === 'rush') {
     if (requirement) {
       lore = `[REQUIREMENT] ${requirement} [EFFECT] ${lore}`
-      CARD.push({ name, type, requirement, lore, image, category, official })
+      CARD.push({ name, type, legend, requirement, lore, image, category, official })
       return CARD
     } else {
       CARD.push({ name, type, lore, image, category, official })
@@ -148,7 +151,7 @@ const createYugipediaCard = (cardName) => {
     
     if (requirement) lore = `[REQUIREMENT] ${requirement} ${effectTypes} ${lore}`
 
-    CARD.push({ name, type, attribute, types, level, atk, def, lore, image, category, official })
+    CARD.push({ name, type, legend, attribute, types, level, atk, def, lore, image, category, official })
     return CARD
   }
 
