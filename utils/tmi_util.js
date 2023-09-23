@@ -156,6 +156,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
         const noCache = message.startsWith("!search*") || message.startsWith("!searchr*")
         const rushSearch = message.startsWith("!searchr")
         const cardPool = rushSearch ? 'rush' : 'main'
+        const searchCategory = cardPool.toUpperCase()
         let searchPrefix = rushSearch ? 'searchr' : 'search'
 
         const checkRedisAndReply = async () => {
@@ -223,7 +224,9 @@ const onMessageHandler = async (channel, tags, message, self) => {
               } else if (searchType === 'list') {
                 responseMessage = getCardArray(searchResult)
               } else {
-                responseMessage = getCardInfo(searchResult[0])
+                const card = searchResult[0]
+                const messagePrefix = (rushSearch || card.category === 'rush') ? '🚀' : '🎴'
+                responseMessage = `${messagePrefix} ${getCardInfo(card)}`
               }
 
               const isShort = responseMessage.length <= 500
@@ -286,23 +289,24 @@ const onMessageHandler = async (channel, tags, message, self) => {
               tags.id
             )
           case "--random":
+            console.log('↪️  sending random card...')
             searchResult = getRandomCard(cardPool)
             return client.say(channel, getCardInfo(searchResult))
           case "--image":
-            console.log(`🚀 [${userChannel} @ ${channel}] ${rushSearch ? '(RUSH) ': ''}SEARCHING CARD IMAGE FOR: "${query}"...`)
+            console.log(`🚀 [${userChannel} @ ${channel}] [${searchCategory}] SEARCHING CARD IMAGE FOR: "${query}"...`)
             searchType = 'image'
             return checkRedisAndReply()
           case "--list":
-            console.log(`🚀 [${userChannel} @ ${channel}] ${rushSearch ? '(RUSH) ': ''}GENERATING LIST FOR: "${query}"...`)
+            console.log(`🚀 [${userChannel} @ ${channel}] [${searchCategory}] GENERATING LIST FOR: "${query}"...`)
             searchType = 'list'
             return checkRedisAndReply()
           case "--wiki":
-            console.log(`🚀 [${userChannel} @ ${channel}] ${rushSearch ? '(RUSH) ': ''}SEARCHING [YUGIPEDIA] FOR: "${query}"...`)
+            console.log(`🚀 [${userChannel} @ ${channel}] [${searchCategory}] SEARCHING 🔹YUGIPEDIA🔹 FOR: "${query}"...`)
             searchType = 'wiki'
             return checkRedisAndReply()
           default:
             query = ORIGINAL_MESSAGE.split(' ').slice(1).join(' ')
-            console.log(`🚀 [${userChannel} @ ${channel}] ${rushSearch ? '(RUSH) ': ''}SEARCHING FOR: "${query}"...`)
+            console.log(`🚀 [${userChannel} @ ${channel}] [${searchCategory}] SEARCHING FOR: "${query}"...`)
             searchType = ''
             return checkRedisAndReply()
         }
