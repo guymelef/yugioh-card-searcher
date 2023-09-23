@@ -52,7 +52,7 @@ const normalizeString = (string) => {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\s\w:!/@&?#=%]|[_☆★]/g, "")
+    .replace(/[^\s\w:!/@&?#=%\[\]]|[_☆★]/g, "")
     .replace(/\s+/g, " ")
     .trim()
 }
@@ -323,8 +323,8 @@ const searchYugipedia = async (keyword) => {
     YUGIPEDIA_LAST_SEARCH = newDate.toISOString()
     await BotVariable.findOneAndUpdate({ name: 'Yugipedia' }, { lastSearch: YUGIPEDIA_LAST_SEARCH })
     const yugipediaCard = await fetchFromYugipedia(keyword)
-
-    if (yugipediaCard.length) saveToDatabase(yugipediaCard[0])
+    
+    if (yugipediaCard.length) saveToDatabase({ ...yugipediaCard[0] })
   
     console.log(`↪️  sending [${yugipediaCard.length}] search result...`)
     return yugipediaCard
@@ -342,6 +342,7 @@ const saveToDatabase = async (card) => {
     const category = card.category
     const official = card.official
     delete card.category
+    if (!card.legend) delete card.legend
 
     console.log(`📁 SAVING "${card.name}"...`)
     const savedCard = await new CardModel(card).save()
