@@ -348,7 +348,7 @@ const saveToDatabase = async (card) => {
     const savedCard = await new CardModel(card).save()
 
     CARD_POOL.push(card)
-    CARD_POOL = CARD_POOL.sort((a, b) => a.name.localeCompare(b.name))
+    CARD_POOL.sort((a, b) => a.name.localeCompare(b.name))
     console.log(`💾 《 "${savedCard.name}" 》/${category.toUpperCase()} (${official ? 'official' : 'unofficial'})/ saved to MongoDb!`)
     console.log(card)
   } catch (err) {
