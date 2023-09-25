@@ -352,7 +352,7 @@ const saveToDatabase = async (card) => {
     console.log(`💾 《 "${savedCard.name}" 》/${category.toUpperCase()} (${official ? 'official' : 'unofficial'})/ saved to MongoDb!`)
     console.log(card)
   } catch (err) {
-    if (err.name === "ValidationError") {      
+    if (err.name === "ValidationError") {
       if (card.official) delete card.official
       await CardModel.findOneAndReplace({ name: card.name }, card)
       console.log("♻️ CARD REPLACED IN DATABASE!")

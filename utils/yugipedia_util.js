@@ -66,7 +66,7 @@ const createYugipediaCard = (cardName) => {
   let lore = getProperty('lore')
   let image = getProperty('image')
   let requirement = getProperty('requirement')
-  let isRush = getProperty('rush_duel')
+  let isRush = getProperty('rush_duel') || getProperty('rush_duel_status')
   let misc = getProperty('misc')
   let legend = false
 
