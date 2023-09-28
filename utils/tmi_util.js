@@ -156,7 +156,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
         const noCache = message.startsWith("!search*") || message.startsWith("!searchr*")
         const rushSearch = message.startsWith("!searchr")
         const cardPool = rushSearch ? 'rush' : 'main'
-        const searchCategory = cardPool.toUpperCase()
+        const searchCategory = cardPool === 'main' ? '🟦' : '🟧'
         let searchPrefix = rushSearch ? 'searchr' : 'search'
 
         const checkRedisAndReply = async () => {
@@ -293,20 +293,20 @@ const onMessageHandler = async (channel, tags, message, self) => {
             searchResult = getRandomCard(cardPool)
             return client.say(channel, getCardInfo(searchResult))
           case "--image":
-            console.log(`🚀 [${userChannel} @ ${channel}] [${searchCategory}] SEARCHING CARD IMAGE FOR: "${query}"...`)
+            console.log(`🚀 [${userChannel} @ ${channel}] ${searchCategory} SEARCHING CARD IMAGE FOR: "${query}"...`)
             searchType = 'image'
             return checkRedisAndReply()
           case "--list":
-            console.log(`🚀 [${userChannel} @ ${channel}] [${searchCategory}] GENERATING LIST FOR: "${query}"...`)
+            console.log(`🚀 [${userChannel} @ ${channel}] ${searchCategory} GENERATING LIST FOR: "${query}"...`)
             searchType = 'list'
             return checkRedisAndReply()
           case "--wiki":
-            console.log(`🚀 [${userChannel} @ ${channel}] [${searchCategory}] SEARCHING 🔹YUGIPEDIA🔹 FOR: "${query}"...`)
+            console.log(`🚀 [${userChannel} @ ${channel}] ${searchCategory} SEARCHING 🔹YUGIPEDIA🔹 FOR: "${query}"...`)
             searchType = 'wiki'
             return checkRedisAndReply()
           default:
             query = ORIGINAL_MESSAGE.split(' ').slice(1).join(' ')
-            console.log(`🚀 [${userChannel} @ ${channel}] [${searchCategory}] SEARCHING FOR: "${query}"...`)
+            console.log(`🚀 [${userChannel} @ ${channel}] ${searchCategory} SEARCHING FOR: "${query}"...`)
             searchType = ''
             return checkRedisAndReply()
         }
