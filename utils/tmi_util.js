@@ -26,9 +26,12 @@ const Channel = require('../models/channel')
 
 let OPEN_CHANNELS
 let client
-let redis
 
 
+
+// REDIS
+const redis = new Redis(REDIS_URI)
+redis.on('connect', () => console.log("🧲 REDIS connection established"))
 
 const fetchDataAndSetupBot = async () => { 
   try {
@@ -52,10 +55,6 @@ const fetchDataAndSetupBot = async () => {
     client.connect()
     client.on('message', onMessageHandler)
     client.on('connected', (server, port) => console.log(`🤖 TMI connected to ${server}:${port}`))
-
-    // REDIS
-    redis = new Redis(REDIS_URI)
-    redis.on('connect', () => console.log("🧲 REDIS connection established"))
   } catch (err) {
     console.log("🔴 BOT SET UP ERROR:", err.message)
     console.log("🔷 STACK:", err.stack)
@@ -329,5 +328,6 @@ const onMessageHandler = async (channel, tags, message, self) => {
 
 
 module.exports = {
-  fetchDataAndSetupBot
+  fetchDataAndSetupBot,
+  redis
 }
