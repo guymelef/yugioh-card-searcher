@@ -181,9 +181,8 @@ const onMessageHandler = async (channel, tags, message, self) => {
           }
 
           const returnResponseForLongSearchResult = () => {
-            const emoji = ['🤔', '🧐', '🤨'][Math.floor(Math.random() * 3)]
             const closestNatural = findClosestNaturalCard(userQuery, searchResult)
-            const message = `Your search yielded ❮${searchResult.length.toLocaleString()}❯ total possible cards. Looking for “${closestNatural}”? ${emoji} \n For «RUSH DUEL» cards, type !searchR <keyword> More commands here: https://www.twitch.tv/cardsearcher/about`
+            const message = `🔎 Your search yielded ❮${searchResult.length.toLocaleString()}❯ total possible cards. Looking for “${closestNatural}”? For «RUSH DUEL» cards, type: !searchR <keyword> ╏ More commands @ https://twitch.tv/cardsearcher/about`
 
             redisValue = JSON.stringify({ short: true, result: message })
             setRedisValue()
