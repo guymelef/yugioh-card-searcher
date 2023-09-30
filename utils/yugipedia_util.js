@@ -49,16 +49,20 @@ const createYugipediaCard = (cardName) => {
 
   let category
   let official
-  if (wikitextSubstring.startsWith('{{anime') || wikitextSubstring.startsWith('{{duel links')) {
+  if (wikitextSubstring.startsWith('{{anime') ||
+    wikitextSubstring.startsWith('{{duel links') ||
+    wikitextSubstring.includes('{{anime card')
+  ) {
     category  = 'stray'
     official = false
-  } else if (
-    wikitextSubstring.startsWith('{{unofficial') ||
+  } else if (wikitextSubstring.startsWith('{{unofficial') ||
     wikitextSubstring.includes('{{unofficial name') ||
     wikitextSubstring.includes('{{unofficial lore')
   ) {
     official = false
-  } else if (wikitextSubstring.startsWith('{{cardtable2') || wikitextSubstring.includes('{{cardtable2')) {
+  } else if (wikitextSubstring.startsWith('{{cardtable2') ||
+    wikitextSubstring.includes('{{cardtable2')
+  ) {
     official = true
   } else {
     official = false
