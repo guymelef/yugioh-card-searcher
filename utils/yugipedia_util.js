@@ -22,7 +22,7 @@ const fetchFromYugipedia = async (cardName) => {
     wikiContent = await wikiContent.json()
 
     const page = wikiContent.query.pages[0]
-    const name = page.title
+    const name = page.title.replace('(Rush Duel)', '')
     wikitext = page.revisions[0].content
 
     let card = createYugipediaCard(name)
