@@ -287,8 +287,9 @@ const onMessageHandler = async (channel, tags, message, self) => {
               tags.id
             )
           case "--random":
-            console.log('↪️  sending random card...')
+            console.log(`🚀 [${userChannel} @ ${channel}] ${searchCategory} GETTING A RANDOM CARD...`)
             searchResult = getRandomCard(cardPool)
+            console.log('↪️  sending card...')
             return client.say(channel, getCardInfo(searchResult))
           case "--image":
             console.log(`🚀 [${userChannel} @ ${channel}] ${searchCategory} SEARCHING CARD IMAGE FOR: "${query}"...`)
