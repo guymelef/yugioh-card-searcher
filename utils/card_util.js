@@ -162,7 +162,7 @@ const findClosestCard = async (keyword, bulk, pool) => {
     }
 
     if (!queryMatches.length && !wordMatches.length) {
-      if (distance(cardName, keyword) === 1 && !bulk) {
+      if (keywordArr.length > 1 && distance(cardName, keyword) === 1 && !bulk) {
         console.log(`↪️  sending closest match...`)
         return [card]
       }
