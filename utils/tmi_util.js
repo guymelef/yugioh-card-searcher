@@ -33,7 +33,7 @@ let client
 const redis = new Redis(REDIS_URI)
 redis.on('connect', () => console.log("🧲 REDIS connection established"))
 
-const fetchDataAndSetupBot = async () => { 
+const fetchDataAndSetupBot = async () => {
   try {
     mongoose.set('strictQuery', true)
     await mongoose.connect(MONGODB_URI)
@@ -181,8 +181,11 @@ const onMessageHandler = async (channel, tags, message, self) => {
           }
 
           const returnResponseForLongSearchResult = () => {
+            const suggestion = cardPool === 'main' ?
+              `For «RUSH DUEL» cards, type: !searchR <keyword>【 More commands @ https://twitch.tv/cardsearcher/about 】`
+              : `For anime or non-TCG/OCG cards, try a Yugipedia lookup with: !search --wiki <card name>【 More commands @ https://twitch.tv/cardsearcher/about 】`
             const closestNatural = findClosestNaturalCard(userQuery, searchResult)
-            const message = `🔎 Your search yielded ❮${searchResult.length.toLocaleString()}❯ total possible cards. Looking for “${closestNatural}”? For «RUSH DUEL» cards, type: !searchR <keyword> ╏ More commands @ https://twitch.tv/cardsearcher/about`
+            const message = `🔎 Your search yielded ❮${searchResult.length.toLocaleString()}❯ total possible cards. Looking for “${closestNatural}”? ${suggestion}`
 
             redisValue = JSON.stringify({ short: true, result: message })
             setRedisValue()
