@@ -60,6 +60,7 @@ app.post("/save_to_redis", (req, res) => {
       console.log("⚠️ REDIS SET ERROR:", err)
       res.json({ error: err })
     } else {
+      console.log("💽 SAVED TO REDIS:", key)
       res.json({ message: "redis set success" })
     }
   })
