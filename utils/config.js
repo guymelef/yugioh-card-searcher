@@ -14,6 +14,7 @@ const SECRET_KEY = process.env.SECRET_KEY
 const MONGODB_URI = process.env.MONGODB_URI
 const REDIS_URI = process.env.REDIS_URI
 const REDIS_TTL = process.env.REDIS_TTL
+const SEARCHER_API = process.env.SEARCHER_API
 const YUGIPEDIA_SEARCH = process.env.YUGIPEDIA_SEARCH
 const YUGIPEDIA_PAGEID = process.env.YUGIPEDIA_PAGEID
 const YUGIPEDIA_IMG = process.env.YUGIPEDIA_IMG
@@ -35,6 +36,14 @@ const requestOptions = {
   redirect: 'follow'
 }
 
+const searchOptions = {
+  method: 'POST',
+  headers: {
+    "Content-Type" : "application/json",
+    "X-Request-Key": SECRET_KEY
+  }
+}
+
 
 
 
@@ -52,9 +61,11 @@ module.exports = {
   MONGODB_URI,
   REDIS_URI,
   REDIS_TTL,
+  SEARCHER_API,
   YUGIPEDIA_SEARCH,
   YUGIPEDIA_PAGEID,
   YUGIPEDIA_IMG,
   tmiOptions,
-  requestOptions
+  requestOptions,
+  searchOptions
 }

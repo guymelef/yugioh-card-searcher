@@ -1,10 +1,11 @@
 const { LevenshteinDistanceSearch } = require('natural')
 const { distance } = require("fastest-levenshtein")
 
+const { SEARCHER_API, searchOptions } = require('./config')
+const BotVariable = require('../models/variable')
+const { OcgCard, RushCard, StrayCard } = require('../models/card')
 const { getSymbol } = require('./bot_util')
 const { fetchFromYugipedia } = require('./yugipedia_util')
-const { OcgCard, RushCard, StrayCard } = require('../models/card')
-const BotVariable = require('../models/variable')
 
 let MAIN_CARDS
 let RUSH_CARDS
@@ -58,6 +59,8 @@ const normalizeString = (string) => {
 }
 
 const findClosestCard = async (keyword, bulk, pool) => {
+  const USER_KEYWORD = keyword
+  keyword = normalizeString(keyword)
   const keywordArr = keyword.split(' ')
   const CARDS = (pool === 'main') ? MAIN_CARDS : RUSH_CARDS
   
@@ -275,6 +278,8 @@ const findClosestCard = async (keyword, bulk, pool) => {
       return wordMatches
     }
 
+    searchUsingUpdater(USER_KEYWORD)
+
     if (possibleMatches.length) {
       console.log(`↪️  sending [${possibleMatches.length}] possible matches...`)
       return possibleMatches
@@ -370,6 +375,36 @@ const saveToDatabase = async (card) => {
       console.log("🔴 NEW CARD SAVE ERROR:", err.message)
       console.log("🔷 STACK:", err.stack)
     }
+  }
+}
+
+const searchUsingUpdater = async (cardName) => {
+  try {
+    searchOptions.body = JSON.stringify({ card: cardName })
+    let data = await fetch(SEARCHER_API, searchOptions)
+    data = await data.json()
+
+    if (data.match) {
+      console.log('✅ YUGIPEDIA MATCH FOUND FOR:', cardName)
+      const card = data.card
+      const CARD_POOL = card.category === 'rush' ? RUSH_CARDS : MAIN_CARDS
+      
+      delete card.pageId
+      delete card.official
+      delete card.category
+
+      const indexToReplace = CARD_POOL.findIndex(item => item.name === card.name)
+      if (indexToReplace !== -1) {
+        CARD_POOL[indexToReplace] = card
+      } else {
+        CARD_POOL.push(card)
+        CARD_POOL.sort((a, b) => a.name.localeCompare(b.name))
+      }
+    } else {
+      console.log('❎ NO YUGIPEDIA MATCH FOUND FOR:', cardName)
+    }
+  } catch(err) {
+    console.log('💥 SEARCH API ERROR:', err)
   }
 }
 

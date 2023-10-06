@@ -215,7 +215,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
                 return client.reply(channel, returnErrMsg(), tags.id)
               }
             } else {
-              searchResult = await findClosestCard(query, searchType === 'list', cardPool)
+              searchResult = await findClosestCard(userQuery, searchType === 'list', cardPool)
             }
             
             if (searchResult.length === 1) {
