@@ -15,6 +15,7 @@ fetchDataAndSetupBot()
 const app = express()
 app.use(cors())
 app.use(checkRequestKeyHeader)
+app.use(express.json())
 
 app.get("/refresh_data", (_, res) => {
   console.log('\n🕊️ RE-FETCHING BOT DATA...')
@@ -48,6 +49,20 @@ app.get("/flush_cache", (_, res) => {
       console.error("🔴 REDIS FLUSH ERROR:", err.message)
       res.json({ message: 'redis cache reset failed', error: err.message })
     })
+})
+
+app.post("/save_to_redis", (req, res) => {
+  const body = req.body
+  const { key, value } = body
+  
+  redis.set(key, value, (err) => {
+    if (err) {
+      console.log("⚠️ REDIS SET ERROR:", err)
+      res.json({ error: err })
+    } else {
+      res.json({ message: "redis set success" })
+    }
+  })
 })
 
 
