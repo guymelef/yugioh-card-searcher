@@ -51,20 +51,5 @@ app.get("/flush_cache", (_, res) => {
     })
 })
 
-app.post("/save_to_redis", (req, res) => {
-  const body = req.body
-  const { key, value } = body
-  
-  redis.set(key, value, (err) => {
-    if (err) {
-      console.log("⚠️ REDIS SET ERROR:", err)
-      res.json({ error: err })
-    } else {
-      console.log("💽 SAVED TO REDIS:", key)
-      res.json({ message: "redis set success" })
-    }
-  })
-})
-
 
 app.listen(PORT, () => console.log(`🐶 THE SERVER IS UP!`))
