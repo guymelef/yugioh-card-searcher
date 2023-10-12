@@ -2,7 +2,7 @@
   "name": "card-searcher-bot",
   "version": "1.0.0",
   "description": "A Twitch bot for searching Yu-Gi-Oh! cards in chat. Visit https://twitch.tv/cardsearcher to get started.",
-  "main": "bot.js",
+  "main": "app.js",
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
@@ -15,12 +15,11 @@
     "tmi.js": "^1.5.0"
   },
   "scripts": {
-    "start": "node bot.js",
-    "dev": "nodemon bot.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js"
   },
   "keywords": [
     "twitch",
-    "bot",
     "bot",
     "yugioh"
   ],

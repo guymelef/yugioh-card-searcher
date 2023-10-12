@@ -1,4 +1,4 @@
-const { SECRET_KEY } = require('./config')
+const { SECRET_KEY } = require('../config/config')
 
 
 

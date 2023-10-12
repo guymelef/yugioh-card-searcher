@@ -7,13 +7,12 @@ const {
   REDIS_URI,
   REDIS_TTL,
   tmiOptions 
-} = require('./config')
+} = require('../config/config')
 const {
   getCardInfo,
   getCardArray,
   transformToBitlyUrl,
-  returnErrMsg,
-} = require('./bot_util')
+} = require('./card')
 const {
   fetchAllData,
   normalizeString,
@@ -21,17 +20,15 @@ const {
   findClosestCard,
   findClosestNaturalCard,
   searchYugipedia
-} = require('./card_util')
+} = require('./search')
+const { returnErrorMessage } = require('./error')
 const Channel = require('../models/channel')
+
+
 
 let OPEN_CHANNELS
 let client
-
-
-
-// REDIS
-const redis = new Redis(REDIS_URI)
-redis.on('connect', () => console.log("🧲 REDIS connection established"))
+let redis
 
 const fetchDataAndSetupBot = async () => {
   try {
@@ -40,11 +37,14 @@ const fetchDataAndSetupBot = async () => {
     console.log('Ⓜ️  Connected to MongoDB!')
     const channels = await Channel.find({}).select('name moderated -_id').lean().exec()
     tmiOptions.channels = channels.map(channel => channel.name)
-    console.log(`📃 ALL CHANNELS [${channels.length}]:`, channels.map(channel => channel.name).sort())
+    console.log(`🟪 ALL CHANNELS [${channels.length}]:`, channels.map(channel => channel.name).sort())
     OPEN_CHANNELS = channels.filter(channel => !channel.moderated).map(channel => channel.name)
-    console.log(`🟪 All [${channels.length}] channels fetched!`)
     
     await fetchAllData()
+    
+    // REDIS
+    redis = new Redis(REDIS_URI)
+    redis.on('connect', () => console.log("🧲 REDIS connection established"))
 
     // TMI
     tmi.Client.prototype.reply = function(channel, replyMessage, replyParentMessageId) {
@@ -147,21 +147,20 @@ const onMessageHandler = async (channel, tags, message, self) => {
         const messageArray = message.split(' ')
         let searchType = messageArray[1]
         let query = ORIGINAL_MESSAGE.split(' ').slice(2).join(' ')
-        let searchResult = []
-        let userQuery = ''
-        let responseMessage = ''
-        let redisKey = ''
-        let redisValue = ''
         const noCache = message.startsWith("!search*") || message.startsWith("!searchr*")
         const rushSearch = message.startsWith("!searchr")
         const cardPool = rushSearch ? 'rush' : 'main'
-        const searchCategory = cardPool === 'main' ? '🟦' : '🟧'
         let searchPrefix = rushSearch ? 'searchr' : 'search'
+        const searchCategory = cardPool === 'main' ? '🟦' : '🟧'
+        let searchResult = []
+        let responseMessage = ''
+        let redisKey = ''
+        let redisValue = ''
 
         const checkRedisAndReply = async () => {
-          userQuery = query
+          const userQuery = query
           query = normalizeString(query)
-          if (!query) return client.reply(channel, returnErrMsg(), tags.id)
+          if (!query) return client.reply(channel, returnErrorMessage(), tags.id)
 
           const getRedisValue = async () => {
             try {
@@ -199,7 +198,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
             console.log('🌵 REDIS CACHE FOUND!')
             redisValue = JSON.parse(redisValue)
 
-            if (!redisValue.result.length) return client.reply(channel, returnErrMsg(), tags.id)
+            if (!redisValue.result.length) return client.reply(channel, returnErrorMessage(), tags.id)
 
             if (redisValue.short) return client.reply(channel, redisValue.result, tags.id)
             else return client.say(channel, redisValue.result)
@@ -212,7 +211,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
               if (!searchResult.length) {
                 redisValue = JSON.stringify({ short: true, result: [] })
                 setRedisValue()
-                return client.reply(channel, returnErrMsg(), tags.id)
+                return client.reply(channel, returnErrorMessage(), tags.id)
               }
             } else {
               searchResult = await findClosestCard(userQuery, searchType === 'list', cardPool)
@@ -303,7 +302,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
             searchType = 'list'
             return checkRedisAndReply()
           case "--wiki":
-            console.log(`🚀 [${userChannel} @ ${channel}] ${searchCategory} SEARCHING 🔹YUGIPEDIA🔹 FOR: "${query}"...`)
+            console.log(`🚀 [${userChannel} @ ${channel}] ${searchCategory} SEARCHING 🌐 YUGIPEDIA FOR: "${query}"...`)
             searchType = 'wiki'
             return checkRedisAndReply()
           default:
@@ -331,6 +330,5 @@ const onMessageHandler = async (channel, tags, message, self) => {
 
 
 module.exports = {
-  fetchDataAndSetupBot,
-  redis
+  fetchDataAndSetupBot
 }

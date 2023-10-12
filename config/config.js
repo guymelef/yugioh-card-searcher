@@ -44,6 +44,15 @@ const searchOptions = {
   }
 }
 
+const bitlyOptions = {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${BITLY_TOKEN}`
+  },
+  redirect: "follow"
+}
+
 
 
 
@@ -67,5 +76,6 @@ module.exports = {
   YUGIPEDIA_IMG,
   tmiOptions,
   requestOptions,
-  searchOptions
+  searchOptions,
+  bitlyOptions
 }

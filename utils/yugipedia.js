@@ -1,9 +1,13 @@
-const { requestOptions } = require('./bot_util')
-const { YUGIPEDIA_SEARCH, YUGIPEDIA_PAGEID, YUGIPEDIA_IMG } = require('./config')
+const {
+  requestOptions,
+  YUGIPEDIA_SEARCH,
+  YUGIPEDIA_PAGEID,
+  YUGIPEDIA_IMG
+} = require('../config/config')
 
-let wikitext
 
 
+let wikitext = ""
 
 const fetchFromYugipedia = async (cardName) => {
   const CARD = []

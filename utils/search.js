@@ -1,18 +1,18 @@
-const { LevenshteinDistanceSearch } = require('natural')
 const { distance } = require("fastest-levenshtein")
+const { LevenshteinDistanceSearch } = require('natural')
 
-const { SEARCHER_API, searchOptions } = require('./config')
+const { SEARCHER_API, searchOptions } = require('../config/config')
 const BotVariable = require('../models/variable')
 const { OcgCard, RushCard, StrayCard } = require('../models/card')
-const { getSymbol } = require('./bot_util')
-const { fetchFromYugipedia } = require('./yugipedia_util')
+const { getSymbol } = require('./card')
+const { fetchFromYugipedia } = require('./yugipedia')
+
+
 
 let MAIN_CARDS
 let RUSH_CARDS
 let LAST_RANDOM_CARD
 let YUGIPEDIA_LAST_SEARCH
-
-
 
 const fetchAllData = async () => {
   try {
@@ -343,34 +343,49 @@ const searchYugipedia = async (keyword) => {
   return false
 }
 
+
+const searchUsingUpdater = async (cardName) => {
+  try {
+    console.log('💡 SEARCHING USING UPDATER API...')
+    searchOptions.body = JSON.stringify({ card: cardName })
+    let data = await fetch(SEARCHER_API, searchOptions)
+    data = await data.json()
+
+    if (data.match) {
+      console.log('✅ YUGIPEDIA MATCH FOUND FOR:', cardName)
+      updateCardPool(data.card)
+    } else {
+      console.log('❎ NO YUGIPEDIA MATCH FOUND FOR:', cardName)
+    }
+  } catch(err) {
+    console.log('💥 SEARCH API ERROR:', err)
+  }
+}
+
 const saveToDatabase = async (card) => {
+  const CARD = { ...card }
   const models = { "stray": StrayCard, "ocg": OcgCard, "rush": RushCard }
   const CardModel = models[card.category]
-  const CARD_POOL = card.category === 'rush' ? RUSH_CARDS : MAIN_CARDS
 
   try {
     const category = card.category
     const official = card.official
-    delete card.category
+    if (card.official) delete card.official
     if (!card.legend) delete card.legend
+    delete card.category
 
     console.log(`📁 SAVING "${card.name}"...`)
     const savedCard = await new CardModel(card).save()
-
-    CARD_POOL.push(card)
-    CARD_POOL.sort((a, b) => a.name.localeCompare(b.name))
     console.log(`💾 《 "${savedCard.name}" 》/${category.toUpperCase()} (${official ? 'official' : 'unofficial'})/ saved to MongoDb!`)
     console.log(card)
+    
+    updateCardPool(CARD)
   } catch (err) {
     if (err.name === "ValidationError") {
-      if (card.official) delete card.official
       await CardModel.findOneAndReplace({ name: card.name }, card)
       console.log("♻️ CARD REPLACED IN DATABASE!")
       
-      delete card.official
-      delete card.pageId
-      const indexToReplace = CARD_POOL.findIndex(item => item.name === card.name)
-      if (indexToReplace !== -1) CARD_POOL[indexToReplace] = card
+      updateCardPool(CARD)
     } else {
       console.log("🔴 NEW CARD SAVE ERROR:", err.message)
       console.log("🔷 STACK:", err.stack)
@@ -378,33 +393,19 @@ const saveToDatabase = async (card) => {
   }
 }
 
-const searchUsingUpdater = async (cardName) => {
-  try {
-    searchOptions.body = JSON.stringify({ card: cardName })
-    let data = await fetch(SEARCHER_API, searchOptions)
-    data = await data.json()
-
-    if (data.match) {
-      console.log('✅ YUGIPEDIA MATCH FOUND FOR:', cardName)
-      const card = data.card
-      const CARD_POOL = card.category === 'rush' ? RUSH_CARDS : MAIN_CARDS
+const updateCardPool = (card) => {
+  const CARD_POOL = card.category === 'rush' ? RUSH_CARDS : MAIN_CARDS
       
-      delete card.pageId
-      delete card.official
-      delete card.category
+  delete card.pageId
+  delete card.official
+  delete card.category
 
-      const indexToReplace = CARD_POOL.findIndex(item => item.name === card.name)
-      if (indexToReplace !== -1) {
-        CARD_POOL[indexToReplace] = card
-      } else {
-        CARD_POOL.push(card)
-        CARD_POOL.sort((a, b) => a.name.localeCompare(b.name))
-      }
-    } else {
-      console.log('❎ NO YUGIPEDIA MATCH FOUND FOR:', cardName)
-    }
-  } catch(err) {
-    console.log('💥 SEARCH API ERROR:', err)
+  const indexToReplace = CARD_POOL.findIndex(item => item.name === card.name)
+  if (indexToReplace !== -1) {
+    CARD_POOL[indexToReplace] = card
+  } else {
+    CARD_POOL.push(card)
+    CARD_POOL.sort((a, b) => a.name.localeCompare(b.name))
   }
 }
 

@@ -1,8 +1,4 @@
-const {
-  BITLY_GUID,
-  BITLY_API,
-  BITLY_TOKEN
-} = require('./config')
+const { BITLY_GUID, BITLY_API, bitlyOptions } = require('../config/config')
 
 
 
@@ -93,29 +89,13 @@ const transformToBitlyUrl = async (url) => {
     domain: "bit.ly",
     long_url: url
   })
+  bitlyOptions.body = body
 
-  const options = {
-    method: "POST",
-    body,
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${BITLY_TOKEN}`
-    },
-    redirect: "follow"
-  }
-
-  let link = await fetch(BITLY_API, options)
+  let link = await fetch(BITLY_API, bitlyOptions)
   link = await link.json()
   link = link.link
 
   return link
-}
-
-const returnErrMsg = () => {
-  const errorMessages = require('../data/error-messages.json')
-
-  const index = Math.floor(Math.random() * errorMessages.length)
-  return `${errorMessages[index]} 💀`
 }
 
 
@@ -126,6 +106,5 @@ module.exports = {
   getSymbol,
   getCardInfo,
   getCardArray,
-  transformToBitlyUrl,
-  returnErrMsg,
+  transformToBitlyUrl
 }
