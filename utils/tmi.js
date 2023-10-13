@@ -37,7 +37,7 @@ const fetchDataAndSetupBot = async () => {
     console.log('Ⓜ️ Connected to MongoDB!')
     const channels = await Channel.find({}).select('name moderated -_id').lean().exec()
     tmiOptions.channels = channels.map(channel => channel.name)
-    console.log(`🟣 ALL CHANNELS [${channels.length}]:`, channels.map(channel => channel.name).sort())
+    console.log(`🟣 ALL CHANNELS [${channels.length}]:`, channels.map(channel => `${channel.name}${channel.moderated ? '*' : ''}`).sort())
     OPEN_CHANNELS = channels.filter(channel => !channel.moderated).map(channel => channel.name)
 
     await fetchAllData()
