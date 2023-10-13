@@ -51,7 +51,7 @@ app.get("/flush_cache", (_, res) => {
         redis.quit()
       })
       .catch(err => {
-        console.error("🔴 REDIS FLUSH ERROR:", err.message)
+        console.error("🟥 REDIS FLUSH ERROR:", err.message)
         res.json({ error: err.message })
       })
   })

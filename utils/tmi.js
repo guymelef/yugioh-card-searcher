@@ -34,14 +34,14 @@ const fetchDataAndSetupBot = async () => {
   try {
     mongoose.set('strictQuery', true)
     await mongoose.connect(MONGODB_URI)
-    console.log('Ⓜ️  Connected to MongoDB!')
+    console.log('Ⓜ️ Connected to MongoDB!')
     const channels = await Channel.find({}).select('name moderated -_id').lean().exec()
     tmiOptions.channels = channels.map(channel => channel.name)
-    console.log(`🟪 ALL CHANNELS [${channels.length}]:`, channels.map(channel => channel.name).sort())
+    console.log(`🟣 ALL CHANNELS [${channels.length}]:`, channels.map(channel => channel.name).sort())
     OPEN_CHANNELS = channels.filter(channel => !channel.moderated).map(channel => channel.name)
-    
+
     await fetchAllData()
-    
+
     // REDIS
     redis = new Redis(REDIS_URI)
     redis.on('connect', () => console.log("🧲 REDIS connection established"))
@@ -56,7 +56,7 @@ const fetchDataAndSetupBot = async () => {
     client.on('message', onMessageHandler)
     client.on('connected', (server, port) => console.log(`🤖 TMI connected to ${server}:${port}`))
   } catch (err) {
-    console.log("🔴 BOT SET UP ERROR:", err.message)
+    console.log("🟥 BOT SET UP ERROR:", err.message)
     console.log("🔷 STACK:", err.stack)
   }
 }
@@ -67,7 +67,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
 
   try {
     if (self) return
-    
+
     ORIGINAL_MESSAGE = message
     userChannel = `#${tags.username}`
     message = message.toLowerCase()
@@ -130,7 +130,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
         console.log(`💔 THE BOT LEFT [ ${userChannel} ]`, new Date().toLocaleString('en-ph'))
         return client.reply(channel, `CardSearcher has successfully left your channel.`, tags.id)
       }
-      
+
       if (message.startsWith("!channels")) {
         let twitchChannels = await Channel.find({}).sort({ name: 1 })
         twitchChannels = twitchChannels.filter(channel => channel.name !== '#cardsearcher')
@@ -141,7 +141,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
         )
       }
     }
-    
+
     if (OPEN_CHANNELS.includes(channel) || tags.badges?.broadcaster || tags.mod) {
       if (message.startsWith("!search")) {
         const messageArray = message.split(' ')
@@ -151,7 +151,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
         const rushSearch = message.startsWith("!searchr")
         const cardPool = rushSearch ? 'rush' : 'main'
         let searchPrefix = rushSearch ? 'searchr' : 'search'
-        const searchCategory = cardPool === 'main' ? '🟦' : '🟧'
+        const searchCategory = cardPool === 'main' ? '🟩' : '🟧'
         let searchResult = []
         let responseMessage = ''
         let redisKey = ''
@@ -289,32 +289,32 @@ const onMessageHandler = async (channel, tags, message, self) => {
               tags.id
             )
           case "--random":
-            console.log(`🚀 [${userChannel} @ ${channel}] ${searchCategory} GETTING A RANDOM CARD...`)
+            console.log(`${searchCategory} [${userChannel} @ ${channel}] GETTING A RANDOM CARD...`)
             searchResult = getRandomCard(cardPool)
             console.log('↪️  sending card...')
             return client.say(channel, getCardInfo(searchResult))
           case "--image":
-            console.log(`🚀 [${userChannel} @ ${channel}] ${searchCategory} SEARCHING CARD IMAGE FOR: "${query}"...`)
+            console.log(`${searchCategory} [${userChannel} @ ${channel}] SEARCHING CARD IMAGE FOR: "${query}"...`)
             searchType = 'image'
             return checkRedisAndReply()
           case "--list":
-            console.log(`🚀 [${userChannel} @ ${channel}] ${searchCategory} GENERATING LIST FOR: "${query}"...`)
+            console.log(`${searchCategory} [${userChannel} @ ${channel}] GENERATING LIST FOR: "${query}"...`)
             searchType = 'list'
             return checkRedisAndReply()
           case "--wiki":
-            console.log(`🚀 [${userChannel} @ ${channel}] ${searchCategory} SEARCHING 🌐 YUGIPEDIA FOR: "${query}"...`)
+            console.log(`${searchCategory} [${userChannel} @ ${channel}] 🌐 SEARCHING FOR: "${query}"...`)
             searchType = 'wiki'
             return checkRedisAndReply()
           default:
             query = ORIGINAL_MESSAGE.split(' ').slice(1).join(' ')
-            console.log(`🚀 [${userChannel} @ ${channel}] ${searchCategory} SEARCHING FOR: "${query}"...`)
+            console.log(`${searchCategory} [${userChannel} @ ${channel}] SEARCHING FOR: "${query}"...`)
             searchType = ''
             return checkRedisAndReply()
         }
       }
     }
   } catch (err) {
-    console.log("🔴 MESSAGE HANDLER ERROR:", err.message)
+    console.log("🟥 MESSAGE HANDLER ERROR:", err.message)
     console.log("🔷 STACK:", err.stack)
     console.log("⚕️ INFO:", `[${userChannel} @ ${channel}]: ${ORIGINAL_MESSAGE}\n`, tags)
 

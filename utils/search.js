@@ -26,13 +26,13 @@ const fetchAllData = async () => {
     console.log(`🔸 STRAY CARDS: ${strayCards.length.toLocaleString('en-ph')}`)
 
     const ygopdVar = await BotVariable.findOne({ name: 'YGOPRODeck' })
-    console.log(`🟩 YGOPD CARD COUNT (${ygopdVar.last_update}): ${ygopdVar.card_count.toLocaleString('en-ph')}`)
+    console.log(`⏺️ YGOPD CARD COUNT (${ygopdVar.last_update}): ${ygopdVar.card_count.toLocaleString('en-ph')}`)
     const yugipediaVar = await BotVariable.findOne({ name: 'Yugipedia' })
     YUGIPEDIA_LAST_SEARCH = yugipediaVar.lastSearch
-    console.log(`🟩 YUGIPEDIA LATEST ENTRY: ${new Date(yugipediaVar.lastUpdate).toLocaleString('en-ph')}`)
-    console.log(`🟩 YUGIPEDIA LAST SEARCH: ${new Date(YUGIPEDIA_LAST_SEARCH).toLocaleString('en-ph')}`)
+    console.log(`⏺️ YUGIPEDIA LATEST ENTRY: ${new Date(yugipediaVar.lastUpdate).toLocaleString('en-ph')}`)
+    console.log(`⏺️ YUGIPEDIA LAST SEARCH: ${new Date(YUGIPEDIA_LAST_SEARCH).toLocaleString('en-ph')}`)
   } catch (err) {
-    console.log("🔴 CARDS FETCH ERROR:", err.message)
+    console.log("🟥 CARDS FETCH ERROR:", err.message)
     console.log("🔷 STACK:", err.stack)
   }
 }
@@ -41,7 +41,7 @@ const getRandomCard = (pool) => {
   const CARDS = (pool === 'main') ? MAIN_CARDS : RUSH_CARDS
   const index = Math.floor(Math.random() * CARDS.length)
   const card = CARDS[index]
-  
+
   if (LAST_RANDOM_CARD === card.name) return getRandomCard()
   else LAST_RANDOM_CARD = card.name
 
@@ -63,24 +63,24 @@ const findClosestCard = async (keyword, bulk, pool) => {
   keyword = normalizeString(keyword)
   const keywordArr = keyword.split(' ')
   const CARDS = (pool === 'main') ? MAIN_CARDS : RUSH_CARDS
-  
+
   let exactMatch = []
   let queryMatches = []
   let wordMatches = []
   let possibleMatches = []
   let partialMatches = []
   let remoteMatches = []
-  
+
   const convertedStringChecker = (word, cardName) => {
     let convertedStr = word.split('').join('.')
     if (cardName.includes(convertedStr)) return true
-    
+
     convertedStr = word.split('').join('/')
     if (cardName.includes(convertedStr)) return true
-    
+
     convertedStr = word.split('').join(':')
     if (cardName.includes(convertedStr)) return true
-    
+
     return false
   }
   
@@ -102,11 +102,11 @@ const findClosestCard = async (keyword, bulk, pool) => {
         (card?.alias && card.alias.toLowerCase() === keyword)
       ) {
         exactMatch.push(card)
-        console.log("↪️  sending exact match...")
+        console.log("↪️ found exact match...")
         return exactMatch
       }
     }
-    
+
     if (card?.alias && card.alias.toLowerCase().includes(keyword)) {
       queryMatches.push(card)
       continue
@@ -166,10 +166,10 @@ const findClosestCard = async (keyword, bulk, pool) => {
 
     if (!queryMatches.length && !wordMatches.length) {
       if ((keywordArr.length > 1 || keyword.length > 4) && distance(cardName, keyword) === 1 && !bulk) {
-        console.log(`↪️  sending closest match...`)
+        console.log(`↪️ found closest match...`)
         return [card]
       }
-      
+
       if (keywordArr.length === 1) {
         let possibleMatch = false
         if (keyword.length > 3) {
@@ -224,7 +224,7 @@ const findClosestCard = async (keyword, bulk, pool) => {
           }
           if (possibleMatch) continue
         }
-        
+
         if (keyword.length > 10 && distance(keywordArr.join(''), cardNameArr.join('')) < 4) {
           possibleMatches.push(card)
           continue
@@ -243,54 +243,54 @@ const findClosestCard = async (keyword, bulk, pool) => {
     const minArray = DISTANCEARRAY.filter(item => item.distance === min)
     minArray.forEach(item => remoteMatches.push(CARDS[item.index]))
   }
-  
+
   if (bulk) {
     if (queryMatches.length) {
-      console.log(`↪️  sending [${queryMatches.length}] query matches...`)
+      console.log(`↪️ found [${queryMatches.length}] query match(es)...`)
       return queryMatches
     } 
-    
+
     if (wordMatches.length) {
-      console.log(`↪️  sending [${wordMatches.length}] word matches...`)
+      console.log(`↪️ found [${wordMatches.length}] word match(es)...`)
       return wordMatches
     }
-    
+
     if (possibleMatches.length) {
-      console.log(`↪️  sending [${possibleMatches.length}] possible matches...`)
+      console.log(`↪️ found [${possibleMatches.length}] possible match(es)...`)
       return possibleMatches
     }
-    
+
     if (partialMatches.length) {
-      console.log(`↪️  sending [${partialMatches.length}] partial matches...`)
+      console.log(`↪️ found [${partialMatches.length}] partial match(es)...`)
       return partialMatches
     }
 
-    console.log(`↪️  sending [${remoteMatches.length}] remote matches...`)
+    console.log(`↪️ found [${remoteMatches.length}] remote match(es)...`)
     return remoteMatches
   } else {
     if (queryMatches.length) {
-      console.log(`↪️  sending [${queryMatches.length}] query matches...`)
+      console.log(`↪️ found [${queryMatches.length}] query match(es)...`)
       return queryMatches
     }
 
     if (wordMatches.length) {
-      console.log(`↪️  sending [${wordMatches.length}] word matches...`)
+      console.log(`↪️ found [${wordMatches.length}] word match(es)...`)
       return wordMatches
     }
 
     searchUsingUpdater(USER_KEYWORD)
 
     if (possibleMatches.length) {
-      console.log(`↪️  sending [${possibleMatches.length}] possible matches...`)
+      console.log(`↪️ found [${possibleMatches.length}] possible match(es)...`)
       return possibleMatches
     }
 
     if (partialMatches.length) {
-      console.log(`↪️  sending [${partialMatches.length}] partial matches...`)
+      console.log(`↪️ found [${partialMatches.length}] partial match(es)...`)
       return partialMatches
     }
 
-    console.log(`↪️  sending [${remoteMatches.length}] remote matches...`)
+    console.log(`↪️ found [${remoteMatches.length}] remote match(es)...`)
     return remoteMatches
   }
 }
@@ -301,25 +301,25 @@ const findClosestNaturalCard = (source, cards) => {
   const distanceArr = cards.map(card => {
     let distance = LevenshteinDistanceSearch(source, card.name.toLowerCase())
     distance.name = card.name
-    
+
     let symbol
     if (card.type === "Monster") symbol = getSymbol(null, card.types)
     else symbol = getSymbol(card.type)
-  
+
     distance.symbol = symbol
     return distance
   })
 
   const min = Math.min(...distanceArr.map(item => item.distance))
   let closest = distanceArr.filter(item => item.distance === min)
-  
+
   if (closest.length > 1) {
     closest.sort((a, b) => {
       if (a.distance === b.distance) return a.offset - b.offset
       return a.distance - b.distance
     })
   }
-  
+
   closest = closest[0]
 
   return `${closest.symbol}${closest.name}`
@@ -333,20 +333,20 @@ const searchYugipedia = async (keyword) => {
     YUGIPEDIA_LAST_SEARCH = newDate.toISOString()
     await BotVariable.findOneAndUpdate({ name: 'Yugipedia' }, { lastSearch: YUGIPEDIA_LAST_SEARCH })
     const yugipediaCard = await fetchFromYugipedia(keyword)
-    
+
     if (yugipediaCard.length) saveToDatabase({ ...yugipediaCard[0] })
-  
-    console.log(`↪️  sending [${yugipediaCard.length}] search result...`)
+
+    console.log(`↪️ found [${yugipediaCard.length}] search result...`)
     return yugipediaCard
   }
-  
+
   return false
 }
 
 
 const searchUsingUpdater = async (cardName) => {
   try {
-    console.log('💡 SEARCHING USING UPDATER API...')
+    console.log('🛸 SEARCHING USING UPDATER API...')
     searchOptions.body = JSON.stringify({ card: cardName })
     let data = await fetch(SEARCHER_API, searchOptions)
     data = await data.json()
@@ -358,7 +358,7 @@ const searchUsingUpdater = async (cardName) => {
       console.log('❎ NO YUGIPEDIA MATCH FOUND FOR:', cardName)
     }
   } catch(err) {
-    console.log('💥 SEARCH API ERROR:', err)
+    console.log('🟥 SEARCH API ERROR:', err)
   }
 }
 
@@ -378,16 +378,16 @@ const saveToDatabase = async (card) => {
     const savedCard = await new CardModel(card).save()
     console.log(`💾 《 "${savedCard.name}" 》/${category.toUpperCase()} (${official ? 'official' : 'unofficial'})/ saved to MongoDb!`)
     console.log(card)
-    
+
     updateCardPool(CARD)
   } catch (err) {
     if (err.name === "ValidationError") {
       await CardModel.findOneAndReplace({ name: card.name }, card)
       console.log("♻️ CARD REPLACED IN DATABASE!")
-      
+
       updateCardPool(CARD)
     } else {
-      console.log("🔴 NEW CARD SAVE ERROR:", err.message)
+      console.log("🟥 NEW CARD SAVE ERROR:", err.message)
       console.log("🔷 STACK:", err.stack)
     }
   }
@@ -395,7 +395,7 @@ const saveToDatabase = async (card) => {
 
 const updateCardPool = (card) => {
   const CARD_POOL = card.category === 'rush' ? RUSH_CARDS : MAIN_CARDS
-      
+
   delete card.pageId
   delete card.official
   delete card.category
