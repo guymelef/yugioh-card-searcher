@@ -346,7 +346,7 @@ const searchYugipedia = async (keyword) => {
 
 const searchUsingUpdater = async (cardName) => {
   try {
-    console.log('🛸 SEARCHING USING UPDATER API...')
+    console.log('🦊 SEARCHING VIA UPDATER API...')
     searchOptions.body = JSON.stringify({ card: cardName })
     let data = await fetch(SEARCHER_API, searchOptions)
     data = await data.json()

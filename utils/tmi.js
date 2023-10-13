@@ -195,7 +195,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
           redisKey = `${searchPrefix}${searchType}:${query}`
           redisValue = await getRedisValue()
           if (redisValue && !noCache) {
-            console.log('🌵 REDIS CACHE FOUND!')
+            console.log('🔑 REDIS CACHE FOUND!')
             redisValue = JSON.parse(redisValue)
 
             if (!redisValue.result.length) return client.reply(channel, returnErrorMessage(), tags.id)
