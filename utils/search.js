@@ -305,7 +305,6 @@ const findClosestCard = async (keyword, bulk, pool) => {
 
     if (partialMatches.length) {
       console.log(`↪️ found [${partialMatches.length}] partial match(es)...`)
-      
       return getTopPartialMatches()
     }
 
