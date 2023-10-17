@@ -289,25 +289,25 @@ const onMessageHandler = async (channel, tags, message, self) => {
               tags.id
             )
           case "--random":
-            console.log(`${searchCategory} [${userChannel} @ ${channel}] GETTING A RANDOM CARD...`)
+            console.log(`${searchCategory} [${userChannel} @ ${channel}] : 🔀 FETCHING CARD...`)
             searchResult = getRandomCard(cardPool)
-            console.log('↪️  sending card...')
+            console.log('↪️ sending card...')
             return client.say(channel, getCardInfo(searchResult))
           case "--image":
-            console.log(`${searchCategory} [${userChannel} @ ${channel}] SEARCHING CARD IMAGE FOR: "${query}"...`)
+            console.log(`${searchCategory} [${userChannel} @ ${channel}] : 📸 "${query}"...`)
             searchType = 'image'
             return checkRedisAndReply()
           case "--list":
-            console.log(`${searchCategory} [${userChannel} @ ${channel}] GENERATING LIST FOR: "${query}"...`)
+            console.log(`${searchCategory} [${userChannel} @ ${channel}] : 📜 "${query}"...`)
             searchType = 'list'
             return checkRedisAndReply()
           case "--wiki":
-            console.log(`${searchCategory} [${userChannel} @ ${channel}] 🌐 SEARCHING FOR: "${query}"...`)
+            console.log(`${searchCategory} [${userChannel} @ ${channel}] : 🌐 "${query}"...`)
             searchType = 'wiki'
             return checkRedisAndReply()
           default:
             query = ORIGINAL_MESSAGE.split(' ').slice(1).join(' ')
-            console.log(`${searchCategory} [${userChannel} @ ${channel}] SEARCHING FOR: "${query}"...`)
+            console.log(`${searchCategory} [${userChannel} @ ${channel}] : 🔎 "${query}"...`)
             searchType = ''
             return checkRedisAndReply()
         }
