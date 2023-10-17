@@ -83,6 +83,22 @@ const findClosestCard = async (keyword, bulk, pool) => {
 
     return false
   }
+
+  const getTopPartialMatches = () => {
+    if (partialMatches.length <= 10) {
+      return partialMatches
+    } else {
+      const distanceArr = partialMatches.map(card => {
+        let value = LevenshteinDistanceSearch(keyword, card.name.toLowerCase())
+        value.card = card
+        return value
+      })
+      
+      distanceArr.sort((a, b) => a.distance - b.distance)
+      partialMatches = distanceArr.map(({ card }) => card).slice(0, 10)
+      return partialMatches
+    }
+  }
   
   const DISTANCEARRAY = []
   for (let index = 0; index < CARDS.length; index++) {
@@ -190,9 +206,11 @@ const findClosestCard = async (keyword, bulk, pool) => {
         if (possibleMatch) continue
       } else {
         let closeMatches = 0
+        let longestWord = 0
         if (keywordArr.length > 1 && cardNameArr.length > 1) {
           for (let word of keywordArr) {
             if (cardName.includes(word)) {
+              if (word.length > longestWord) longestWord = word.length
               closeMatches++
               continue
             }
@@ -231,8 +249,8 @@ const findClosestCard = async (keyword, bulk, pool) => {
         }
 
         if (!possibleMatches.length) {
-          if (keywordArr.length === 2 && closeMatches === 1) partialMatches.push(card)
-          else if (keywordArr.length > 2 && closeMatches / keywordArr.length >= 0.6) partialMatches.push(card)
+          if (closeMatches / keywordArr.length === 0.5) partialMatches.push(card)
+          else if (closeMatches && longestWord > 4) partialMatches.push(card)
         }
       }
     }
@@ -262,7 +280,7 @@ const findClosestCard = async (keyword, bulk, pool) => {
 
     if (partialMatches.length) {
       console.log(`↪️ found [${partialMatches.length}] partial match(es)...`)
-      return partialMatches
+      return getTopPartialMatches()
     }
 
     console.log(`↪️ found [${remoteMatches.length}] remote match(es)...`)
@@ -287,7 +305,8 @@ const findClosestCard = async (keyword, bulk, pool) => {
 
     if (partialMatches.length) {
       console.log(`↪️ found [${partialMatches.length}] partial match(es)...`)
-      return partialMatches
+      
+      return getTopPartialMatches()
     }
 
     console.log(`↪️ found [${remoteMatches.length}] remote match(es)...`)
@@ -343,7 +362,6 @@ const searchYugipedia = async (keyword) => {
   return false
 }
 
-
 const searchUsingUpdater = async (cardName) => {
   try {
     console.log('🦊 SEARCHING VIA UPDATER API...')
@@ -352,10 +370,10 @@ const searchUsingUpdater = async (cardName) => {
     data = await data.json()
 
     if (data.match) {
-      console.log('💡 YUGIPEDIA MATCH FOUND FOR:', cardName)
+      console.log(`💡 YUGIPEDIA MATCH FOUND FOR: "${cardName}"`)
       updateCardPool(data.card)
     } else {
-      console.log('👻 NO YUGIPEDIA MATCH FOUND FOR:', cardName)
+      console.log(`👻 NO YUGIPEDIA MATCH FOUND FOR: "${cardName}"`)
     }
   } catch(err) {
     console.log('🟥 SEARCH API ERROR:', err)
