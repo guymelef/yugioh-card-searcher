@@ -41,7 +41,7 @@ const fetchFromYugipedia = async (cardName) => {
     
     return CARD
   } catch (err) {
-    console.log(`🟥 [[ ${cardName} ]] YUGIPEDIA LOOKUP ERROR:`, err.message)
+    console.log(`🟥 YUGIPEDIA LOOKUP ERROR:`, err.message)
     console.log("🔷 STACK:", err.stack)
     return CARD
   }

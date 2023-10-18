@@ -166,7 +166,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
             try {
               return await redis.get(redisKey)
             } catch (err) {
-              console.log("⚠️ REDIS GET ERROR:", err)
+              console.log("🟥 REDIS GET ERROR:", err)
               return null
             }
           }
@@ -175,7 +175,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
             try {
               await redis.set(redisKey, redisValue, 'EX', REDIS_TTL)
             } catch (err) {
-              console.log("⚠️ REDIS SET ERROR:", err)
+              console.log("🟥 REDIS SET ERROR:", err)
             }
           }
 

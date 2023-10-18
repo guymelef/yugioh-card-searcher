@@ -29,7 +29,7 @@ app.get("/refresh_data", (_, res) => {
       })
     })
     .catch(err => {
-      console.error("❌ FETCH DATA ERROR:", err.message)
+      console.error("🟥 FETCH DATA ERROR:", err.message)
       res.json({ error: err.message })
     })
 })
