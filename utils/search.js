@@ -141,11 +141,6 @@ const findClosestCard = async (keyword, bulk, pool) => {
     }
 
     if (!queryMatches.length) {
-      if (cardNameArr.join('').includes(keywordArr.join(''))) {
-        wordMatches.push(card)
-        continue
-      }
-
       if (keywordArr.length > 1 && cardNameArr.length > 1) {
         let isAMatch = false
         let matches = 0
@@ -178,6 +173,11 @@ const findClosestCard = async (keyword, bulk, pool) => {
           continue
         }
       }
+
+      if (cardNameArr.join('').includes(keywordArr.join(''))) {
+        possibleMatches.push(card)
+        continue
+      }
     }
 
     if (!queryMatches.length && !wordMatches.length) {
@@ -186,7 +186,7 @@ const findClosestCard = async (keyword, bulk, pool) => {
         return [card]
       }
 
-      if (keyword.includes(cardName)) {
+      if (cardName.length > 4 && keyword.includes(cardName)) {
         possibleMatches.push(card)
         continue
       }
