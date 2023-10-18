@@ -95,7 +95,7 @@ const findClosestCard = async (keyword, bulk, pool) => {
       })
       
       distanceArr.sort((a, b) => a.distance - b.distance)
-      partialMatches = distanceArr.map(({ card }) => card).slice(0, 10)
+      partialMatches = distanceArr.map(({ card }) => card).slice(0, 12)
       return partialMatches
     }
   }
