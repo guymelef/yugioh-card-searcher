@@ -186,6 +186,11 @@ const findClosestCard = async (keyword, bulk, pool) => {
         return [card]
       }
 
+      if (keyword.includes(cardName)) {
+        possibleMatches.push(card)
+        continue
+      }
+
       if (keywordArr.length === 1) {
         let possibleMatch = false
         if (keyword.length > 3) {
@@ -259,7 +264,10 @@ const findClosestCard = async (keyword, bulk, pool) => {
   if (!queryMatches.length && !wordMatches.length && !possibleMatches.length && !partialMatches.length) {
     const min = Math.min(...DISTANCEARRAY.map(item => item.distance))
     const minArray = DISTANCEARRAY.filter(item => item.distance === min)
-    minArray.forEach(item => remoteMatches.push(CARDS[item.index]))
+    minArray.forEach(item => {
+      const card = CARDS[item.index]
+      if (card.name.toLowerCase().startsWith(keyword[0])) remoteMatches.push(CARDS[item.index])
+    })
   }
 
   if (bulk) {
