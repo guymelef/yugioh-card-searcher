@@ -21,16 +21,16 @@ const fetchAllData = async () => {
     const strayCards = await StrayCard.find({}).select('-pageId -official -_id -__v').lean().exec()
     MAIN_CARDS = [...ocgCards, ...strayCards].sort((a, b) => a.name.localeCompare(b.name))
     RUSH_CARDS = [...rushCards].sort((a, b) => a.name.localeCompare(b.name))
-    console.log(`🔸 MAIN CARDS: ${ocgCards.length.toLocaleString('en-ph')}`)
-    console.log(`🔸 RUSH CARDS: ${rushCards.length.toLocaleString('en-ph')}`)
-    console.log(`🔸 STRAY CARDS: ${strayCards.length.toLocaleString('en-ph')}`)
+    console.log(`💠 MAIN CARDS: ${ocgCards.length.toLocaleString('en-ph')}`)
+    console.log(`💠 RUSH CARDS: ${rushCards.length.toLocaleString('en-ph')}`)
+    console.log(`💠 STRAY CARDS: ${strayCards.length.toLocaleString('en-ph')}`)
 
     const ygopdVar = await BotVariable.findOne({ name: 'YGOPRODeck' })
-    console.log(`⚔️ YGOPD CARD COUNT (${ygopdVar.last_update}): ${ygopdVar.card_count.toLocaleString('en-ph')}`)
+    console.log(`⭐ YGOPD CARD COUNT (${ygopdVar.last_update}): ${ygopdVar.card_count.toLocaleString('en-ph')}`)
     const yugipediaVar = await BotVariable.findOne({ name: 'Yugipedia' })
     YUGIPEDIA_LAST_SEARCH = yugipediaVar.lastSearch
-    console.log(`⚔️ YUGIPEDIA LATEST ENTRY: ${new Date(yugipediaVar.lastUpdate).toLocaleString('en-ph')}`)
-    console.log(`⚔️ YUGIPEDIA LAST SEARCH: ${new Date(YUGIPEDIA_LAST_SEARCH).toLocaleString('en-ph')}`)
+    console.log(`⭐ YUGIPEDIA LATEST ENTRY: ${new Date(yugipediaVar.lastUpdate).toLocaleString('en-ph')}`)
+    console.log(`⭐ YUGIPEDIA LAST SEARCH: ${new Date(YUGIPEDIA_LAST_SEARCH).toLocaleString('en-ph')}`)
   } catch (err) {
     console.log("🟥 CARDS FETCH ERROR:", err.message)
     console.log("🔷 STACK:", err.stack)
