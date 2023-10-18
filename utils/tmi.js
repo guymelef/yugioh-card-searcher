@@ -205,18 +205,17 @@ const onMessageHandler = async (channel, tags, message, self) => {
           } else {
             if (searchType === 'wiki') {
               searchResult = await searchYugipedia(userQuery)
-              
-              if (!searchResult) return ''
-
-              if (!searchResult.length) {
-                redisValue = JSON.stringify({ short: true, result: [] })
-                setRedisValue()
-                return client.reply(channel, returnErrorMessage(), tags.id)
-              }
+              if (!searchResult) return
             } else {
               searchResult = await findClosestCard(userQuery, searchType === 'list', cardPool)
             }
             
+            if (!searchResult.length) {
+              redisValue = JSON.stringify({ short: true, result: [] })
+              setRedisValue()
+              return client.reply(channel, returnErrorMessage(), tags.id)
+            }
+
             if (searchResult.length === 1) {
               if (searchType === 'image') {
                 const link = await transformToBitlyUrl(searchResult[0].image)
