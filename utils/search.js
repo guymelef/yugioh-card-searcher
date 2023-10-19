@@ -45,6 +45,7 @@ const getRandomCard = (pool) => {
   if (LAST_RANDOM_CARD === card.name) return getRandomCard()
   else LAST_RANDOM_CARD = card.name
 
+  console.log('↪️ sent random card\n')
   return card
 }
 
@@ -118,7 +119,7 @@ const findClosestCard = async (keyword, bulk, pool) => {
         (card?.alias && card.alias.toLowerCase() === keyword)
       ) {
         exactMatch.push(card)
-        console.log("↪️ found exact match...")
+        console.log("↪️ found exact match\n")
         return exactMatch
       }
     }
@@ -182,7 +183,7 @@ const findClosestCard = async (keyword, bulk, pool) => {
 
     if (!queryMatches.length && !wordMatches.length) {
       if ((keywordArr.length > 1 || keyword.length > 4) && distance(cardName, keyword) === 1 && !bulk) {
-        console.log(`↪️ found closest match...`)
+        console.log(`↪️ found closest match\n`)
         return [card]
       }
 
@@ -272,51 +273,51 @@ const findClosestCard = async (keyword, bulk, pool) => {
 
   if (bulk) {
     if (queryMatches.length) {
-      console.log(`↪️ found [${queryMatches.length}] query match(es)...`)
+      console.log(`↪️ found [${queryMatches.length}] query match(es)\n`)
       return queryMatches
     } 
 
     if (wordMatches.length) {
-      console.log(`↪️ found [${wordMatches.length}] word match(es)...`)
+      console.log(`↪️ found [${wordMatches.length}] word match(es)\n`)
       return wordMatches
     }
 
     if (possibleMatches.length) {
-      console.log(`↪️ found [${possibleMatches.length}] possible match(es)...`)
+      console.log(`↪️ found [${possibleMatches.length}] possible match(es)\n`)
       return possibleMatches
     }
 
     if (partialMatches.length) {
-      console.log(`↪️ found [${partialMatches.length}] partial match(es)...`)
+      console.log(`↪️ found [${partialMatches.length}] partial match(es)\n`)
       return getTopPartialMatches()
     }
 
-    console.log(`↪️ found [${remoteMatches.length}] remote match(es)...`)
+    console.log(`↪️ found [${remoteMatches.length}] remote match(es)\n`)
     return remoteMatches
   } else {
     if (queryMatches.length) {
-      console.log(`↪️ found [${queryMatches.length}] query match(es)...`)
+      console.log(`↪️ found [${queryMatches.length}] query match(es)\n`)
       return queryMatches
     }
 
     if (wordMatches.length) {
-      console.log(`↪️ found [${wordMatches.length}] word match(es)...`)
+      console.log(`↪️ found [${wordMatches.length}] word match(es)\n`)
       return wordMatches
     }
 
     searchUsingUpdater(USER_KEYWORD)
 
     if (possibleMatches.length) {
-      console.log(`↪️ found [${possibleMatches.length}] possible match(es)...`)
+      console.log(`↪️ found [${possibleMatches.length}] possible match(es)\n`)
       return possibleMatches
     }
 
     if (partialMatches.length) {
-      console.log(`↪️ found [${partialMatches.length}] partial match(es)...`)
+      console.log(`↪️ found [${partialMatches.length}] partial match(es)\n`)
       return getTopPartialMatches()
     }
 
-    console.log(`↪️ found [${remoteMatches.length}] remote match(es)...`)
+    console.log(`↪️ found [${remoteMatches.length}] remote match(es)\n`)
     return remoteMatches
   }
 }
@@ -380,7 +381,7 @@ const searchUsingUpdater = async (cardName) => {
       console.log(`💡 YUGIPEDIA MATCH FOUND FOR: "${cardName}"`)
       updateCardPool(data.card)
     } else {
-      console.log(`👻 NO YUGIPEDIA MATCH FOUND FOR: "${cardName}"`)
+      console.log(`\n👻 NO YUGIPEDIA MATCH FOUND FOR: "${cardName}"\n`)
     }
   } catch(err) {
     console.log('🟥 SEARCH API ERROR:', err)

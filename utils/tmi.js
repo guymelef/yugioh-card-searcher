@@ -151,6 +151,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
         const rushSearch = message.startsWith("!searchr")
         const cardPool = rushSearch ? 'rush' : 'main'
         let searchPrefix = rushSearch ? 'searchr' : 'search'
+        let messagePrefix = rushSearch ? '🚀' : '🎴'
         const searchCategory = cardPool === 'main' ? '🟩' : '🟧'
         let searchResult = []
         let responseMessage = ''
@@ -224,7 +225,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
                 responseMessage = getCardArray(searchResult)
               } else {
                 const card = searchResult[0]
-                const messagePrefix = (rushSearch || card.category === 'rush') ? '🚀' : '🎴'
+                messagePrefix = (rushSearch || card.category === 'rush') ? '🚀' : '🎴'
                 responseMessage = `${messagePrefix} ${getCardInfo(card)}`
               }
 
@@ -288,25 +289,24 @@ const onMessageHandler = async (channel, tags, message, self) => {
               tags.id
             )
           case "--random":
-            console.log(`${searchCategory} [${userChannel} @ ${channel}] : 🔀 FETCHING CARD...`)
+            console.log(`\n${searchCategory} [${userChannel} @ ${channel}]: 🔀 fetching...`)
             searchResult = getRandomCard(cardPool)
-            console.log('↪️ sending card...')
-            return client.say(channel, getCardInfo(searchResult))
+            return client.say(channel, `${messagePrefix} ${getCardInfo(searchResult)}`)
           case "--image":
-            console.log(`${searchCategory} [${userChannel} @ ${channel}] : 📸 "${query}"...`)
+            console.log(`\n${searchCategory} [${userChannel} @ ${channel}]: 📸 "${query}"`)
             searchType = 'image'
             return checkRedisAndReply()
           case "--list":
-            console.log(`${searchCategory} [${userChannel} @ ${channel}] : 📜 "${query}"...`)
+            console.log(`\n${searchCategory} [${userChannel} @ ${channel}]: 📜 "${query}"`)
             searchType = 'list'
             return checkRedisAndReply()
           case "--wiki":
-            console.log(`${searchCategory} [${userChannel} @ ${channel}] : 🌐 "${query}"...`)
+            console.log(`\n${searchCategory} [${userChannel} @ ${channel}]: 🌐 "${query}"`)
             searchType = 'wiki'
             return checkRedisAndReply()
           default:
             query = ORIGINAL_MESSAGE.split(' ').slice(1).join(' ')
-            console.log(`${searchCategory} [${userChannel} @ ${channel}] : 🔎 "${query}"...`)
+            console.log(`\n${searchCategory} [${userChannel} @ ${channel}]: 🔎 "${query}"`)
             searchType = ''
             return checkRedisAndReply()
         }
@@ -317,10 +317,8 @@ const onMessageHandler = async (channel, tags, message, self) => {
     console.log("🔷 STACK:", err.stack)
     console.log("⚕️ INFO:", `[${userChannel} @ ${channel}]: ${ORIGINAL_MESSAGE}\n`, tags)
 
-    if (channel === "#cardsearcher")
-      client.reply(channel, `Oops, an error occured! Please try again or report the problem.`, tags.id)
-    else
-      return
+    if (channel === "#cardsearcher") client.reply(channel, `❗Oops, an error occured! Please try again or report the problem.`, tags.id)
+    else return
   }
 }
 
