@@ -45,7 +45,7 @@ const getRandomCard = (pool) => {
   if (LAST_RANDOM_CARD === card.name) return getRandomCard()
   else LAST_RANDOM_CARD = card.name
 
-  console.log('↪️ sent random card\n')
+  console.log('↪️ sent random card')
   return card
 }
 
@@ -119,7 +119,7 @@ const findClosestCard = async (keyword, bulk, pool) => {
         (card?.alias && card.alias.toLowerCase() === keyword)
       ) {
         exactMatch.push(card)
-        console.log("↪️ found exact match\n")
+        console.log('↪️ found exact match')
         return exactMatch
       }
     }
@@ -183,7 +183,7 @@ const findClosestCard = async (keyword, bulk, pool) => {
 
     if (!queryMatches.length && !wordMatches.length) {
       if ((keywordArr.length > 1 || keyword.length > 4) && distance(cardName, keyword) === 1 && !bulk) {
-        console.log(`↪️ found closest match\n`)
+        console.log(`↪️ found closest match`)
         return [card]
       }
 
@@ -273,51 +273,51 @@ const findClosestCard = async (keyword, bulk, pool) => {
 
   if (bulk) {
     if (queryMatches.length) {
-      console.log(`↪️ found [${queryMatches.length}] query match(es)\n`)
+      console.log(`↪️ found [${queryMatches.length}] query match(es)`)
       return queryMatches
     } 
 
     if (wordMatches.length) {
-      console.log(`↪️ found [${wordMatches.length}] word match(es)\n`)
+      console.log(`↪️ found [${wordMatches.length}] word match(es)`)
       return wordMatches
     }
 
     if (possibleMatches.length) {
-      console.log(`↪️ found [${possibleMatches.length}] possible match(es)\n`)
+      console.log(`↪️ found [${possibleMatches.length}] possible match(es)`)
       return possibleMatches
     }
 
     if (partialMatches.length) {
-      console.log(`↪️ found [${partialMatches.length}] partial match(es)\n`)
+      console.log(`↪️ found [${partialMatches.length}] partial match(es)`)
       return getTopPartialMatches()
     }
 
-    console.log(`↪️ found [${remoteMatches.length}] remote match(es)\n`)
+    console.log(`↪️ found [${remoteMatches.length}] remote match(es)`)
     return remoteMatches
   } else {
     if (queryMatches.length) {
-      console.log(`↪️ found [${queryMatches.length}] query match(es)\n`)
+      console.log(`↪️ found [${queryMatches.length}] query match(es)`)
       return queryMatches
     }
 
     if (wordMatches.length) {
-      console.log(`↪️ found [${wordMatches.length}] word match(es)\n`)
+      console.log(`↪️ found [${wordMatches.length}] word match(es)`)
       return wordMatches
     }
 
     searchUsingUpdater(USER_KEYWORD)
 
     if (possibleMatches.length) {
-      console.log(`↪️ found [${possibleMatches.length}] possible match(es)\n`)
+      console.log(`↪️ found [${possibleMatches.length}] possible match(es)`)
       return possibleMatches
     }
 
     if (partialMatches.length) {
-      console.log(`↪️ found [${partialMatches.length}] partial match(es)\n`)
+      console.log(`↪️ found [${partialMatches.length}] partial match(es)`)
       return getTopPartialMatches()
     }
 
-    console.log(`↪️ found [${remoteMatches.length}] remote match(es)\n`)
+    console.log(`↪️ found [${remoteMatches.length}] remote match(es)`)
     return remoteMatches
   }
 }
@@ -363,7 +363,7 @@ const searchYugipedia = async (keyword) => {
 
     if (yugipediaCard.length) saveToDatabase({ ...yugipediaCard[0] })
 
-    console.log(`↪️ found [${yugipediaCard.length}] search result...`)
+    console.log(`↪️ returned [${yugipediaCard.length}] result`)
     return yugipediaCard
   }
 
@@ -378,7 +378,7 @@ const searchUsingUpdater = async (cardName) => {
     data = await data.json()
 
     if (data.match) {
-      console.log(`💡 YUGIPEDIA MATCH FOUND FOR: "${cardName}"`)
+      console.log(`\n💡 YUGIPEDIA MATCH FOUND FOR: "${cardName}"\n`)
       updateCardPool(data.card)
     } else {
       console.log(`\n👻 NO YUGIPEDIA MATCH FOUND FOR: "${cardName}"\n`)

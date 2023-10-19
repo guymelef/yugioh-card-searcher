@@ -13,7 +13,7 @@ const fetchFromYugipedia = async (cardName) => {
   const CARD = []
   
   try {
-    console.log(`📖 SEARCHING YUGIPEDIA... 【${cardName}】`)
+    console.log(`📖 SEARCHING YUGIPEDIA: 【${cardName}】`)
     let wikiContent = ""
     
     let response = await fetch(`${YUGIPEDIA_SEARCH}${encodeURIComponent(cardName)}`, requestOptions)
