@@ -22,7 +22,7 @@ app.get("/refresh_data", (_, res) => {
   
   fetchAllData()
     .then(_ => {
-      console.log("🐳 BOT DATA REFRESHED!\n")
+      console.log("🐳 BOT DATA REFRESHED!")
       res.json({
         message: "bot data refresh success",
         date: new Date().toLocaleString('en-ph')
@@ -43,7 +43,7 @@ app.get("/flush_cache", (_, res) => {
     
     redis.flushall()
       .then(_ => {
-        console.log('🌳 REDIS CACHE EMPTIED!\n')
+        console.log('🌳 REDIS CACHE EMPTIED!')
         res.json({
           message: "redis cache reset success",
           date: new Date().toLocaleString('en-ph')
