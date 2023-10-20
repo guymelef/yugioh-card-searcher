@@ -378,10 +378,10 @@ const searchUsingUpdater = async (cardName) => {
     data = await data.json()
 
     if (data.match) {
-      console.log(`\n💡 YUGIPEDIA MATCH FOUND FOR: "${cardName}"\n`)
+      console.log(`\n💡 YUGIPEDIA MATCH FOUND FOR: "${cardName}"`)
       updateCardPool(data.card)
     } else {
-      console.log(`\n👻 NO YUGIPEDIA MATCH FOUND FOR: "${cardName}"\n`)
+      console.log(`\n👻 NO YUGIPEDIA MATCH FOUND FOR: "${cardName}"`)
     }
   } catch(err) {
     console.log('🟥 SEARCH API ERROR:', err)
