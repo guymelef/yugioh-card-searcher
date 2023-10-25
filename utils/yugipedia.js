@@ -80,7 +80,7 @@ const createYugipediaCard = (cardName) => {
   let requirement = getProperty('requirement')
   let isRush = getProperty('rush_duel') || getProperty('rush_duel_status')
   let misc = getProperty('misc')
-  let legend = false
+  let legend = false || wikitext.includes('Legend Card')
 
   if (misc && misc.toLowerCase() === 'legend card') legend = true
   if (!category) category = (requirement || isRush) ? 'rush' : 'ocg'
