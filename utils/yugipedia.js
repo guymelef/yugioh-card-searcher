@@ -84,6 +84,7 @@ const createYugipediaCard = (cardName) => {
 
   if (misc && misc.toLowerCase() === 'legend card') legend = true
   if (!category) category = (requirement || isRush) ? 'rush' : 'ocg'
+
   if (!lore || (!types && !lore)) return CARD
   
   if (['Spell', 'Trap'].includes(type)) {
@@ -111,7 +112,7 @@ const createYugipediaCard = (cardName) => {
     }
   }
 
-  if (types.includes('Skill') || wikitextSubstring.startsWith('{{duel links skill')) {
+  if ((types && types.includes('Skill')) || wikitextSubstring.startsWith('{{duel links skill')) {
     type = 'Skill'
     category = category || 'ocg'
 
