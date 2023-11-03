@@ -17,9 +17,11 @@ cardSchema.plugin(uniqueValidator)
 const OcgCard = mongoose.model('OcgCard', cardSchema)
 const RushCard = mongoose.model('RushCard', cardSchema)
 const StrayCard = mongoose.model('StrayCard', cardSchema)
+const SnapCard = mongoose.model('SnapCard', cardSchema)
+const SnapLocation = mongoose.model('SnapLocation', cardSchema)
 
 
 
 
 
-module.exports = { OcgCard, RushCard, StrayCard }
+module.exports = { OcgCard, RushCard, StrayCard, SnapCard, SnapLocation }

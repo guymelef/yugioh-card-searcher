@@ -98,6 +98,26 @@ const transformToBitlyUrl = async (url) => {
   return link
 }
 
+const getSnapCardInfo = (card) => {
+  const seriesNum = {'1': '1️⃣', '2': '2️⃣', '3': '3️⃣', '4': '4️⃣', '5': '5️⃣'}
+  const getCardSeries = series => {
+    if (series) {
+      if (series === 'Season Pass') return `Season Pass`
+      else if (series === 'NA') return 'Unreleased'
+      else return `Series ${seriesNum[series]}`
+    } else {
+      return 'Summon'
+    }
+  }
+
+  const ability = card.evolved ? `${card.ability + ` Evolved: ${card.evolved}` }` : card.ability
+  if (card.type === 'card') {
+    return `🐦 ″${card.name}″ [🔹${card.cost} 🔸${card.power}] ❮${getCardSeries(card.series)}❯ : ${ability}`
+  } else {
+    return `🦚 ″${card.name}″ : ${card.ability}`
+  }
+}
+
 
 
 
@@ -106,5 +126,6 @@ module.exports = {
   getSymbol,
   getCardInfo,
   getCardArray,
-  transformToBitlyUrl
+  transformToBitlyUrl,
+  getSnapCardInfo
 }

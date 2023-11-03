@@ -12,6 +12,7 @@ const {
   getCardInfo,
   getCardArray,
   transformToBitlyUrl,
+  getSnapCardInfo
 } = require('./card')
 const {
   fetchAllData,
@@ -310,6 +311,27 @@ const onMessageHandler = async (channel, tags, message, self) => {
             searchType = ''
             return checkRedisAndReply()
         }
+      }
+    }
+
+    if (channel === "#thesandvich") {
+      if (message.startsWith('!card') || message.startsWith('!location')) {
+        let pool = ''
+        if (message.startsWith('!card')) pool = 'card'
+        if (message.startsWith('!location')) pool = 'location'
+
+        const messageArray = message.split(' ')
+        const query = messageArray.slice(1).join(' ')
+
+        const searchResult = await findClosestCard(query, false, pool)
+        const emojis = ['☹️', '😞', '🫤', '😩', '🤔']
+        if (!searchResult.length) return client.reply(channel, `Snap, card not found! ${emojis[Math.floor(Math.random() * 5)]}`, tags.id)
+
+        const card = searchResult[0]
+        card.type = pool
+
+        const cardInfo = getSnapCardInfo(card)
+        client.reply(channel, cardInfo, tags.id)
       }
     }
   } catch (err) {

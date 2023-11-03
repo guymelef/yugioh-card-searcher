@@ -3,7 +3,7 @@ const { LevenshteinDistanceSearch } = require('natural')
 
 const { SEARCHER_API, searchOptions } = require('../config/config')
 const BotVariable = require('../models/variable')
-const { OcgCard, RushCard, StrayCard } = require('../models/card')
+const { OcgCard, RushCard, StrayCard, SnapCard, SnapLocation } = require('../models/card')
 const { getSymbol } = require('./card')
 const { fetchFromYugipedia } = require('./yugipedia')
 
@@ -14,16 +14,25 @@ let RUSH_CARDS
 let LAST_RANDOM_CARD
 let YUGIPEDIA_LAST_SEARCH
 
+let SNAP_CARDS
+let SNAP_LOCATIONS
+
 const fetchAllData = async () => {
   try {
     const ocgCards = await OcgCard.find({}).select('-pageId -official -_id -__v').lean().exec()
     const rushCards = await RushCard.find({}).select('-pageId -official -_id -__v').lean().exec()
     const strayCards = await StrayCard.find({}).select('-pageId -official -_id -__v').lean().exec()
+    const snapCards = await SnapCard.find({}).select('-pageId -official -_id -__v').lean().exec()
+    const snapLocations = await SnapLocation.find({}).select('-pageId -official -_id -__v').lean().exec()
     MAIN_CARDS = [...ocgCards, ...strayCards].sort((a, b) => a.name.localeCompare(b.name))
     RUSH_CARDS = [...rushCards].sort((a, b) => a.name.localeCompare(b.name))
-    console.log(`💠 MAIN CARDS: ${ocgCards.length.toLocaleString('en-ph')}`)
-    console.log(`💠 RUSH CARDS: ${rushCards.length.toLocaleString('en-ph')}`)
-    console.log(`💠 STRAY CARDS: ${strayCards.length.toLocaleString('en-ph')}`)
+    SNAP_CARDS = [...snapCards].sort((a, b) => a.name.localeCompare(b.name))
+    SNAP_LOCATIONS = [...snapLocations].sort((a, b) => a.name.localeCompare(b.name))
+    console.log(`🔷 MAIN CARDS: ${ocgCards.length.toLocaleString('en-ph')}`)
+    console.log(`🔷 RUSH CARDS: ${rushCards.length.toLocaleString('en-ph')}`)
+    console.log(`🔷 STRAY CARDS: ${strayCards.length.toLocaleString('en-ph')}`)
+    console.log(`🔶 SNAP CARDS: ${snapCards.length.toLocaleString('en-ph')}`)
+    console.log(`🔶 SNAP LOCATIONS: ${snapLocations.length.toLocaleString('en-ph')}`)
 
     const ygopdVar = await BotVariable.findOne({ name: 'YGOPRODeck' })
     console.log(`⭐ YGOPD CARD COUNT (${ygopdVar.last_update}): ${ygopdVar.card_count.toLocaleString('en-ph')}`)
@@ -63,7 +72,9 @@ const findClosestCard = async (keyword, bulk, pool) => {
   const USER_KEYWORD = keyword
   keyword = normalizeString(keyword)
   const keywordArr = keyword.split(' ')
-  const CARDS = (pool === 'main') ? MAIN_CARDS : RUSH_CARDS
+
+  const CARD_POOL = { 'main': MAIN_CARDS, 'rush': RUSH_CARDS, 'card': SNAP_CARDS, 'location': SNAP_LOCATIONS }
+  const CARDS = CARD_POOL[pool]
 
   let exactMatch = []
   let queryMatches = []
@@ -305,7 +316,7 @@ const findClosestCard = async (keyword, bulk, pool) => {
       return wordMatches
     }
 
-    searchUsingUpdater(USER_KEYWORD)
+    if (['main', 'rush'].includes(pool)) searchUsingUpdater(USER_KEYWORD)
 
     if (possibleMatches.length) {
       console.log(`↪️ found [${possibleMatches.length}] possible match(es)`)
