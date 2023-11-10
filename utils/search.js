@@ -79,6 +79,7 @@ const findClosestCard = async (keyword, bulk, pool) => {
   let exactMatch = []
   let queryMatches = []
   let wordMatches = []
+  let closestMatches = []
   let possibleMatches = []
   let partialMatches = []
   let remoteMatches = []
@@ -194,9 +195,11 @@ const findClosestCard = async (keyword, bulk, pool) => {
 
     if (!queryMatches.length && !wordMatches.length) {
       if ((keywordArr.length > 1 || keyword.length > 4) && distance(cardName, keyword) === 1 && !bulk) {
-        console.log('↪️ found closest match')
-        return [card]
+        closestMatches.push(card)
+        continue
       }
+
+      if (closestMatches.length) continue
 
       if (cardName.length > 4 && keyword.includes(cardName)) {
         possibleMatches.push(card)
@@ -273,7 +276,7 @@ const findClosestCard = async (keyword, bulk, pool) => {
     }
   }
 
-  if (!queryMatches.length && !wordMatches.length && !possibleMatches.length && !partialMatches.length) {
+  if (!queryMatches.length && !wordMatches.length && !closestMatches.length && !possibleMatches.length && !partialMatches.length) {
     const min = Math.min(...DISTANCEARRAY.map(item => item.distance))
     const minArray = DISTANCEARRAY.filter(item => item.distance === min)
     minArray.forEach(item => {
@@ -291,6 +294,11 @@ const findClosestCard = async (keyword, bulk, pool) => {
     if (wordMatches.length) {
       console.log(`↪️ found [${wordMatches.length}] word match(es)`)
       return wordMatches
+    }
+
+    if (closestMatches.length) {
+      console.log(`↪️ found [${closestMatches.length}] closest match(es)`)
+      return closestMatches
     }
 
     if (possibleMatches.length) {
@@ -314,6 +322,11 @@ const findClosestCard = async (keyword, bulk, pool) => {
     if (wordMatches.length) {
       console.log(`↪️ found [${wordMatches.length}] word match(es)`)
       return wordMatches
+    }
+
+    if (closestMatches.length) {
+      console.log(`↪️ found [${closestMatches.length}] closest match(es)`)
+      return closestMatches
     }
 
     if (['main', 'rush'].includes(pool)) searchUsingUpdater(USER_KEYWORD)
