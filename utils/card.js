@@ -104,7 +104,7 @@ const getSnapCardInfo = (card) => {
     if (series) {
       if (series === 'Season Pass') return `Season Pass`
       else if (series === 'NA') return 'Unreleased'
-      else return `Series ${seriesNum[series]}`
+      else return `S${seriesNum[series]}`
     } else {
       return 'Summon'
     }
@@ -112,9 +112,9 @@ const getSnapCardInfo = (card) => {
 
   const ability = card.evolved ? `${card.ability + ` Evolved: ${card.evolved}` }` : card.ability
   if (card.type === 'card') {
-    return `🐦 ″${card.name}″ [🔹${card.cost} 🔸${card.power}] ❮${getCardSeries(card.series)}❯ : ${ability}`
+    return `✦ ″${card.name}″ [🔹${card.cost} 🔸${card.power}] ❮${getCardSeries(card.series)}❯ : ${ability}`
   } else {
-    return `🦚 ″${card.name}″ : ${card.ability}`
+    return `◉ ″${card.name}″ : ${card.ability}`
   }
 }
 
