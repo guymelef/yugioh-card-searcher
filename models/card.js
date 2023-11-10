@@ -19,9 +19,10 @@ const RushCard = mongoose.model('RushCard', cardSchema)
 const StrayCard = mongoose.model('StrayCard', cardSchema)
 const SnapCard = mongoose.model('SnapCard', cardSchema)
 const SnapLocation = mongoose.model('SnapLocation', cardSchema)
+const SnapBot = mongoose.model('SnapBot', cardSchema)
 
 
 
 
 
-module.exports = { OcgCard, RushCard, StrayCard, SnapCard, SnapLocation }
+module.exports = { OcgCard, RushCard, StrayCard, SnapCard, SnapLocation, SnapBot }

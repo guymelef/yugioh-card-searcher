@@ -23,6 +23,7 @@ const {
   searchYugipedia
 } = require('./search')
 const { returnErrorMessage } = require('./error')
+const { SnapBot } = require('../models/card')
 const Channel = require('../models/channel')
 
 
@@ -325,13 +326,19 @@ const onMessageHandler = async (channel, tags, message, self) => {
 
         const searchResult = await findClosestCard(query, false, pool)
         const emojis = ['☹️', '😞', '🫤', '😩', '🤔']
-        if (!searchResult.length) return client.reply(channel, `Snap, card not found! ${emojis[Math.floor(Math.random() * 5)]}`, tags.id)
+        if (!searchResult.length) return client.reply(channel, `Oh, snap! Couldn't find that ${pool} in the Multiverse. ${emojis[Math.floor(Math.random() * 5)]}`, tags.id)
 
         const card = searchResult[0]
         card.type = pool
 
         const cardInfo = getSnapCardInfo(card)
-        client.reply(channel, cardInfo, tags.id)
+        return client.reply(channel, cardInfo, tags.id)
+      } else if (message.startsWith('!bot')) {
+        const botName = ORIGINAL_MESSAGE.split(' ').slice(1).join(' ')
+        const match = await SnapBot.findOne({ name: botName })
+
+        if (match) return client.reply(channel, `▲ ″${match.name}″ [${match.type}] is in the bot list.`, tags.id)
+        else return client.reply(channel, `▼ ″${botName}″ is NOT in the bot list.`, tags.id)
       }
     }
   } catch (err) {
