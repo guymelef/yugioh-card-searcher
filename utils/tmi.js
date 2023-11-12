@@ -324,6 +324,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
         const messageArray = message.split(' ')
         const query = messageArray.slice(1).join(' ')
 
+        console.log(`\n🟪 [${userChannel} @ ${channel}]: 🔎 "${query}"`)
         const searchResult = await findClosestCard(query, false, pool)
         const emojis = ['☹️', '😞', '🫤', '😩', '🤔']
         if (!searchResult.length) return client.reply(channel, `Oh, snap! Couldn't find that ${pool} in the Multiverse. ${emojis[Math.floor(Math.random() * 5)]}`, tags.id)
@@ -331,7 +332,6 @@ const onMessageHandler = async (channel, tags, message, self) => {
         const card = searchResult[0]
         card.type = pool
 
-        console.log(`\n🟪 [${userChannel} @ ${channel}]: 🔎 "${query}"`)
         const cardInfo = getSnapCardInfo(card)
         return client.reply(channel, cardInfo, tags.id)
       } else if (message.startsWith('!bot')) {
