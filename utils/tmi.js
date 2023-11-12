@@ -332,6 +332,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
         card.type = pool
 
         const cardInfo = getSnapCardInfo(card)
+        console.log(`\n🟪 [${userChannel} @ ${channel}]: 🔎 "${query}"`)
         return client.reply(channel, cardInfo, tags.id)
       } else if (message.startsWith('!bot')) {
         const botName = ORIGINAL_MESSAGE.split(' ').slice(1).join(' ')
