@@ -91,7 +91,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
           if (!newChannel.moderated) OPEN_CHANNELS.push(newChannel.name)
 
           await client.join(userChannel)
-          console.log(`🧩 THE BOT JOINED [ ${userChannel} ]`, new Date().toLocaleString('en-ph'))
+          console.log(`\n🧩 THE BOT JOINED [ ${userChannel} ]`, new Date().toLocaleString('en-ph'))
           return client.reply(
             channel,
             `Awesome! CardSearcher has joined your channel. Don't forget to promote the bot to VIP/moderator.`,
@@ -129,7 +129,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
         
         await client.part(userChannel)
         OPEN_CHANNELS = OPEN_CHANNELS.filter(channel => channel !== userChannel)
-        console.log(`💔 THE BOT LEFT [ ${userChannel} ]`, new Date().toLocaleString('en-ph'))
+        console.log(`\n💔 THE BOT LEFT [ ${userChannel} ]`, new Date().toLocaleString('en-ph'))
         return client.reply(channel, `CardSearcher has successfully left your channel.`, tags.id)
       }
 
