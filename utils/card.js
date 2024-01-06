@@ -99,18 +99,19 @@ const transformToBitlyUrl = async (url) => {
 }
 
 const getSnapCardInfo = (card) => {
-  const seriesNum = {'1': '1️⃣', '2': '2️⃣', '3': '3️⃣', '4': '4️⃣', '5': '5️⃣'}
-  const getCardSeries = series => {
+  const getCardSeries = (series) => {
     if (series) {
       if (series === 'Season Pass') return `Season Pass`
       else if (series === 'NA') return 'Unreleased'
-      else return `S${seriesNum[series]}`
+      else return `S${series}`
     } else {
       return 'Summon'
     }
   }
 
-  const ability = card.evolved ? `${card.ability + ` Evolved: ${card.evolved}` }` : card.ability
+  let ability = card.evolved ? `${card.text + ` Evolved: ${card.evolved}` }` : card.ability
+  ability = ability.replace('<i>', '').replace('</i>', '')
+
   if (card.type === 'card') {
     return `✦ ″${card.name}″ [🔹${card.cost} 🔸${card.power}] ❮${getCardSeries(card.series)}❯ : ${ability}`
   } else {
