@@ -17,6 +17,10 @@ const app = express()
 app.use(cors())
 app.use(checkRequestKeyHeader)
 
+app.get("/ping", (_, res) => {
+  res.send('pong')
+})
+
 app.get("/refresh_data", (_, res) => {
   console.log('\n🕊️ RE-FETCHING BOT DATA...')
   
