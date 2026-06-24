@@ -1,4 +1,4 @@
-const { BITLY_GUID, BITLY_API, bitlyOptions } = require('../config/config')
+const { TINYURL_API, tinyurlOptions } = require('../config/config')
 
 
 
@@ -83,17 +83,12 @@ const formatArrows = (array) => {
   return array.map(arrow => markers[arrow.trim()]).join('')
 }
 
-const transformToBitlyUrl = async (url) => {
-  const body = JSON.stringify({
-    group_guid: `${BITLY_GUID}`,
-    domain: "bit.ly",
-    long_url: url
-  })
-  bitlyOptions.body = body
+const transformToTinyurl = async (url) => {
+  tinyurlOptions.body = JSON.stringify({ url })
 
-  let link = await fetch(BITLY_API, bitlyOptions)
+  let link = await fetch(TINYURL_API, tinyurlOptions)
   link = await link.json()
-  link = link.link
+  link = link.data.tiny_url
 
   return link
 }
@@ -127,6 +122,6 @@ module.exports = {
   getSymbol,
   getCardInfo,
   getCardArray,
-  transformToBitlyUrl,
+  transformToTinyurl,
   getSnapCardInfo
 }

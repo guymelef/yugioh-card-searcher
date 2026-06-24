@@ -7,9 +7,8 @@ const DEBUG = process.env.DEBUG
 const BOT_USERNAME = process.env.BOT_USERNAME
 const BOT_USER_AGENT = process.env.BOT_USER_AGENT
 const OAUTH_TOKEN = process.env.OAUTH_TOKEN
-const BITLY_GUID = process.env.BITLY_GUID
-const BITLY_TOKEN = process.env.BITLY_TOKEN
-const BITLY_API = process.env.BITLY_API
+const TINYURL_TOKEN = process.env.TINYURL_TOKEN
+const TINYURL_API = process.env.TINYURL_API
 const SECRET_KEY = process.env.SECRET_KEY
 const MONGODB_URI = process.env.MONGODB_URI
 const REDIS_URI = process.env.REDIS_URI
@@ -44,13 +43,12 @@ const searchOptions = {
   }
 }
 
-const bitlyOptions = {
+const tinyurlOptions = {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    "Authorization": `Bearer ${BITLY_TOKEN}`
-  },
-  redirect: "follow"
+    "Authorization": `Bearer ${TINYURL_TOKEN}`
+  }
 }
 
 
@@ -63,9 +61,7 @@ module.exports = {
   BOT_USERNAME,
   OAUTH_TOKEN,
   BOT_USER_AGENT,
-  BITLY_GUID,
-  BITLY_TOKEN,
-  BITLY_API,
+  TINYURL_API,
   SECRET_KEY,
   MONGODB_URI,
   REDIS_URI,
@@ -77,5 +73,5 @@ module.exports = {
   tmiOptions,
   requestOptions,
   searchOptions,
-  bitlyOptions
+  tinyurlOptions
 }

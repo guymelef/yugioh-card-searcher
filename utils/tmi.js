@@ -11,7 +11,7 @@ const {
 const {
   getCardInfo,
   getCardArray,
-  transformToBitlyUrl,
+  transformToTinyurl,
   getSnapCardInfo
 } = require('./card')
 const {
@@ -221,7 +221,7 @@ const onMessageHandler = async (channel, tags, message, self) => {
 
             if (searchResult.length === 1) {
               if (searchType === 'image') {
-                const link = await transformToBitlyUrl(searchResult[0].image)
+                const link = await transformToTinyurl(searchResult[0].image)
                 responseMessage = `📸 "${searchResult[0].name}" - [ ${link} ]`
               } else if (searchType === 'list') {
                 responseMessage = getCardArray(searchResult)
